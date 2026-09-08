@@ -36,8 +36,8 @@ from tiers import (
 from dungeon import (
     BASE_STATS, LAYER1_TOTAL, layer_total, coin_rate_per_sec, coin_per_5sec,
     effective_stats, dungeon_speed, owned_items, owned_item_rows, settle_dungeon,
-    effective_layer_total, boss_type, sync_initial_tier, take_boss_report,
-    rare_item_ids,
+    effective_layer_total, boss_type, sync_initial_tier, historical_best_layer,
+    take_boss_report, rare_item_ids,
 )
 from kick import check_cooldown, mark_cooldown, build_kick_image, build_beat_image, build_jue_image, build_dalao_image
 import ore
@@ -123,9 +123,10 @@ def cmd_checkin(user, group_id, args, at_qqs=None):
 # ---------- 余额 ----------
 
 def cmd_balance(user, group_id, args, at_qqs=None):
+    _ensure_initial_tier(user)
     items = owned_items(user)
     prof = (user.profession or "") or ""
-    class_txt = f"{class_name(prof)} · {_user_title(user)}" if prof else "未转职"
+    class_txt = f"{class_name(prof)} · {_user_title(user)}" if prof else "未转职·冒险者"
     return (f"当前资产：{format_currency(user.copper)}\n"
             f"职业/称号：{class_txt}\n"
             f"持有装备 {len(items)} 件；累计签到 {user.total_checkin} 次，连续签到 {user.checkin_streak} 天。")
@@ -135,8 +136,26 @@ def cmd_balance(user, group_id, args, at_qqs=None):
 
 
 def _user_title(user):
-    """完整晋级称号（如 见习战士）；未转职返回前缀。"""
-    return tier_title((user.profession or "") or None, (user.tier or 0))
+    """完整晋级称号（如 见习战士）；未转职显示「冒险者」（不带职业阶级前缀）。"""
+    prof = (user.profession or "") or ""
+    if not prof:
+        return "冒险者"
+    return tier_title(prof, (user.tier or 0))
+
+
+def _ensure_initial_tier(user):
+    """老玩家继承（D13）：未定阶（tier==0）时按历史最高层自动定初始阶级（幂等）。
+
+    在所有会展示称号 / 过滤装备的入口统一调用，保证「转职 / 武器库 / 背包 / 余额 /
+    晋升 / 购买 / 进地下城」各路径行为一致，不再出现“先进地下城白送高阶、先转职却要从头升”
+    的差别。调用方处于应用上下文内；本函数内部负责 commit。
+    """
+    if user is None or (user.tier or 0) > 0:
+        return
+    if historical_best_layer(user) <= 0:
+        return
+    sync_initial_tier(user)
+    db.session.commit()
 
 
 def _item_tier(it):
@@ -148,6 +167,7 @@ def _item_tier(it):
 
 def cmd_bag(user, group_id, args, at_qqs=None):
     """查看当前持有的武具与矿石（/背包）。"""
+    _ensure_initial_tier(user)
     rows = owned_item_rows(user)
     if not rows:
         return ("🎒 你的背包空空如也。\n"
@@ -214,11 +234,13 @@ def _item_desc(it):
 
 
 def cmd_shop(user, group_id, args, at_qqs=None):
-    """武器库：按职业+阶级过滤展示（原 /武具店 改名）。
+    """武器库：按职业可用(line/any) + 类型分组展示；同类装备排在一起（D-issue3）。
 
-    展示规则：未转职先引导转职；只展示 tier ≥ 当前阶级 且 当前职业可用(line 或 any) 的装备；
-    当前阶级可购，更高阶级带 🔒 锁（晋升解锁），低于当前阶级的旧装备隐藏。
+    展示规则：未转职先引导转职；已转职展示本职业可用全部档位并按类型分组，
+    组内从低阶到高阶排列 —— 低于/等于当前阶级的都可直接购买（便于低阶换装，D-issue2），
+    高于当前阶级的带 🔒（晋升解锁，仅预览不逐条刷屏）。
     """
+    _ensure_initial_tier(user)
     prof = (user.profession or "") or ""
     if not prof:
         return ("💡 你是冒险者，请先选择职业：\n"
@@ -227,27 +249,29 @@ def cmd_shop(user, group_id, args, at_qqs=None):
     line = class_line(prof)
     my_tier = user.tier or 0
     items = load_equipment()
-    shown = []
-    for it in items:
-        if item_line(it) not in (line, LINE_ANY):
+    # 本职业可用（职业 line 或 通用 any）
+    usable = [it for it in items if item_line(it) in (line, LINE_ANY)]
+    # 类型展示顺序（两职业通用的放前，便于换装时一眼找到同类）
+    order = ["weapon", "staff", "shield", "focus", "armor", "robe", "accessory", "other"]
+    groups = {}
+    for it in usable:
+        groups.setdefault(it.get("type", "other"), []).append(it)
+    lines = [f"⚔️ 武器库 · {_user_title(user)}（同类排在一起；当前阶级可购全部档，更高阶 🔒 需晋升）"]
+    for ty in order:
+        if ty not in groups:
             continue
-        if _item_tier(it) < my_tier:
-            continue  # 低阶旧装备不再展示
-        shown.append(it)
-    shown.sort(key=lambda x: (_item_tier(x), x["price"]))
-    lines = [f"⚔️ 武器库（{_user_title(user)} 可购当前阶，更高阶 🔒 需晋升）"]
-    cur = None
-    for it in shown:
-        t = _item_tier(it)
-        if t != cur:
-            cur = t
-            lock = "" if t <= my_tier else "🔒 "
-            lines.append(f"—— {lock}{tier_title(prof, t)}（T{t}）——")
-        if t <= my_tier:
-            lines.append(f"· {it['name']}（{TYPE_NAMES.get(it['type'], it['type'])}）{_item_desc(it)} · {format_currency(it['price'])}")
-        else:
-            lines.append(f"· 🔒 {it['name']}（晋升 {tier_title(prof, t)} 解锁）")
-    lines.append("—— 提示：/转职 切换职业；/晋升 提升阶级解锁更高阶装备 ——")
+        arr = sorted(groups[ty], key=lambda x: (_item_tier(x), x["price"]))
+        purchasable = [it for it in arr if _item_tier(it) <= my_tier]
+        locked = [it for it in arr if _item_tier(it) > my_tier]
+        if not arr:
+            continue
+        lines.append(f"—— {TYPE_NAMES.get(ty, ty)} ——")
+        for it in purchasable:
+            lines.append(f"· {it['name']}（{_item_desc(it)}）{format_currency(it['price'])}")
+        if locked:
+            t0 = _item_tier(locked[0])
+            lines.append(f"· 🔒 更高阶 {TYPE_NAMES.get(ty, ty)}（T{t0} 起）需 /晋升 解锁")
+    lines.append("—— 提示：/购买 装备名；/转职 切换职业；/晋升 提升阶级解锁更高阶 ——")
     return "\n".join(lines)
 
 
@@ -267,18 +291,20 @@ def cmd_class(user, group_id, args, at_qqs=None):
         hint = "、".join(c["name"] for c in all_classes())
         return f"没有职业「{arg}」。可选：{hint}"
     user.profession = cid
-    db.session.commit()
-    return (f"⚔️ 转职成功！你已成为 {class_name(cid)}（{tier_title(cid, user.tier or 0)}）。\n"
+    _ensure_initial_tier(user)  # 转职成功：老玩家立即按历史最高层继承对应阶级（不倒退、免逐步付费）
+    db.session.commit()  # 确保 profession（及可能的定阶）落库
+    return (f"⚔️ 转职成功！你已成为 {class_name(cid)}（{_user_title(user)}）。\n"
             f"地下城将只计算本职业与通用装备的属性（不混搭）。")
 
 
 def cmd_promote(user, group_id, args, at_qqs=None):
     """晋升阶级（/晋升）：需历史最高层达标 + 消耗货币。"""
+    _ensure_initial_tier(user)
     cur = user.tier or 0
     nxt = next_promotion(cur)
     if nxt is None:
         return f"你已达最高阶级 {_user_title(user)}！"
-    best = max(user.dungeon_cleared or 0, user.dungeon_layer or 0, user.saved_dungeon_layer or 0)
+    best = historical_best_layer(user)
     need_layer = TIER_LAYER.get(nxt, 0)
     cost = tier_promotion_cost(nxt)
     if best < need_layer:
@@ -302,8 +328,7 @@ def cmd_promote(user, group_id, args, at_qqs=None):
 
 def _forge_unlocked(user):
     """铁匠铺解锁门槛：玩家曾到达地下城 400 层（与矿石资格一致）。"""
-    return max(user.dungeon_cleared or 0, user.dungeon_layer or 0,
-               user.saved_dungeon_layer or 0) >= forge.FORGE_MIN_LAYER
+    return historical_best_layer(user) >= forge.FORGE_MIN_LAYER
 
 
 def cmd_forge_shop(user, group_id, args, at_qqs=None):
@@ -327,6 +352,7 @@ def cmd_forge_shop(user, group_id, args, at_qqs=None):
 
 def cmd_forge(user, group_id, args, at_qqs=None):
     """锻造装备：消耗铜币 + 矿石（不能赊账），成功后入背包。"""
+    _ensure_initial_tier(user)
     name = (args or "").strip()
     if not name:
         return "用法：/锻造 装备名（/铁匠铺 查看配方）"
@@ -375,6 +401,7 @@ def cmd_forge(user, group_id, args, at_qqs=None):
 
 def cmd_buy(user, group_id, args, at_qqs=None):
     """购买装备（/购买），职业+阶级双重校验。"""
+    _ensure_initial_tier(user)
     names = [n for n in (args or "").split()]
     if not names:
         return "用法：/购买 商品名 [商品名 ...]（例如 /购买 短剑 圆盾）"

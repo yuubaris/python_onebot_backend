@@ -170,6 +170,22 @@ def dungeon_speed(stats):
     ) * (1 + stats["defense"] / 400) * (1 + stats["hp"] / 600)
 
 
+def historical_best_layer(user):
+    """历史最高层（用于定阶 / 晋升门槛）：以「当前层 / 退出保存层」为准。
+
+    dungeon_layer（在线推进层）与 saved_dungeon_layer（退出时保存层）反映真实到达层，
+    两者均为 0（如仅剩旧累计）时才用 dungeon_cleared 兜底 —— 避免“反复刷低层累计数”
+    被误当成真实最高层而把老玩家一次性顶到顶阶。
+    """
+    if user is None:
+        return 0
+    layer = max(getattr(user, "dungeon_layer", 0) or 0,
+                getattr(user, "saved_dungeon_layer", 0) or 0)
+    if layer <= 0:
+        layer = getattr(user, "dungeon_cleared", 0) or 0
+    return layer
+
+
 def sync_initial_tier(user):
     """存量玩家（D13）：若尚未定阶，按历史最高层自动定初始阶级（老玩家不倒退）。
 
@@ -177,10 +193,7 @@ def sync_initial_tier(user):
     """
     if user is None or (getattr(user, "tier", 0) or 0) > 0:
         return
-    best = max(getattr(user, "dungeon_layer", 0) or 0,
-               getattr(user, "dungeon_cleared", 0) or 0,
-               getattr(user, "saved_dungeon_layer", 0) or 0)
-    t = tier_of_layer(best)
+    t = tier_of_layer(historical_best_layer(user))
     if t > 0:
         user.tier = t
 
