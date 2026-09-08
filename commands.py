@@ -22,7 +22,7 @@ import random
 import time
 from datetime import datetime, timedelta
 
-from models import db, User, CheckinRecord, UserItem
+from models import db, User, CheckinRecord, UserItem, TurnItem
 from currency import format_currency
 from equipment import load_equipment, find_item, suggest_items
 from classes import (
@@ -46,6 +46,7 @@ import forge
 import boss
 import alchemy
 import consumable
+import dungeon
 
 # 未知指令触发阈值：累计超过该次数后，发送 beat.jpeg 且不再响应该用户的未知指令
 UNKNOWN_LIMIT = 3
@@ -803,6 +804,7 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/炼金 [配方名] - 查看/制作药水·道具（消耗材料+矿石）\n"
             "/使用 物品名 - 使用药水/道具(药水/道具各同时仅一种, 新用替换并刷新时长)\n"
             "/挑战 @对方 / 列表 / <Boss名|层数|称号> - 玩家对战 · Boss 清单 · Boss 挑战（如 挑战 1000层）\n"
+            "/转转 捐赠 <装备名> / 乞讨 - 装备互助：捐赠入公共库，乞讨一件符合自己等级的装备（每天 3 次）\n"
             "/踢 @对方 - 生成踢人图（30 秒冷却）\n"
             "/撅 @对方 - 生成撅人 GIF（30 秒冷却）\n"
             "/佬 @对方 - 生成大佬致敬图（30 秒冷却）\n"
@@ -1052,6 +1054,94 @@ def cmd_boss(user, group_id, args, at_qqs=None):
     return boss.challenge_boss(user, target)[0]
 
 
+# ---------- 转转（捐赠 / 乞讨） ----------
+
+_TURN_DAILY_LIMIT = 3
+
+
+def _turn_usable(user, item):
+    """该装备是否对乞讨者「符合等级」可用：商店/稀有 tier ≤ 当前阶级；锻造按铁匠铺 Lv 解锁层。"""
+    try:
+        return dungeon._item_usable(item, user.tier or 0, historical_best_layer(user))
+    except Exception:
+        return False
+
+
+def _turn_today(user):
+    today = local_today().strftime("%Y-%m-%d")
+    if user.turn_date != today:
+        user.turn_date = today
+        user.turn_count = 0
+    return today
+
+
+def cmd_turn(user, group_id, args, at_qqs=None):
+    """转转：捐赠不需要的装备入公共库 / 乞讨一件符合自己等级的装备（每天 3 次）。
+
+    - /转转 捐赠 <装备名>：把自己的装备放入公共库（他人可乞讨）；
+    - /转转 乞讨：从公共库随机取一件「符合自己等级」的装备（tier ≤ 当前阶级 / 锻造 Lv 已解锁），每天 3 次；
+    - /转转：查看规则、今日剩余次数与库中情况。
+    """
+    parts = (args or "").split(maxsplit=1)
+    act = parts[0].strip().lower() if parts else ""
+    if not act:
+        _turn_today(user)
+        total = db.session.execute(db.select(db.func.count()).select_from(TurnItem)).scalar() or 0
+        rows = db.session.execute(db.select(TurnItem)).scalars().all()
+        fit = 0
+        for r in rows:
+            meta = dungeon.find_any_item(r.item_id)
+            if meta and _turn_usable(user, meta):
+                fit += 1
+        return (f"🎁 转转 · 互助公共库\n"
+                f"· /转转 捐赠 <装备名> - 把不需要的装备放入公共库（他人可乞讨）\n"
+                f"· /转转 乞讨 - 随机获得一件符合自己等级的装备（每天 {_TURN_DAILY_LIMIT} 次）\n"
+                f"今日剩余乞讨：{max(0, _TURN_DAILY_LIMIT - user.turn_count)} 次\n"
+                f"公共库：共 {total} 件，其中 {fit} 件符合你的等级")
+    if act in ("捐赠", "捐", "donate"):
+        name = parts[1].strip() if len(parts) > 1 else ""
+        if not name:
+            return "用法：/转转 捐赠 <装备名>（例如 /转转 捐赠 短剑）"
+        item = find_item(name)
+        if item is None:
+            item = find_any_item(name)
+        if item is None:
+            return f"没有找到「{name}」这件装备。"
+        row = db.session.execute(
+            db.select(UserItem).where(
+                UserItem.user_id == user.user_id,
+                UserItem.item_id == item["id"],
+            ).limit(1)
+        ).scalars().first()
+        if row is None:
+            return f"你还没有「{item['name']}」，无法捐赠。"
+        db.session.delete(row)
+        db.session.add(TurnItem(item_id=item["id"], donor_id=user.user_id))
+        db.session.commit()
+        return f"🎁 捐赠成功！「{item['name']}」已放入公共库，其他冒险者可乞讨。"
+    if act in ("乞讨", "讨", "beg"):
+        _turn_today(user)
+        if user.turn_count >= _TURN_DAILY_LIMIT:
+            return f"今天乞讨次数已用完（{_TURN_DAILY_LIMIT}/{_TURN_DAILY_LIMIT}），明天再来吧！"
+        rows = db.session.execute(db.select(TurnItem)).scalars().all()
+        fits = []
+        for r in rows:
+            meta = dungeon.find_any_item(r.item_id)
+            if meta and _turn_usable(user, meta):
+                fits.append((r, meta))
+        if not fits:
+            return "公共库空空如也，或暂时没有符合你等级的装备。去 /转转 捐赠 一件装备帮帮别人吧！"
+        row, meta = random.choice(fits)
+        db.session.delete(row)
+        db.session.add(UserItem(user_id=user.user_id, item_id=meta["id"], is_new=0))
+        user.turn_count += 1
+        db.session.commit()
+        return (f"🎁 乞讨成功！获得「{meta['name']}」（{_item_desc(meta)}）\n"
+                f"今日剩余乞讨：{max(0, _TURN_DAILY_LIMIT - user.turn_count)} 次。\n"
+                f"也欢迎 /转转 捐赠 不需要的装备回馈大家～")
+    return f"不认识的操作「{parts[0]}」。\n用法：/转转 捐赠 <装备名> · /转转 乞讨 · /转转"
+
+
 # ---------- 炼金（/炼金 [配方名]） ----------
 
 def cmd_alchemy(user, group_id, args, at_qqs=None):
@@ -1106,6 +1196,7 @@ COMMANDS = {
     "boss": cmd_boss, "bosslist": cmd_boss, "b": cmd_boss,
     "炼金": cmd_alchemy, "alchemy": cmd_alchemy, "lianjin": cmd_alchemy,
     "使用": cmd_use, "use": cmd_use, "shiyong": cmd_use,
+    "转转": cmd_turn, "zhuanzhuan": cmd_turn, "zhuan": cmd_turn, "turn": cmd_turn,
     "帮助": cmd_help, "help": cmd_help, "bangzhu": cmd_help,
 }
 

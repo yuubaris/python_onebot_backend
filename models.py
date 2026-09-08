@@ -62,6 +62,8 @@ class User(db.Model):
     profession = db.Column(db.String(32), default="", nullable=False)
     tier = db.Column(db.Integer, default=0, nullable=False)
     shop_filter = db.Column(db.Integer, default=0, nullable=False)  # 武器库开关：1=只显示当前档(隐藏低等级) 0=全部
+    turn_date = db.Column(db.String(10), default="", nullable=False)   # 转转乞讨日期 YYYY-MM-DD
+    turn_count = db.Column(db.Integer, default=0, nullable=False)      # 当日已乞讨次数
     # 对战（/挑战）：每日发起次数限制（3 次/天，按日期重置）
     challenge_date = db.Column(db.String(10), default="", nullable=False)   # YYYY-MM-DD
     challenge_count = db.Column(db.Integer, default=0, nullable=False)      # 当日已发起次数
@@ -69,6 +71,15 @@ class User(db.Model):
     unknown_count = db.Column(db.Integer, default=0, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+class TurnItem(db.Model):
+    """转转公共库：玩家捐赠的装备，其他玩家可乞讨（每天 3 次，取走即删除）。"""
+    __tablename__ = "turn_item"
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    item_id = db.Column(db.String(64), nullable=False, index=True)
+    donor_id = db.Column(db.BigInteger, nullable=False)
+    donated_at = db.Column(db.DateTime, default=datetime.now)
 
 
 class UserItem(db.Model):
