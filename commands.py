@@ -909,17 +909,9 @@ def cmd_kick(user, group_id, args, at_qqs=None):
 # ---------- 对战（/挑战 @对方） ----------
 
 # 演出招式库（随机组合，纯文字演出）
-_MOVE_OPEN = [
-    "使出一记上勾拳，", "一记飞腿直踹，", "挥拳重重砸向，", "一记肘击横扫，",
-    "凌空一记膝撞顶向", "一记摆拳呼啸而至，",
-]
 _MOVE_HIT = [
     "正中胸口", "被扫倒在地", "击中面门", "被震退数步", "被撞在墙上",
     "被命中小腹", "被击得连连后退",
-]
-_MOVE_RETURN = [
-    "反手一记右鞭腿，", "随即一记头槌，", "侧身一记回旋踢，", "紧跟着一记直拳，",
-    "借势一记下劈腿，", "转身一记扫堂腿，",
 ]
 _FINISH = [
     "以一记上勾拳终结了比赛", "用一记头槌终结了比赛", "以一记回旋踢终结了比赛",
@@ -1008,9 +1000,14 @@ def _player_duel(user, group_id, targets):
     an = user.nickname or str(user.user_id)
     bn = target_user.nickname or str(target)
     wname = winner.nickname or str(winner.user_id)
-    msg1 = f"{an} {random.choice(_MOVE_OPEN)}{bn} {random.choice(_MOVE_HIT)}！"
-    msg2 = f"{bn} {random.choice(_MOVE_RETURN)}{an} {random.choice(_MOVE_HIT)}！"
-    msg3 = f"{wname} {random.choice(_FINISH)}，{wname} 获胜！{wname} 获得 {format_currency(pay)}。"
+    # 娱乐技能交锋（v2.11.61）：双方按各自等级称号出招，仅文字表述、无效果
+    import skills as _skills
+    askill = _skills.title_skill(user.profession or "", user.tier or 0)
+    bskill = _skills.title_skill(target_user.profession or "", target_user.tier or 0)
+    wskill = _skills.title_skill(winner.profession or "", winner.tier or 0)
+    msg1 = f"{an} 使出【{askill}】，{random.choice(_MOVE_HIT)}{bn}！"
+    msg2 = f"{bn} 使出【{bskill}】，{random.choice(_MOVE_HIT)}{an}！"
+    msg3 = f"{wname} 使出【{wskill}】{random.choice(_FINISH)}，{wname} 获胜！{wname} 获得 {format_currency(pay)}。"
     return {
         "type": "challenge_show",
         "group_id": group_id,
