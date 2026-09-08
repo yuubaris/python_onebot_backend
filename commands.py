@@ -31,7 +31,7 @@ from classes import (
 )
 from tiers import (
     tier_title, tier_of_price, next_promotion, TIER_LAYER, MAX_TIER,
-    tier_promotion_cost, tier_price_cap,
+    tier_promotion_cost, tier_price_cap, TIER_ATTR_BONUS,
 )
 from dungeon import (
     BASE_STATS, LAYER1_TOTAL, layer_total, coin_rate_per_sec, coin_per_5sec,
@@ -125,9 +125,12 @@ def cmd_checkin(user, group_id, args, at_qqs=None):
 def cmd_balance(user, group_id, args, at_qqs=None):
     items = owned_items(user)
     prof = (user.profession or "") or ""
+    t = user.tier or 0
+    bonus = int((TIER_ATTR_BONUS.get(t, 1.0) - 1) * 100) if t > 0 else 0
     class_txt = f"{class_name(prof)} · {_user_title(user)}" if prof else "未转职·冒险者"
+    bonus_txt = f"（称号加成 +{bonus}% 全属性）" if bonus else ""
     return (f"当前资产：{format_currency(user.copper)}\n"
-            f"职业/称号：{class_txt}\n"
+            f"职业/称号：{class_txt} {bonus_txt}\n"
             f"持有装备 {len(items)} 件；累计签到 {user.total_checkin} 次，连续签到 {user.checkin_streak} 天。")
 
 
@@ -299,12 +302,15 @@ def cmd_promote(user, group_id, args, at_qqs=None):
     user.copper -= cost
     user.tier = nxt
     db.session.commit()
-    # 装备档位最高到 T5（武具店 45000 + 铁匠铺全锻造，T5=800 毕业）：
-    # T6 灭世、T7 至尊 为纯称号荣誉阶，不再新增装备解锁。
+    # 解锁档位（2026-09-08 口径，层门槛 0/50/150/400/800/1600/3200/5000）：
+    # 武器库(商店)档位随阶级解锁；铁匠铺按历史层分级（Lv1@400…Lv4@3200，穿戴随层解锁）。
+    # T6 灭世 / T7 至尊 不再纯称号——称号每阶全属性 +5%（T7=+35%），并配合锻造顶级追装。
+    from tiers import TIER_ATTR_BONUS, TIER_LAYER as _TL
     if nxt >= 6:
-        unlock_note = "（纯称号荣誉阶：武具店/铁匠铺顶级装备早已解锁，无新装备）"
+        unlock_note = (f"称号加成提升至 全属性 +{int((TIER_ATTR_BONUS[nxt] - 1) * 100)}%！"
+                       f"（灭世/至尊为称号·锻造段：铁匠铺 Lv{3 if nxt == 6 else 4} 及顶级锻造可追）")
     else:
-        unlock_note = f"武器库已解锁 {tier_title(user.profession, nxt)} 阶级的装备！"
+        unlock_note = f"武器库已解锁 {tier_title(user.profession, nxt)} 阶级的装备！称号加成 +{int((TIER_ATTR_BONUS[nxt] - 1) * 100)}%。"
     return (f"🎉 晋升成功！{tier_title(user.profession, cur)} → {tier_title(user.profession, nxt)}\n"
             f"消耗 {format_currency(cost)}，剩余 {format_currency(user.copper)}。\n"
             f"{unlock_note}")
@@ -313,26 +319,42 @@ def cmd_promote(user, group_id, args, at_qqs=None):
 # ---------- 铁匠铺（/铁匠铺、/锻造） ----------
 
 def _forge_unlocked(user):
-    """铁匠铺解锁门槛：玩家曾到达地下城 800 层（T5，全配方在此开放）。"""
-    return historical_best_layer(user) >= forge.FORGE_MIN_LAYER
+    """铁匠铺是否已开放：到达 Lv1 解锁层（400 层，T3 段）即有铁匠铺。"""
+    return historical_best_layer(user) >= forge.FORGE_LV_LAYER[1]
+
+
+def _forge_level_open(user, level):
+    """指定锻造 Lv 是否已按历史最高层解锁。"""
+    return forge.level_unlocked(historical_best_layer(user), level)
+
+
+def _forge_status(user):
+    """当前已解锁的锻造 Lv（升序列表）。"""
+    return sorted(forge.unlocked_levels(historical_best_layer(user)))
 
 
 def cmd_forge_shop(user, group_id, args, at_qqs=None):
-    """查看铁匠铺配方（全部超越武具店顶级）。"""
+    """查看铁匠铺配方：按历史最高层分级展示已解锁 Lv（未解锁的标解锁层）。"""
     if not _forge_unlocked(user):
-        return ("🔨 铁匠铺尚未解锁。\n"
-                f"到达地下城第 {forge.FORGE_MIN_LAYER} 层后解锁，可锻造超越武具店顶级的装备！")
+        return ("🔨 铁匠铺尚未开放。\n"
+                f"到达地下城第 {forge.FORGE_LV_LAYER[1]} 层后开启 Lv1，可锻造超越武具店顶级的装备！")
     recs = forge.all_forges()
-    lines = ["🔨 铁匠铺（/锻造 装备名 制作；全部超越武具店顶级）"]
+    open_lvs = _forge_status(user)
+    lines = [f"🔨 铁匠铺（/锻造 装备名 制作；已开放 Lv{'/'.join(map(str, open_lvs))}）"]
     cur_level = None
     for r in recs:
         if r.get("level") != cur_level:
             cur_level = r.get("level")
-            lines.append(f"—— Lv{cur_level} ——")
+            lv_open = cur_level in open_lvs
+            if lv_open:
+                lines.append(f"—— Lv{cur_level} ——")
+            else:
+                need = forge.FORGE_LV_LAYER.get(cur_level)
+                lines.append(f"—— 🔒 Lv{cur_level}（到达地下城 {need} 层解锁）——")
         cost = forge.format_cost(r.get("cost", {})) + f" + {format_currency(r.get('price', 0))}"
         lines.append(f"· {r['name']}（{TYPE_NAMES.get(r['type'], r['type'])}）{_item_desc(r)}")
         lines.append(f"   消耗：{cost}")
-    lines.append("—— 提示：铁匠铺装备无法在 /出售 回收 ——")
+    lines.append("—— 提示：铁匠铺装备无法在 /出售 回收；锻造产物可随等级解锁直接穿戴 ——")
     return "\n".join(lines)
 
 
@@ -342,14 +364,14 @@ def cmd_forge(user, group_id, args, at_qqs=None):
     if not name:
         return "用法：/锻造 装备名（/铁匠铺 查看配方）"
     if not _forge_unlocked(user):
-        return (f"🔨 铁匠铺尚未解锁。到达地下城第 {forge.FORGE_MIN_LAYER} 层后解锁，"
+        return (f"🔨 铁匠铺尚未开放。到达地下城第 {forge.FORGE_LV_LAYER[1]} 层后开启 Lv1，"
                 f"可锻造超越武器库顶级的装备！")
     rec = forge.find_forge(name)
     if rec is None:
         hits = forge.suggest_forges(name)
         hint = f"，你是不是想锻造：{'、'.join(h['name'] for h in hits)}" if hits else ""
         return f"铁匠铺没有「{name}」{hint}\n发送 /铁匠铺 查看配方。"
-    # 职业/阶级校验（v3）：锻造产物同购买一样受职业与阶级限制
+    # 职业校验：锻造产物与商店一致，需职业 line 匹配
     prof = (user.profession or "") or ""
     line = item_line(rec)
     if line != LINE_ANY:
@@ -359,11 +381,12 @@ def cmd_forge(user, group_id, args, at_qqs=None):
         if line != class_line(prof):
             other = "战士" if line == "physical" else "魔法师"
             return f"❌ 「{rec['name']}」是{other}的锻造装备，你无法使用。"
-    # 阶级校验（v3）：仅配方显式带 tier 时按阶级限制（锻造产物 tier=5，需晋升到 T5 可锻造）
-    req_tier = rec.get("tier")
-    if req_tier is not None and (user.tier or 0) < int(req_tier):
-        return (f"🔒 「{rec['name']}」需要晋升到 {tier_title(prof, int(req_tier)) or req_tier} 才能锻造。\n"
-                f"当前阶级 {_user_title(user)}。")
+    # 等级解锁校验（新口径）：配方按铁匠铺 Lv 分级，需历史最高层达到该 Lv 解锁层
+    lv = int(rec.get("level", 1))
+    if not _forge_level_open(user, lv):
+        need = forge.FORGE_LV_LAYER.get(lv)
+        return (f"🔒 「{rec['name']}」属于铁匠铺 Lv{lv}，到达地下城第 {need} 层后解锁。\n"
+                f"（当前历史最高层 {historical_best_layer(user)}）")
     price = rec.get("price", 0)
     if user.copper < price:
         return (f"铜币不足，不能赊账！锻造「{rec['name']}」需 {format_currency(price)}，"

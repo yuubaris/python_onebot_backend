@@ -1,18 +1,30 @@
 # -*- coding: utf-8 -*-
-"""铁匠铺锻造模块（T5·地下城 800 层解锁全配方）。
+"""铁匠铺锻造模块（按配方 Lv 分级解锁：Lv1@400 层 → Lv4@3200 层）。
 
-铁匠铺制造的装备全部超越武具店顶级（永恒之刃），配方消耗「铜币 + 矿石」。
-配方数据以 JSON 文件（forge.json）保存在项目目录中，方便维护数值；
+锻造是商店（武器库）毕业线之后的进阶装备来源：Lv1 强度 ≈ 商店 T4.5，Lv2~Lv4 依次更高，
+供 T5/T6/T7 玩家追装。配方消耗「铜币 + 矿石」，数据以 JSON（forge.json）维护；
 数据库（user_item 表）只记录锻造产物的装备 id，完整属性统一从 JSON 读取。
 """
 import json
 import os
 
 FORGE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "forge.json")
-# 铁匠铺解锁门槛：玩家曾到达地下城 800 层（T5 段，全锻造配方在此开放）
-FORGE_MIN_LAYER = 800
+# 铁匠铺分级解锁层（对齐阶级层门槛 T3~T6）：历史最高层 ≥ 对应层 即解锁该 Lv 配方。
+# Lv1@400(T3) / Lv2@800(T4) / Lv3@1600(T5) / Lv4@3200(T6)
+FORGE_LV_LAYER = {1: 400, 2: 800, 3: 1600, 4: 3200}
+FORGE_MIN_LAYER = FORGE_LV_LAYER[1]  # 兼容旧引用：最低解锁层（Lv1）
 
 _cache = {"mtime": None, "recipes": [], "by_id": {}, "by_name": {}}
+
+
+def unlocked_levels(layer):
+    """给定历史最高层，返回已解锁的锻造 Lv 集合。"""
+    return {lv for lv, need in FORGE_LV_LAYER.items() if (layer or 0) >= need}
+
+
+def level_unlocked(layer, lv):
+    """指定锻造 Lv 是否已按历史最高层解锁。"""
+    return (layer or 0) >= FORGE_LV_LAYER.get(lv, 10 ** 9)
 
 
 def load_forges(force=False):

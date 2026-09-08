@@ -8,7 +8,9 @@
 - 产币曲线：每秒铜币 = (1/60) × n^0.6（增速低于难度曲线，更稳健），按 5 秒为单位核算。
 - 同类型装备只取在【公式】中收益最大的一个，其余类型可叠加。
 - 职业（v3）：已转职只吃该职业 line + 通用(any)；未转职自动择优（物理/魔法取高）。
-- 阶级（v3）：只能装备 tier ≤ 当前阶级 的装备。
+- 阶级（v3/v5）：商店/稀有装备只能装备 tier ≤ 当前阶级 的；锻造装备按「铁匠铺 Lv」穿戴
+  （历史最高层 ≥ 该 Lv 解锁层即可用，不卡当前阶级）。
+- 称号加成（v5）：全属性乘 TIER_ATTR_BONUS[tier]（每阶 +5%，T7=+35%），同装备下高阶称号更强。
 - Boss 关（v4）：10 层精英 / 50 层小Boss / 100 层大Boss，Boss 层进度放大，通关随机掉落。
 """
 import threading
@@ -115,16 +117,39 @@ def _item_tier(item):
     return tier_of_price(item.get("price", 0))
 
 
-def _stats_for_line(owned, line, tier_max):
-    """按「职业 line + 阶级 tier」过滤后计算有效属性。
+def _forge_lv(item):
+    """返回装备的锻造 Lv（forge 配方有 level 字段）；非锻造装备返回 None。"""
+    lv = item.get("level")
+    try:
+        return int(lv) if lv is not None else None
+    except (TypeError, ValueError):
+        return None
 
-    可用 = line 为该职业(或 any 通用) 且 tier ≤ 当前阶级 的装备；
+
+def _item_usable(it, tier_max, best_layer):
+    """装备是否对当前玩家生效：商店/稀有按「tier ≤ 当前阶级」；锻造按「铁匠铺 Lv 已解锁」。
+
+    forge 配方都有 level 字段（Lv1~Lv4），其解锁层见 forge.FORGE_LV_LAYER：
+    玩家历史最高层达到对应解锁层即可穿戴该锻造装（不受当前阶级 tier 限制）。
+    """
+    lv = _forge_lv(it)
+    if lv is not None:
+        # 锻造装备：以铁匠铺 Lv 解锁层为准（历史最高层达标即可用）
+        from forge import FORGE_LV_LAYER
+        return (best_layer or 0) >= FORGE_LV_LAYER.get(lv, 10 ** 9)
+    return _item_tier(it) <= tier_max
+
+
+def _stats_for_line(owned, line, tier_max, best_layer):
+    """按「职业 line + 阶级/锻造解锁」过滤后计算有效属性（不乘称号加成）。
+
+    可用 = line 为该职业(或 any 通用) 且（商店/稀有：tier ≤ 当前阶级；锻造：Lv 已按历史层解锁）；
     再按 type 取公式收益最高一件叠加。
     """
     stats = dict(BASE_STATS)
     best = {}
     for it in owned:
-        if _item_tier(it) > tier_max:
+        if not _item_usable(it, tier_max, best_layer):
             continue
         if item_line(it) not in (line, LINE_ANY):
             continue
@@ -140,24 +165,37 @@ def _stats_for_line(owned, line, tier_max):
 
 
 def effective_stats(user, owned):
-    """用户的有效属性 = 初始属性 + 各类型中公式收益最高的那件装备属性之和。
+    """用户的有效属性 = (初始属性 + 各类型收益最高装备之和) × 称号加成。
 
     - 同类型只取收益最高 1 件，跨类型叠加；
     - 已转职：只吃该职业 line + 通用(any) 的装备（不能混搭）；
     - 未转职：自动择优（分别按物理组/魔法组算速度，取高）；
-    - 阶级：只计入 tier ≤ 当前阶级 的装备。
+    - 商店/稀有装备：只计入 tier ≤ 当前阶级 的装备；
+      锻造装备：只计入「铁匠铺对应 Lv 已按历史最高层解锁」的装备（不卡当前阶级）；
+    - 称号加成：全属性乘 TIER_ATTR_BONUS[user.tier]（每阶 +5%，T7=+35%）——
+      同装备下，高阶称号实力更强。
     """
     tier_max = 0
     prof = ""
+    best_layer = 0
+    tier_bonus = 1.0
     if user is not None:
         tier_max = getattr(user, "tier", 0) or 0
         prof = getattr(user, "profession", "") or ""
+        best_layer = historical_best_layer(user)
+        from tiers import TIER_ATTR_BONUS
+        tier_bonus = TIER_ATTR_BONUS.get(tier_max, 1.0)
     if prof and class_line(prof):
-        return _stats_for_line(owned, class_line(prof), tier_max)
-    # 未转职 → 自动择优（any 通用件两组都能用，按各自专属件收益定胜负）
-    s_phy = _stats_for_line(owned, LINE_PHYSICAL, tier_max)
-    s_mag = _stats_for_line(owned, LINE_MAGIC, tier_max)
-    return s_phy if dungeon_speed(s_phy) >= dungeon_speed(s_mag) else s_mag
+        stats = _stats_for_line(owned, class_line(prof), tier_max, best_layer)
+    else:
+        # 未转职 → 自动择优（any 通用件两组都能用，按各自专属件收益定胜负）
+        s_phy = _stats_for_line(owned, LINE_PHYSICAL, tier_max, best_layer)
+        s_mag = _stats_for_line(owned, LINE_MAGIC, tier_max, best_layer)
+        stats = s_phy if dungeon_speed(s_phy) >= dungeon_speed(s_mag) else s_mag
+    if tier_bonus != 1.0:
+        for k in stats:
+            stats[k] *= tier_bonus
+    return stats
 
 
 def dungeon_speed(stats):
