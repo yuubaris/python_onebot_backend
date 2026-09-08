@@ -225,20 +225,24 @@ def cmd_bag(user, group_id, args, at_qqs=None):
 
 # ---------- 武器库（原武具店） ----------
 
+# 装备属性展示顺序（背包/武器库/锻造/Boss 掉落统一）：攻→魔→敏→智→命→防
+# —— 如需调整顺序改此表即可。
+ITEM_ATTR_ORDER = [
+    ("attack", "攻"),
+    ("mp", "魔"),
+    ("agility", "敏"),
+    ("intelligence", "智"),
+    ("hp", "命"),
+    ("defense", "防"),
+]
+
+
 def _item_desc(it):
     parts = []
-    if it.get("attack"):
-        parts.append(f"攻{it['attack']}")
-    if it.get("defense"):
-        parts.append(f"防{it['defense']}")
-    if it.get("hp"):
-        parts.append(f"命{it['hp']}")
-    if it.get("mp"):
-        parts.append(f"魔{it['mp']}")
-    if it.get("agility"):
-        parts.append(f"敏{it['agility']}")
-    if it.get("intelligence"):
-        parts.append(f"智{it['intelligence']}")
+    for key, label in ITEM_ATTR_ORDER:
+        val = it.get(key)
+        if val:
+            parts.append(f"{label}{val}")
     return " ".join(parts)
 
 
