@@ -851,6 +851,7 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/使用 物品名 - 使用药水/道具(药水/道具各同时仅一种, 新用替换并刷新时长)\n"
             "/挑战 @对方 / 列表 / <Boss名|层数|称号> - 玩家对战 · Boss 清单 · Boss 挑战（如 挑战 1000层）\n"
             "/转转 捐赠 <装备名> / 乞讨 - 装备互助：捐赠入公共库，乞讨一件符合自己等级的装备（每天 3 次）\n"
+            "/抽奖 1|2|3 - 抽奖：消耗金钱抽装备/材料/道具/金钱（5铜/5银/5金，各档概率与稀有度不同）\n"
             "/踢 @对方 - 生成踢人图（30 秒冷却）\n"
             "/撅 @对方 - 生成撅人 GIF（30 秒冷却）\n"
             "/佬 @对方 - 生成大佬致敬图（30 秒冷却）\n"
@@ -1100,6 +1101,38 @@ def cmd_boss(user, group_id, args, at_qqs=None):
     return boss.challenge_boss(user, target)[0]
 
 
+# ---------- 抽奖（/抽奖 1|2|3） ----------
+
+_LOTTERY_ALIAS = {
+    "1": 1, "一": 1, "铜": 1, "5铜": 1, "铜签": 1, "low": 1, "basic": 1,
+    "2": 2, "二": 2, "银": 2, "5银": 2, "银签": 2, "mid": 2, "silver": 2,
+    "3": 3, "三": 3, "金": 3, "5金": 3, "金签": 3, "high": 3, "gold": 3,
+}
+
+
+def cmd_lottery(user, group_id, args, at_qqs=None):
+    """抽奖：消耗金钱抽取金钱/装备/材料/道具，共 3 档（5铜/5银/5金），各档中奖率与卡池稀有度不同。"""
+    import lottery
+    name = (args or "").strip()
+    if not name:
+        return lottery.rule_text()
+    tier_no = _LOTTERY_ALIAS.get(name.lower(), None)
+    if tier_no is None:
+        return f"不认识「{name}」。\n用法：/抽奖 1|2|3（或 /抽奖 铜|银|金），/抽奖 查看规则"
+    cost = lottery.TIERS[tier_no]["cost"]
+    if user.copper < cost:
+        return (f"余额不足！{lottery.TIERS[tier_no]['cost_txt']}/次，"
+                f"你只有 {format_currency(user.copper)}。")
+    user.copper -= cost
+    text, jackpot = lottery.roll(user, tier_no)
+    from models import db
+    db.session.commit()
+    head = f"🎰 {lottery.TIERS[tier_no]['name']} · 消耗 {lottery.TIERS[tier_no]['cost_txt']}"
+    if jackpot:
+        head += " ✨✨✨ 大奖！"
+    return f"{head}\n{text}\n剩余资产：{format_currency(user.copper)}"
+
+
 # ---------- 转转（捐赠 / 乞讨） ----------
 
 _TURN_DAILY_LIMIT = 3
@@ -1245,6 +1278,7 @@ COMMANDS = {
     "炼金": cmd_alchemy, "alchemy": cmd_alchemy, "lianjin": cmd_alchemy,
     "使用": cmd_use, "use": cmd_use, "shiyong": cmd_use,
     "转转": cmd_turn, "zhuanzhuan": cmd_turn, "zhuan": cmd_turn, "turn": cmd_turn,
+    "抽奖": cmd_lottery, "lottery": cmd_lottery, "choujiang": cmd_lottery, "lucky": cmd_lottery,
     "帮助": cmd_help, "help": cmd_help, "bangzhu": cmd_help,
 }
 
