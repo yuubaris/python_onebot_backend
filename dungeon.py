@@ -357,18 +357,19 @@ def rare_item_ids():
 
 
 def _roll_boss_ore(layer, btype):
-    """Boss 通关掉落矿石：按 Boss 类型给稀有度权重，返回 (ore_id, count)。
+    """Boss 通关掉落矿石：先掷数量，再每颗独立判定档位与种类，返回 ore_id 列表。
 
     相对普通层（ore.roll_ore，档位概率固定）Boss 层掉率概率更高：
     高稀有档占比随 Boss 类型提升（精英→小Boss→大Boss 递增），且 Boss 必掉。
     矿石从对应档位全池随机（含扩充后的新矿）；神话档仅大 Boss 掉落。
     掉落数量（v2.11.30）：1 + 层数梯度（每 100 层 +1）+ Boss 类型加成（大Boss+2/小Boss+1），封顶 8。
+    每颗独立判定（v2.11.47）：每颗按权重判档、档内随机选种——一次掉落可为混合档位/种类。
     """
     import random
     from ore import load_ores
     ores = load_ores()
     if not ores:
-        return None
+        return []
     by_rar = {}
     for o in ores:
         by_rar.setdefault(o.get("rarity", "common"), []).append(o["id"])
@@ -379,15 +380,18 @@ def _roll_boss_ore(layer, btype):
         weights = [("legendary", 0.20), ("rare", 0.50), ("common", 0.30)]
     else:
         weights = [("rare", 0.45), ("common", 0.55)]
-    r = random.random()
-    acc = 0.0
-    for rarity, w in weights:
-        acc += w
-        if r <= acc and by_rar.get(rarity):
-            bonus = 2 if btype == "major" else (1 if btype == "minor" else 0)
-            count = min(1 + layer // 100 + bonus, 8)
-            return random.choice(by_rar[rarity]), count
-    return None
+    bonus = 2 if btype == "major" else (1 if btype == "minor" else 0)
+    count = min(1 + layer // 100 + bonus, 8)
+    results = []
+    for _ in range(count):
+        r = random.random()
+        acc = 0.0
+        for rarity, w in weights:
+            acc += w
+            if r <= acc and by_rar.get(rarity):
+                results.append(random.choice(by_rar[rarity]))
+                break
+    return results
 
 
 def _grant_boss_rare(user, layer, btype):
@@ -582,9 +586,11 @@ def _roll_boss_drop(user, layer, btype):
         coin_bonus = bonus
     ore_res = _roll_boss_ore(layer, btype)
     if ore_res:
-        ore_id, ore_n = ore_res
-        ore.grant_ores(user.user_id, {ore_id: ore_n})
-        ore_count = ore_n
+        ore_agg = {}
+        for oid in ore_res:
+            ore_agg[oid] = ore_agg.get(oid, 0) + 1
+        ore.grant_ores(user.user_id, ore_agg)
+        ore_count = len(ore_res)
     # 特殊物品（精英 25% / 小Boss 45% / 大Boss 80%，R17；掉落增益 scope=special）→ 有名字单独列
     special_id = material.roll_special(btype)
     if special_id:
