@@ -787,13 +787,14 @@ def settle_dungeon(user):
             layer_now = max(user.dungeon_layer, 1)
             gained = {}
             for _ in range(cycles):
-                # 每次采矿先掷数量（v2.11.33）：30% 得 1 颗 / 20% 得 2 颗 / 10% 得 3 颗 / 40% 无掉落
+                # 每次采矿先掷数量（v2.11.34）：40% 得 1 颗 / 25% 得 2 颗 / 10% 得 3 颗 / 25% 无掉落
+                # 期望 1.2 颗/周期：保证大部分周期有产出，偶发 2~3 颗，无掉落率压低
                 _r = _random.random()
-                if _r < 0.30:
+                if _r < 0.40:
                     _n = 1
-                elif _r < 0.50:
+                elif _r < 0.65:
                     _n = 2
-                elif _r < 0.60:
+                elif _r < 0.75:
                     _n = 3
                 else:
                     _n = 0
