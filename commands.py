@@ -663,6 +663,13 @@ def _dungeon_enter(user):
         ore_note = _ore_entry_note(layer)
         bt = boss_type(layer)
         boss_note = f" · BOSS" if bt else ""
+        if bt:
+            try:
+                import boss as _boss_mod
+                if _boss_mod.boss_for_layer(layer):
+                    boss_note += "（命名守关：进度满后战力判定，失败重置收益照常）"
+            except Exception:
+                pass
         return (f"⚔️ 已从上次进度继续冒险！（{_user_title(user)}{boss_note}）\n"
                 f"你回到地下城第 {layer} 层（剩余进度 {progress:.0f} / 总计 {effective_layer_total(layer):.0f}）\n"
                 f"推进速度：{speed:.2f} 进度/秒；金币速度：约 {coin_per_5sec(layer):.4f} 铜币/5秒\n"
@@ -772,7 +779,9 @@ def cmd_dungeon(user, group_id, args, at_qqs=None):
     return ("地下城指令：\n"
             "/地下城 进入 - 进入/继续地下城（退出后保留进度，可直达上次位置）\n"
             "/地下城 状态 - 查看当前层数/进度/金币/生效中药水·道具(剩余层数/时间)\n"
-            "/地下城 退出 - 离开地下城（保存当前进度）")
+            "/地下城 退出 - 离开地下城（保存当前进度）\n"
+            "—— Boss 关：命名守关 Boss 打满进度后按战力判定胜负，失败重置本关进度但收益照常；"
+            "精英/小Boss/无名字整百层进度跑完即通关 ——")
 
 
 # ---------- 帮助 ----------
@@ -782,12 +791,12 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/签到 - 每日签到，随机获得铜币/银币\n"
             "/余额 - 查看当前资产/职业/称号\n"
             "/背包 - 查看当前持有的武具与矿石\n"
-            "/武器库 - 查看可购买的装备（按职业与阶级过滤）\n"
+            "/武器库 - 查看可购买的装备（按职业与阶级过滤；/武器库 开关 隐藏低等级装备防刷屏）\n"
             "/购买 商品名 [商品名...] - 批量购买装备（需职业/阶级符合）\n"
             "/出售 商品名 [商品名...] - 批量出售装备（购买价 60%）\n"
             "/转职 战士|魔法师 - 选择职业（切换职业）\n"
             "/晋升 - 按地下城进度+货币提升阶级\n"
-            "/地下城 进入/状态/退出 - 地下城冒险（10/50/100 层 Boss 掉落；最高 3600 层；状态含生效中药水/道具）\n"
+            "/地下城 进入/状态/退出 - 地下城冒险（最高 3600 层；命名守关 Boss 需战力判定，失败重置进度收益照常；状态含生效中药水/道具）\n"
             "/铁匠铺 - 查看锻造配方（400 层解锁，超越武器库顶级）\n"
             "/锻造 装备名 - 消耗铜币+矿石制作装备（需职业/阶级符合）\n"
             "/boss 列表 - 查看守关 Boss（挑战统一走 /挑战 <Boss名|层数|称号>；普通每日共 3 次 / 1000·2000·3000·3600 每日各 1 次，首通必出 Boss 材料）\n"
@@ -1025,7 +1034,7 @@ def cmd_boss(user, group_id, args, at_qqs=None):
         parts = arg.split(maxsplit=1)
         name = parts[1].strip() if len(parts) > 1 else parts[0][2:].strip()
         if not name:
-            return "用法：/boss 挑战 <Boss名>（如 /boss 挑战 裂风狼王·灰鬃）"
+            return "用法：/boss 挑战 <Boss名>（如 /boss 挑战 裂风狼王·灰鬃）；统一入口 /挑战 <Boss名|层数|称号>"
         target = boss.find_boss(name)
         if target is None:
             hits = boss.suggest_bosses(name)
