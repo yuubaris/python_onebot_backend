@@ -805,6 +805,57 @@
         "item_id": "tool_all_3",
         "count": 1
       }
+    },
+    {
+      "id": "alc_tool_myriad_1",
+      "name": "炼金·万宝符1",
+      "kind": "tool",
+      "level": 1,
+      "desc": "全部材料掉落 ×1.6（持续 4 小时）",
+      "cost": {
+        "materials": {
+          "boss_myriad": 1
+        },
+        "copper": 4000
+      },
+      "output": {
+        "item_id": "tool_myriad_1",
+        "count": 1
+      }
+    },
+    {
+      "id": "alc_tool_myriad_2",
+      "name": "炼金·万宝符2",
+      "kind": "tool",
+      "level": 2,
+      "desc": "全部材料掉落 ×1.8（持续 4 小时）",
+      "cost": {
+        "materials": {
+          "boss_myriad": 2
+        },
+        "copper": 15000
+      },
+      "output": {
+        "item_id": "tool_myriad_2",
+        "count": 1
+      }
+    },
+    {
+      "id": "alc_tool_myriad_3",
+      "name": "炼金·万宝符3",
+      "kind": "tool",
+      "level": 3,
+      "desc": "全部材料掉落 ×2.0（持续 4 小时）",
+      "cost": {
+        "materials": {
+          "boss_myriad": 3
+        },
+        "copper": 50000
+      },
+      "output": {
+        "item_id": "tool_myriad_3",
+        "count": 1
+      }
     }
   ]
 }

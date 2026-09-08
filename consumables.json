@@ -698,6 +698,54 @@
           "value": 14400
         }
       }
+    },
+    {
+      "id": "tool_myriad_1",
+      "name": "万宝符1",
+      "kind": "tool",
+      "level": 1,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "material",
+        "scope": "all",
+        "mult": 1.6,
+        "duration": {
+          "type": "time",
+          "value": 14400
+        }
+      }
+    },
+    {
+      "id": "tool_myriad_2",
+      "name": "万宝符2",
+      "kind": "tool",
+      "level": 2,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "material",
+        "scope": "all",
+        "mult": 1.8,
+        "duration": {
+          "type": "time",
+          "value": 14400
+        }
+      }
+    },
+    {
+      "id": "tool_myriad_3",
+      "name": "万宝符3",
+      "kind": "tool",
+      "level": 3,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "material",
+        "scope": "all",
+        "mult": 2.0,
+        "duration": {
+          "type": "time",
+          "value": 14400
+        }
+      }
     }
   ]
 }

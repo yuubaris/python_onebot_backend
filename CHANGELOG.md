@@ -5,6 +5,30 @@
 
 ---
 
+## 2026-09-08 · v2.11.4 —— 大 Boss 专属材料「万宝源晶」+ 新道具「万宝符」
+
+### 💎 万宝源晶（boss_myriad · 神话）
+
+- **1000/2000/3000 究极大 Boss** 挑战成功**必掉 1 个**「万宝源晶」（`bosses.json` 无关，走 `boss.py`
+  `BIG_BOSS_LAYERS` 判定）；**3600 最终 Boss** 在「万瓜圣契」之外**并列额外掉落**（每日 4 大 Boss 最多产 4 个）。
+- `materials.json` 新增 `boss_myriad`（`category=boss`、`rarity=myth`），/背包 材料区可见。
+
+### 🧪 新道具「万宝符1~3」（tool_myriad）
+
+- 效果：**全部材料掉落 ×1.6/1.8/2.0**（持续 4 小时）——「万象符3(×1.5)」的上位版，消耗究极材料。
+- 配方：万宝源晶 ×1/2/3 + 铜币 4000/15000/50000；产物/配方 44 → **47**。
+- 生成器 `docs/seed_consumables.py` 同步（TOOLS/TOOL_COST/TOOL_TARGET）。
+
+### 🔧 顺带修复
+
+- `boss.py` 胜利结算 `wins = (row.total_wins or 0) + 1`：直接挑战从未有进度记录的 Boss
+  （新行未 flush 时 `total_wins` 为 None）不再崩溃（此前依赖地下城自动推进先建记录规避）。
+
+- 影响文件：`boss.py` · `materials.json` · `consumables.json` · `alchemy_recipes.json` ·
+  `docs/seed_consumables.py`；配套文档 `README.md` / `bot_wiki.html` / `docs/alchemy-boss-consumable-request.md`。
+
+---
+
 ## 2026-09-08 · v2.11.3 —— 3000 层 Boss 补入究极大 Boss 组（命名+分组）
 
 ### 🎯 究极大 Boss 补全
@@ -167,7 +191,7 @@
 - `/背包` 增「🧪 材料」「⚗️ 药水/道具」区。
 
 ### 🆕 炼金 / 使用
-- `/炼金 <配方名>`：消耗 草药/特殊/boss 材料 + 矿石 + 铜币 → 药水/道具（44 配方种子，`seed_consumables.py` 生成）。
+- `/炼金 <配方名>`：消耗 草药/特殊/boss 材料 + 矿石 + 铜币 → 药水/道具（44 配方种子，`seed_consumables.py` 生成；**v2.11.4 已扩至 47**）。
 - 药水 = 属性强化（狂攻/凝神/魔涌/坚壁/血源/疾风 × Lv1~5）；道具 = 掉落增益（聚财/寻宝/采掘/采药/祈灵/万象 × Lv1~3）。
 - 持续口径：**持续 N 层**（地下城推进层数后失效）或 **持续 N 时间**（N 秒到期）；同名 buff 刷新时长（层数型累加、时间型重置）。
 - 稀有道具（寻宝/祈灵/万象）低等级不提供。`/使用 <物品名>` 生效；药水加成并入 `effective_stats`（提升推进与 Boss 胜率），道具在掉落结算乘倍率。

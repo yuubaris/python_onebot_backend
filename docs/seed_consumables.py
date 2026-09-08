@@ -38,6 +38,7 @@ TOOLS = [
     ("tool_herb",    "采药符", "material",   "herb",     {1: 1.3, 2: 1.5, 3: 1.8}),
     ("tool_special", "祈灵符", "material",   "special",  {2: 1.4, 3: 1.7}),         # 稀有 Lv1 不提供
     ("tool_all",     "万象符", "material",   "all",      {3: 1.5}),                  # 稀有 仅 Lv3
+    ("tool_myriad",  "万宝符", "material",   "all",      {1: 1.6, 2: 1.8, 3: 2.0}),   # 究极: 万宝源晶(大Boss专属), 万象符上位
 ]
 
 # ---------------- 药水配方消耗（Lv × 属性；「草药+特殊」多样化） ----------------
@@ -114,10 +115,15 @@ TOOL_COST = {
     "all": {
         3: {"materials": {"special_relic": 2, "boss_frost": 1, "herb_dragonblood": 2}, "copper": 8000},
     },
+    "myriad": {  # 万宝符：究极大 Boss 专属材料「万宝源晶」主料
+        1: {"materials": {"boss_myriad": 1}, "copper": 4000},
+        2: {"materials": {"boss_myriad": 2}, "copper": 15000},
+        3: {"materials": {"boss_myriad": 3}, "copper": 50000},
+    },
 }
 
 TOOL_TARGET = {"coin": "金钱", "equip": "装备", "ore": "矿石", "herb": "草药",
-               "special": "特殊物品", "all": "全部材料"}
+               "special": "特殊物品", "all": "全部材料", "myriad": "全部材料"}
 
 
 def main():

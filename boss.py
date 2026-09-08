@@ -36,6 +36,8 @@ GROUP_DAILY_LIMIT = {"normal": 3, "big": 1}
 GROUP_LABEL = {"normal": "守关 Boss", "big": "大 Boss（1000/2000/3000/3600）"}
 # 3600 最终 Boss 挑战成功额外掉落的特殊道具（用途暂空，占位收藏；独立 category=souvenir）
 FINAL_BOSS_RELIC = "souvenir_wangua"
+# 究极大 Boss(1000/2000/3000) 挑战成功必掉的专属材料「万宝源晶」；3600 最终 Boss 在其外额外掉落（万宝符原料）
+MYRIAD_GEM = "boss_myriad"
 
 REPEAT_DROP_RATE = 0.60       # 重复挑战成功时 Boss 材料随机掉率（不随次数递减）
 COIN_DECAY_BASE = 0.8         # 铜币永久衰减速率
@@ -267,7 +269,7 @@ def challenge_boss(user, boss):
     first_clear = not row.first_clear_date
     if first_clear:
         row.first_clear_date = today
-    wins = row.total_wins + 1          # 本次成功后累计次数（用于衰减）
+    wins = (row.total_wins or 0) + 1  # 本次成功后累计次数（用于衰减；新建行未 flush 时 total_wins 可能为 None）
     row.total_wins = wins
 
     # 铜币（永久递减）
@@ -296,6 +298,12 @@ def challenge_boss(user, boss):
         material.grant_materials(user.user_id, {FINAL_BOSS_RELIC: 1})
         rmeta = material.material_meta(FINAL_BOSS_RELIC)
         lines.append(f"🌟 额外获得特殊道具：{rmeta['name'] if rmeta else FINAL_BOSS_RELIC} ×1")
+
+    # 究极大 Boss(1000/2000/3000/3600) 额外必掉「万宝源晶」（万宝符原料；3600 与万瓜圣契并列额外）
+    if int(boss.get("layer", 0) or 0) in BIG_BOSS_LAYERS:
+        material.grant_materials(user.user_id, {MYRIAD_GEM: 1})
+        mmeta = material.material_meta(MYRIAD_GEM)
+        lines.append(f"💎 大 Boss 专属材料：{mmeta['name'] if mmeta else MYRIAD_GEM} ×1")
 
     lines.append(f"今日「{subject}」剩余挑战次数 {max(0, limit - used - 1)}/{limit}。")
     db.session.commit()
