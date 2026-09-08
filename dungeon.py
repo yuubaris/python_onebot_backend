@@ -356,6 +356,21 @@ def rare_item_ids():
     return {r.get("id") for r in _load_rare_pool() if r.get("id")}
 
 
+def _extra_ore_roll(layer):
+    """普通层周期采矿：概率性额外矿石（v2.11.31）。
+
+    基础 1 颗掉落之外，概率获得额外数量：
+    - 触发概率 = 40% + 每满 100 层 +10%（封顶 80%）；
+    - 额外颗数 = 1 + 每满 200 层 +1（封顶 5 颗）。
+    例：100 层 50% 概率 +1；300 层 70% 概率 +2；800 层以上 80% 概率 +5。
+    """
+    import random
+    p = min(0.8, 0.4 + (layer // 100) * 0.1)
+    if random.random() < p:
+        return 1 + min(layer // 200, 4)
+    return 0
+
+
 def _roll_boss_ore(layer, btype):
     """Boss 通关掉落矿石：按 Boss 类型给稀有度权重，返回 (ore_id, count)。
 
@@ -789,6 +804,8 @@ def settle_dungeon(user):
                 oid = ore.roll_ore(layer_now)
                 if oid:
                     gained[oid] = gained.get(oid, 0) + 1
+                    # 概率性获得更多（层数越高概率/数量越大）
+                    gained[oid] += _extra_ore_roll(layer_now)
             # 矿石掉率增益（采掘符 scope=ore）
             if mult_ore > 1.0 and gained:
                 gained = {oid: max(1, int(cnt * mult_ore)) for oid, cnt in gained.items()}
