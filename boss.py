@@ -373,9 +373,21 @@ def boss_list_text(user):
             if unlocked and g == "big":
                 remain_b = max(0, limit - group_used_today(user, b))
                 suffix = f" 剩 {remain_b}/{limit}"
+            # 专属掉落标注（boss_gear.json）：装备名（部位·职业）
+            from boss_gear import gear_for_layer
+            gear = gear_for_layer(int(b.get("layer", 0) or 0))
+            gear_txt = ""
+            if gear:
+                _gt = {"weapon": "主手", "staff": "法杖", "shield": "盾", "focus": "法器",
+                       "armor": "战甲", "robe": "法袍", "accessory": "饰品"}
+                _gl = {"physical": "战", "magic": "法", "any": "通用"}
+                parts = []
+                for gd in gear:
+                    parts.append(f"{gd['name']}({_gl.get(gd['line'], '')}·{_gt.get(gd['type'], gd['type'])})")
+                gear_txt = f"｜👑 {'/'.join(parts)}"
             if not unlocked:
-                out.append(f"🔒 {b['layer']}层 {b['name']}（{b.get('tag','')}）需历史最高层 ≥ {b['layer']}")
+                out.append(f"🔒 {b['layer']}层 {b['name']}（{b.get('tag','')}）需历史最高层 ≥ {b['layer']}{gear_txt}")
             else:
-                out.append(f"· {b['layer']}层 {b['name']}（{b.get('tag','')}）[{first}] · 材料：{mname}{suffix}")
+                out.append(f"· {b['layer']}层 {b['name']}（{b.get('tag','')}）[{first}] · 材料：{mname}{suffix}{gear_txt}")
     out.append("—— 用法：/挑战 <Boss名|层数|称号>（如 /挑战 裂风狼王 / 挑战 1000层）；/挑战 列表 查看 ——")
     return "\n".join(out)
