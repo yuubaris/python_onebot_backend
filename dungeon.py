@@ -557,27 +557,30 @@ def _boss_coin_bonus(layer, btype):
 
 
 def _roll_boss_drop(user, layer, btype):
-    """通关某 Boss 层：掷掉落（金钱 / 矿石 / 稀有装备），写库并返回播报行。
+    """通关某 Boss 层：掷掉落（金钱 / 矿石 / 稀有装备），写库并返回播报。
 
-    通关即给：额外金钱 + 必掉矿石；稀有装备按概率（精英 25% / 小Boss 55% / 大Boss 100%）。
+    返回 (named_lines, merged_text)：
+    - named_lines：有名字的掉落单独列（特殊物品 / 稀有装备，每样一行）；
+    - merged_text：其他通用掉落合并一行（金钱 / 矿石）。
     """
     import random
     from ore import ore_meta
-    lines = []
-    # 额外金钱（Boss 专属通关奖励，即时入账）
+    named = []
+    merged_parts = []
+    # 额外金钱（Boss 专属通关奖励，即时入账）→ 合并
     bonus = _boss_coin_bonus(layer, btype)
     if bonus > 0:
         user.copper += bonus
         user.dungeon_coins_earned += bonus
         user.dungeon_run_coins += bonus
-        lines.append(f"💰 +{bonus} 铜币")
+        merged_parts.append(f"💰 +{bonus} 铜币")
     ore_id = _roll_boss_ore(layer, btype)
     if ore_id:
         ore.grant_ores(user.user_id, {ore_id: 1})
         meta = ore_meta(ore_id)
         nm = meta["name"] if meta else ore_id
-        lines.append(f"💎 矿石 ×1（{nm}）")
-    # 特殊物品（精英 25% / 小Boss 45% / 大Boss 80%，R17；掉落增益 scope=special）
+        merged_parts.append(f"💎 {nm}×1")
+    # 特殊物品（精英 25% / 小Boss 45% / 大Boss 80%，R17；掉落增益 scope=special）→ 有名字单独列
     special_id = material.roll_special(btype)
     if special_id:
         scnt = 1
@@ -591,16 +594,17 @@ def _roll_boss_drop(user, layer, btype):
         material.grant_materials(user.user_id, {special_id: scnt})
         smeta = material.material_meta(special_id)
         snm = smeta["name"] if smeta else special_id
-        lines.append(f"✨ 特殊物品 ×{scnt}（{snm}）")
-    # 稀有装备概率：精英 25% / 小Boss 55% / 大Boss 100%
+        named.append(f"✨ 特殊物品 ×{scnt}（{snm}）")
+    # 稀有装备概率：精英 25% / 小Boss 55% / 大Boss 100% → 有名字单独列
     p = {"elite": 0.25, "minor": 0.55, "major": 1.0}.get(btype, 0.25)
     if random.random() < p:
         from classes import TYPE_NAMES as _tn
         it = _grant_boss_rare(user, layer, btype)
         if it:
             tn = _tn.get(it.get("type", "other"), it.get("type", ""))
-            lines.append(f"✦ {it['name']}({tn}·稀有) new！")
-    return lines
+            named.append(f"✦ {it['name']}({tn}·稀有) new！")
+    merged = " · ".join(merged_parts) if merged_parts else None
+    return named, merged
 
 
 def _auto_named_boss_first(user, layer):
@@ -689,9 +693,12 @@ def settle_dungeon(user):
                     user.dungeon_capped = 1
                     cleared += 1
                     if bt:
-                        drops = _roll_boss_drop(user, cleared_layer, bt)
-                        if drops:
-                            report.append(f"🎉 通关 第{cleared_layer}层 {_BOSS_NAME.get(bt, bt)}（封顶）！" + "；".join(drops))
+                        named, merged = _roll_boss_drop(user, cleared_layer, bt)
+                        if named or merged:
+                            report.append(f"🎉 通关 第{cleared_layer}层 {_BOSS_NAME.get(bt, bt)}（封顶）！")
+                            report.extend(named)
+                            if merged:
+                                report.append(merged)
                 # 命名 Boss 自动推进首通（100/200/…/3600 守关层）→ boss 材料（未首通才给）
                 _auto_lines = _auto_named_boss_first(user, cleared_layer)
                 if _auto_lines:
@@ -703,10 +710,13 @@ def settle_dungeon(user):
                 user.dungeon_progress = effective_layer_total(user.dungeon_layer)
                 cleared += 1
                 if bt:
-                    # 通关 Boss 层：掉落（通关瞬间结算）
-                    drops = _roll_boss_drop(user, cleared_layer, bt)
-                    if drops:
-                        report.append(f"🎉 通关 第{cleared_layer}层 {_BOSS_NAME.get(bt, bt)}！" + "；".join(drops))
+                    # 通关 Boss 层：掉落（通关瞬间结算）——有名字的单独列，其他合并显示
+                    named, merged = _roll_boss_drop(user, cleared_layer, bt)
+                    if named or merged:
+                        report.append(f"🎉 通关 第{cleared_layer}层 {_BOSS_NAME.get(bt, bt)}！")
+                        report.extend(named)
+                        if merged:
+                            report.append(merged)
                 # 命名 Boss 自动推进首通（100/200/…/3600 守关层）→ boss 材料（未首通才给）
                 _auto_lines = _auto_named_boss_first(user, cleared_layer)
                 if _auto_lines:
