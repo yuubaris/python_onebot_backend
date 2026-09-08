@@ -2,7 +2,7 @@
   "items": [
     {
       "id": "gear_other_100_weapon",
-      "name": "灰鬃裂刃",
+      "name": "灰鬃撕风",
       "type": "weapon",
       "line": "physical",
       "tier": 2,
@@ -38,7 +38,7 @@
     },
     {
       "id": "gear_other_200_weapon",
-      "name": "磐岩重剑",
+      "name": "磐岩崩山",
       "type": "weapon",
       "line": "physical",
       "tier": 3,
@@ -74,7 +74,7 @@
     },
     {
       "id": "gear_other_300_weapon",
-      "name": "枯骨战镰",
+      "name": "枯骨收割",
       "type": "weapon",
       "line": "physical",
       "tier": 3,
@@ -110,7 +110,7 @@
     },
     {
       "id": "gear_other_400_weapon",
-      "name": "霜语冰刃",
+      "name": "霜语凛锋",
       "type": "weapon",
       "line": "physical",
       "tier": 4,
@@ -146,7 +146,7 @@
     },
     {
       "id": "gear_other_500_weapon",
-      "name": "烬鳞战刃",
+      "name": "烬鳞炽斩",
       "type": "weapon",
       "line": "physical",
       "tier": 4,
@@ -182,7 +182,7 @@
     },
     {
       "id": "gear_other_600_weapon",
-      "name": "冥渊骨剑",
+      "name": "冥渊斩魄",
       "type": "weapon",
       "line": "physical",
       "tier": 4,
@@ -218,7 +218,7 @@
     },
     {
       "id": "gear_other_700_weapon",
-      "name": "噬星魔刃",
+      "name": "噬星弑神",
       "type": "weapon",
       "line": "physical",
       "tier": 4,
@@ -254,7 +254,7 @@
     },
     {
       "id": "gear_other_800_weapon",
-      "name": "裂渊重刃",
+      "name": "裂渊碎虚",
       "type": "weapon",
       "line": "physical",
       "tier": 5,
@@ -290,7 +290,7 @@
     },
     {
       "id": "gear_other_900_weapon",
-      "name": "混沌战斧",
+      "name": "混沌开天",
       "type": "weapon",
       "line": "physical",
       "tier": 5,
@@ -326,7 +326,7 @@
     },
     {
       "id": "gear_other_1200_weapon",
-      "name": "吞海战戟",
+      "name": "吞海惊浪",
       "type": "weapon",
       "line": "physical",
       "tier": 5,
@@ -362,7 +362,7 @@
     },
     {
       "id": "gear_other_1400_weapon",
-      "name": "裂空巨剑",
+      "name": "裂空碎星",
       "type": "weapon",
       "line": "physical",
       "tier": 5,
@@ -398,7 +398,7 @@
     },
     {
       "id": "gear_other_1600_weapon",
-      "name": "赤渊炎刃",
+      "name": "赤渊灼天",
       "type": "weapon",
       "line": "physical",
       "tier": 5,
@@ -434,7 +434,7 @@
     },
     {
       "id": "gear_other_1800_weapon",
-      "name": "净世圣剑",
+      "name": "净世圣裁",
       "type": "weapon",
       "line": "physical",
       "tier": 5,
@@ -470,7 +470,7 @@
     },
     {
       "id": "gear_other_2500_weapon",
-      "name": "渊灭神刃",
+      "name": "渊灭斩魂",
       "type": "weapon",
       "line": "physical",
       "tier": 5,
@@ -506,7 +506,7 @@
     },
     {
       "id": "gear_big_3000_armor",
-      "name": "裂界战铠",
+      "name": "裂界玄铠",
       "type": "armor",
       "line": "physical",
       "tier": 6,
@@ -560,7 +560,7 @@
     },
     {
       "id": "gear_big_1000_weapon",
-      "name": "终焉帝剑",
+      "name": "终焉裁决",
       "type": "weapon",
       "line": "physical",
       "tier": 5,
@@ -596,7 +596,7 @@
     },
     {
       "id": "gear_big_2000_shield",
-      "name": "归墟圣盾",
+      "name": "归墟壁垒",
       "type": "shield",
       "line": "physical",
       "tier": 6,
