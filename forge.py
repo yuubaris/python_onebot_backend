@@ -43,7 +43,7 @@ def load_forges(force=False):
 
 
 def find_forge(name_or_id):
-    """按配方名称或 id 精确查找，找不到返回 None；兼容省略“锻造·”前缀（如 /锻造 精铁重剑）。"""
+    """按配方名称或 id 精确查找，找不到返回 None；名称兼容带/不带“锻造”前缀（如 /锻造 断岳重剑）。"""
     load_forges()
     key = (name_or_id or "").strip()
     if not key:
@@ -59,7 +59,7 @@ def find_forge(name_or_id):
     for name, r in _cache["by_name"].items():
         if name.lower() == low:
             return r
-    # 兼容省略“锻造·”前缀（如 /锻造 精铁重剑）
+    # 兼容带/不带“锻造”前缀的输入（如 /锻造 锻造·断岳重剑 与 /锻造 断岳重剑）
     for name, r in _cache["by_name"].items():
         short = name
         for pre in ("锻造·", "锻造"):

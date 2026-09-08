@@ -2,7 +2,7 @@
   "recipes": [
     {
       "id": "forge_iron_sword",
-      "name": "锻造·断岳重剑",
+      "name": "断岳重剑",
       "type": "weapon",
       "level": 1,
       "attack": 67,
@@ -21,7 +21,7 @@
     },
     {
       "id": "forge_iron_armor",
-      "name": "锻造·磐岳战铠",
+      "name": "磐岳战铠",
       "type": "armor",
       "level": 1,
       "attack": 0,
@@ -40,7 +40,7 @@
     },
     {
       "id": "forge_iron_staff",
-      "name": "锻造·奥术秘杖",
+      "name": "奥术秘杖",
       "type": "staff",
       "level": 1,
       "attack": 0,
@@ -59,7 +59,7 @@
     },
     {
       "id": "forge_silver_sword",
-      "name": "锻造·裂空圣剑",
+      "name": "裂空圣剑",
       "type": "weapon",
       "level": 2,
       "attack": 86,
@@ -79,7 +79,7 @@
     },
     {
       "id": "forge_silver_armor",
-      "name": "锻造·镇岳重甲",
+      "name": "镇岳重甲",
       "type": "armor",
       "level": 2,
       "attack": 0,
@@ -99,7 +99,7 @@
     },
     {
       "id": "forge_silver_staff",
-      "name": "锻造·贤者权杖",
+      "name": "贤者权杖",
       "type": "staff",
       "level": 2,
       "attack": 0,
@@ -119,7 +119,7 @@
     },
     {
       "id": "forge_gold_sword",
-      "name": "锻造·天罚神剑",
+      "name": "天罚神剑",
       "type": "weapon",
       "level": 3,
       "attack": 109,
@@ -140,7 +140,7 @@
     },
     {
       "id": "forge_gold_armor",
-      "name": "锻造·神鳞圣铠",
+      "name": "神鳞圣铠",
       "type": "armor",
       "level": 3,
       "attack": 0,
@@ -161,7 +161,7 @@
     },
     {
       "id": "forge_gold_staff",
-      "name": "锻造·创世圣袍",
+      "name": "创世圣袍",
       "type": "robe",
       "level": 4,
       "attack": 0,
@@ -182,7 +182,7 @@
     },
     {
       "id": "forge_dragon_blade",
-      "name": "锻造·龙神之刃",
+      "name": "龙神之刃",
       "type": "weapon",
       "level": 4,
       "attack": 137,

@@ -456,15 +456,15 @@ speed = (attack×2 + agility×1.5 + intelligence×1.25 + mp×1.2)
 
    | id（不变） | 旧名 | 新名 | type 变化 | 归位 |
    | --- | --- | --- | --- | --- |
-   | forge_iron_sword | 锻造·精铁重剑 | 锻造·断岳重剑 | — | Lv1 战士武器 |
-   | forge_iron_armor | 锻造·铁壁重铠 | 锻造·磐岳战铠 | — | Lv1 战士防具 |
-   | forge_iron_staff | 锻造·奥术法杖 | 锻造·奥术秘杖 | robe→staff | Lv1 法师法杖 |
-   | forge_silver_sword | 锻造·银辉圣剑 | 锻造·裂空圣剑 | — | Lv2 战士武器 |
-   | forge_silver_armor | 锻造·秘银重甲 | 锻造·镇岳重甲 | — | Lv2 战士防具 |
+   | forge_iron_sword | 锻造·精铁重剑 |断岳重剑 | — | Lv1 战士武器 |
+   | forge_iron_armor | 锻造·铁壁重铠 |磐岳战铠 | — | Lv1 战士防具 |
+   | forge_iron_staff | 锻造·奥术法杖 |奥术秘杖 | robe→staff | Lv1 法师法杖 |
+   | forge_silver_sword | 锻造·银辉圣剑 |裂空圣剑 | — | Lv2 战士武器 |
+   | forge_silver_armor | 锻造·秘银重甲 |镇岳重甲 | — | Lv2 战士防具 |
    | forge_silver_staff | 锻造·贤者权杖 | 锻造·贤者权杖（保留） | robe→staff | Lv2 法师法杖 |
-   | forge_gold_sword | 锻造·金龙神剑 | 锻造·天罚神剑 | — | Lv3 战士武器 |
-   | forge_gold_armor | 锻造·龙晶圣铠 | 锻造·神鳞圣铠 | — | Lv3 战士防具 |
-   | forge_gold_staff | 锻造·创世法袍 | 锻造·创世圣袍 | — | Lv3 法师生存(robe) |
+   | forge_gold_sword | 锻造·金龙神剑 |天罚神剑 | — | Lv3 战士武器 |
+   | forge_gold_armor | 锻造·龙晶圣铠 |神鳞圣铠 | — | Lv3 战士防具 |
+   | forge_gold_staff | 锻造·创世法袍 |创世圣袍 | — | Lv3 法师生存(robe) |
    | forge_dragon_blade | 锻造·龙神之刃 | 锻造·龙神之刃（保留） | — | Lv4 战士武器 |
 
    > 说明：贤者权杖/龙神之刃本就不是材料名，予以保留；其余去材料化。旧名不再出现（锻造产物显示新名）。

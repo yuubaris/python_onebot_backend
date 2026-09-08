@@ -419,7 +419,7 @@ def _forge_status(user):
 def _forge_breakdown(user, name):
     """分解锻造装备：删除装备，按配方矿石成本返还——普通矿石返一半（向下取整），高级矿石每个单位 50% 概率独立判定。"""
     if not name:
-        return "用法：/铁匠铺 分解 <装备名>（如 /铁匠铺 分解 锻造·断岳重剑）"
+        return "用法：/铁匠铺 分解 <装备名>（如 /铁匠铺 分解 断岳重剑）"
     rec = forge.find_forge(name)
     if rec is None:
         other = find_any_item(name) if name else None
