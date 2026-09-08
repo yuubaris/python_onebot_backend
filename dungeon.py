@@ -356,33 +356,6 @@ def rare_item_ids():
     return {r.get("id") for r in _load_rare_pool() if r.get("id")}
 
 
-# 普通层周期采矿的额外产量档位（v2.11.32 阶梯式）：(最低层数, 触发概率, 额外颗数)
-_ORE_EXTRA_BANDS = [
-    (0,   0.40, 1),  # 1~99 层：40% 概率 +1
-    (100, 0.50, 1),  # 100~199 层：50% 概率 +1
-    (200, 0.60, 2),  # 200~399 层：60% 概率 +2
-    (400, 0.70, 3),  # 400~799 层：70% 概率 +3
-    (800, 0.80, 5),  # 800 层及以上：80% 概率 +5
-]
-
-
-def _extra_ore_roll(layer):
-    """普通层周期采矿：概率性额外矿石（阶梯式）。
-
-    基础 1 颗掉落之外，按层数档位（见 _ORE_EXTRA_BANDS）阶梯增加概率与颗数：
-    1~99 层 40%+1 → 100~199 层 50%+1 → 200~399 层 60%+2 →
-    400~799 层 70%+3 → 800 层及以上 80%+5。
-    """
-    import random
-    prob, n = 0.4, 1
-    for min_l, p, extra in _ORE_EXTRA_BANDS:
-        if layer >= min_l:
-            prob, n = p, extra
-    if random.random() < prob:
-        return n
-    return 0
-
-
 def _roll_boss_ore(layer, btype):
     """Boss 通关掉落矿石：按 Boss 类型给稀有度权重，返回 (ore_id, count)。
 
@@ -807,17 +780,28 @@ def settle_dungeon(user):
 
     # 稀有矿石结算（400 层以上资格；每 15 分钟一个周期，余数直接丢弃）
     if user.dungeon_ore_eligible and user.dungeon_ore_last:
+        import random as _random
         dt_ore = now - user.dungeon_ore_last
         cycles = int(dt_ore // ore.ORE_CYCLE_SECONDS)
         if cycles > 0:
             layer_now = max(user.dungeon_layer, 1)
             gained = {}
             for _ in range(cycles):
-                oid = ore.roll_ore(layer_now)
-                if oid:
-                    gained[oid] = gained.get(oid, 0) + 1
-                    # 概率性获得更多（层数越高概率/数量越大）
-                    gained[oid] += _extra_ore_roll(layer_now)
+                # 每次采矿先掷数量（v2.11.33）：30% 得 1 颗 / 20% 得 2 颗 / 10% 得 3 颗 / 40% 无掉落
+                _r = _random.random()
+                if _r < 0.30:
+                    _n = 1
+                elif _r < 0.50:
+                    _n = 2
+                elif _r < 0.60:
+                    _n = 3
+                else:
+                    _n = 0
+                # 每一颗矿石再自行概率判断种类
+                for _ in range(_n):
+                    oid = ore.pick_ore(layer_now)
+                    if oid:
+                        gained[oid] = gained.get(oid, 0) + 1
             # 矿石掉率增益（采掘符 scope=ore）
             if mult_ore > 1.0 and gained:
                 gained = {oid: max(1, int(cnt * mult_ore)) for oid, cnt in gained.items()}

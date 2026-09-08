@@ -93,6 +93,27 @@ def roll_ore(layer, rand=random.random):
     return None
 
 
+def pick_ore(layer, rand=random.random):
+    """按稀有度权重必出一颗矿石（v2.11.33）：数量由调用方先掷，每一颗独立判种类。
+
+    权重结构与 roll_ore 相同（神话/传说/稀有/普通），未命中任何高稀有档时兜底普通档，
+    保证返回矿石 id（layer < ORE_MIN_LAYER 仍返回 None）。
+    """
+    if layer < ORE_MIN_LAYER:
+        return None
+    load_ores()
+    p_myth = myth_probability(layer)
+    p_legend = legend_probability(layer)
+    r = rand()
+    if r < p_myth:
+        return random.choice(_cache["by_rarity"].get("myth", [])) or None
+    if r < p_myth + p_legend:
+        return random.choice(_cache["by_rarity"].get("legendary", [])) or None
+    if r < p_myth + p_legend + ORE_RARE_PCT:
+        return random.choice(_cache["by_rarity"].get("rare", [])) or None
+    return random.choice(_cache["by_rarity"].get("common", [])) or None
+
+
 def grant_ores(user_id, gained):
     """批量累加用户矿石持有量（gained: {ore_id: count}）。
 
