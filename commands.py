@@ -422,6 +422,10 @@ def _forge_breakdown(user, name):
         return "用法：/铁匠铺 分解 <装备名>（如 /铁匠铺 分解 锻造·断岳重剑）"
     rec = forge.find_forge(name)
     if rec is None:
+        other = find_any_item(name) if name else None
+        if other is not None:
+            return (f"「{other['name']}」不是锻造装备，无法分解。\n"
+                    f"仅锻造装备可分解回收矿石；商店/掉落装备可 /出售 或 /转转 捐赠。")
         hits = forge.suggest_forges(name)
         hint = f"，你是不是想分解：{'、'.join(h['name'] for h in hits)}" if hits else ""
         return f"铁匠铺没有「{name}」这件锻造装备{hint}"
