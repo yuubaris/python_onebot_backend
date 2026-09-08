@@ -133,9 +133,13 @@ def cmd_balance(user, group_id, args, at_qqs=None):
     bonus = int((TIER_ATTR_BONUS.get(t, 1.0) - 1) * 100) if t > 0 else 0
     class_txt = f"{class_name(prof)} · {_user_title(user)}" if prof else "未转职·冒险者"
     bonus_txt = f"（称号加成 +{bonus}% 全属性）" if bonus else ""
-    return (f"当前资产：{format_currency(user.copper)}\n"
+    base = (f"当前资产：{format_currency(user.copper)}\n"
             f"职业/称号：{class_txt} {bonus_txt}\n"
             f"持有装备 {len(items)} 件；累计签到 {user.total_checkin} 次，连续签到 {user.checkin_streak} 天。")
+    buff_block = _buff_status_block(user)
+    if buff_block:
+        return base + "\n" + buff_block
+    return base
 
 
 # ---------- 背包 ----------
@@ -200,25 +204,35 @@ def cmd_bag(user, group_id, args, at_qqs=None):
         _ore_mark = {"myth": "★", "legendary": "✦", "rare": "◆", "common": "·"}
         for o in ores:
             lines.append(f"{_ore_mark.get(o['rarity'], '·')} {o['name']} ×{o['count']}")
-    # 材料展示（草药/特殊/boss 材料）
+    # 材料展示（草药/特殊/boss 材料 分类独立成块）
     mats = material.owned_materials(user.user_id)
     if mats:
-        lines.append("—— 🧪 材料 ——")
-        _cat_name = {"herb": "草药", "special": "特殊", "boss": "Boss材料", "souvenir": "特殊道具"}
+        _cat_name = {"herb": "🌿 草药", "special": "✨ 特殊材料", "boss": "💎 Boss材料", "souvenir": "🏷️ 特殊道具"}
         _mat_mark = {"myth": "★", "legendary": "✦", "rare": "◆", "common": "·"}
         cur_cat = None
         for m in mats:
             if m["category"] != cur_cat:
                 cur_cat = m["category"]
-                lines.append(f"· {_cat_name.get(cur_cat, cur_cat)}：")
-            lines.append(f"  {_mat_mark.get(m['rarity'], '·')} {m['name']} ×{m['count']}")
-    # 炼金产物（药水/道具）
+                lines.append(f"—— {_cat_name.get(cur_cat, cur_cat)} ——")
+            mark = _mat_mark.get(m["rarity"], "·")
+            head = f"{mark} " if mark != "·" else ""
+            lines.append(f"· {head}{m['name']} ×{m['count']}")
+    # 炼金产物（药水/道具 分类展示）
     cons = consumable.owned_consumables(user.user_id)
-    if cons:
-        lines.append("—— ⚗️ 药水/道具 ——")
-        for it in cons:
-            kind = "药水" if it["kind"] == "potion" else "道具"
-            lines.append(f"· {it['name']}（{kind} Lv{it['level']}）×{it['count']}")
+    potions = [c for c in cons if c.get("kind") == "potion"]
+    tools = [c for c in cons if c.get("kind") != "potion"]
+    if potions:
+        lines.append("—— 🧪 药水 ——")
+        for it in potions:
+            lines.append(f"· {it['name']}（Lv{it['level']}）×{it['count']}")
+    if tools:
+        lines.append("—— 🎫 道具 ——")
+        for it in tools:
+            lines.append(f"· {it['name']}（Lv{it['level']}）×{it['count']}")
+    # 生效中的药水/道具（同槽互斥；到期自动清理）
+    buff_block = _buff_status_block(user)
+    if buff_block:
+        lines.append(buff_block)
     lines.append(f"当前资产：{format_currency(user.copper)}")
     # 已读标记：背包查看即消费 new!，下次起不再提示
     db.session.execute(
