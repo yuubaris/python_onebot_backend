@@ -277,10 +277,9 @@ def challenge_boss(user, boss):
 
     p = _success_rate(user, boss)
     win = random.random() < p
-    # 娱乐技能交锋（v2.11.59）：仅文字表述，无任何效果
+    # 娱乐技能交锋（v2.11.60）：仅文字表述，无任何效果
     import skills as _skills
-    prof = getattr(user, "profession", "") or ""
-    _my = _skills.class_skill(prof)
+    _my = _skills.title_skill(getattr(user, "profession", "") or "", getattr(user, "tier", 0) or 0)
     _his = _skills.boss_skill(boss.get("tag", ""))
     _clash = f"💥 你使出【{_my}】，对手发动【{_his}】，激战正酣！"
     if not win:

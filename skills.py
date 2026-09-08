@@ -1,11 +1,32 @@
 # -*- coding: utf-8 -*-
-"""挑战娱乐技能表（v2.11.59）：仅用于挑战玩法的文字表述，无任何数值/判定效果。
+"""挑战娱乐技能表（v2.11.60）：仅用于挑战玩法的文字表述，无任何数值/判定效果。
 
-- BOSS_SKILLS：按 Boss 称号(tag) 各 3 个技能；
-- CLASS_SKILLS：按玩家职业(warrior/mage) 各 3 个技能；
-- FALLBACK_SKILLS：未转职玩家的通用技能。
+- LEVEL_TITLE_SKILLS：按玩家等级称号（15 种 = 初始「见习」+ T1~T7 × 战士/魔法师）各 3 个技能；
+- BOSS_SKILLS：按 Boss 称号(tag，如 兽王/究极/最终) 各 3 个技能（Boss 侧娱乐文字）；
+- title_skill(class_id, tier)：玩家按当前等级称号随机 1 个技能；
+- boss_skill(tag)：Boss 按自身称号随机 1 个技能。
 """
 
+# 玩家等级称号技能：初始 + 7 阶 × 2 职业（共 15 种）
+LEVEL_TITLE_SKILLS = {
+    "见习": ["蓄力一击", "灵活闪避", "全力冲刺"],
+    "疾风战士": ["疾风斩", "风影突袭", "狂风连击"],
+    "烈焰战士": ["烈焰劈砍", "火海冲击", "烈焰护体"],
+    "银辉战士": ["银月斩", "辉光护壁", "银辉破甲"],
+    "苍穹战士": ["苍穹碎击", "破空斩", "天穹守护"],
+    "神谕战士": ["神谕裁决", "圣印重斩", "神辉庇佑"],
+    "灭世战士": ["灭世重击", "毁灭冲锋", "末日战吼"],
+    "至尊战士": ["至尊一击", "帝威压制", "无上神斩"],
+    "疾风魔法师": ["疾风弹", "风缚术", "迅捷闪现"],
+    "烈焰魔法师": ["烈焰爆", "火墙术", "燃烬术"],
+    "银辉魔法师": ["银辉弹", "辉光护盾", "月华射线"],
+    "苍穹魔法师": ["苍穹陨星", "空间撕裂", "星辉法阵"],
+    "神谕魔法师": ["神谕之光", "圣言术", "天启之力"],
+    "灭世魔法师": ["灭世灾炎", "深渊裂隙", "湮灭新星"],
+    "至尊魔法师": ["至尊奥术", "法则改写", "万象归一"],
+}
+
+# Boss 称号(tag)技能：Boss 侧娱乐文字
 BOSS_SKILLS = {
     "兽王": ["裂地猛扑", "兽王咆哮", "狂野撕咬"],
     "魔像": ["山崩重拳", "石化凝视", "大地震颤"],
@@ -27,23 +48,27 @@ BOSS_SKILLS = {
     "最终": ["最终审判", "万法归一", "时之终焉"],
 }
 
-CLASS_SKILLS = {
-    "warrior": ["破军斩", "铁壁坚守", "怒涛连击"],
-    "mage": ["奥术冲击", "寒霜新星", "秘法屏障"],
-}
 
-FALLBACK_SKILLS = ["蓄力一击", "灵活闪避", "全力冲刺"]
+def _pick(pool):
+    import random
+    return random.choice(pool)
+
+
+def title_skill(class_id, tier):
+    """玩家按当前等级称号随机 1 个技能（tier<=0 一律「见习」；未知称号兜底见习池）。"""
+    from tiers import TIER_PREFIX
+    from classes import class_name
+    t = max(int(tier or 0), 0)
+    if t <= 0:
+        title = "见习"
+    else:
+        nm = class_name(class_id or "")
+        pre = TIER_PREFIX.get(t, "")
+        title = f"{pre}{nm}" if nm else "见习"
+    return _pick(LEVEL_TITLE_SKILLS.get(title, LEVEL_TITLE_SKILLS["见习"]))
 
 
 def boss_skill(tag):
-    """Boss 按称号随机 1 个技能名；未知称号取通用技能。"""
-    import random
-    pool = BOSS_SKILLS.get((tag or "").strip(), FALLBACK_SKILLS)
-    return random.choice(pool)
-
-
-def class_skill(class_id):
-    """玩家按职业随机 1 个技能名；未转职/未知取通用技能。"""
-    import random
-    pool = CLASS_SKILLS.get(class_id or "", FALLBACK_SKILLS)
-    return random.choice(pool)
+    """Boss 按自身称号随机 1 个技能；未知称号取通用池。"""
+    pool = BOSS_SKILLS.get((tag or "").strip(), ["威慑一击", "蓄势猛击", "狂暴反击"])
+    return _pick(pool)
