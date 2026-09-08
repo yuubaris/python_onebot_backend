@@ -37,7 +37,7 @@ from dungeon import (
     BASE_STATS, LAYER1_TOTAL, layer_total, coin_rate_per_sec, coin_per_5sec,
     effective_stats, dungeon_speed, owned_items, owned_item_rows, settle_dungeon,
     effective_layer_total, boss_type, historical_best_layer,
-    take_boss_report, rare_item_ids,
+    take_boss_report, rare_item_ids, find_any_item,
 )
 from kick import check_cooldown, mark_cooldown, build_kick_image, build_beat_image, build_jue_image, build_dalao_image
 import ore
@@ -220,6 +220,14 @@ def cmd_bag(user, group_id, args, at_qqs=None):
             kind = "药水" if it["kind"] == "potion" else "道具"
             lines.append(f"· {it['name']}（{kind} Lv{it['level']}）×{it['count']}")
     lines.append(f"当前资产：{format_currency(user.copper)}")
+    # 已读标记：背包查看即消费 new!，下次起不再提示
+    db.session.execute(
+        db.update(UserItem).where(
+            UserItem.user_id == user.user_id,
+            UserItem.is_new == 1,
+        ).values(is_new=0)
+    )
+    db.session.commit()
     return "\n".join(lines)
 
 
@@ -512,12 +520,17 @@ def cmd_sell(user, group_id, args, at_qqs=None):
     names = [n for n in (args or "").split()]
     if not names:
         return "用法：/出售 商品名 [商品名 ...]（例如 /出售 短剑 圆盾）"
-    sold, missing, not_owned = [], [], []
+    sold, missing, not_owned, not_sellable = [], [], [], []
     total = 0
     for name in names:
         item = find_item(name)
         if item is None:
+            item = find_any_item(name)   # 非商店来源（如 Boss 稀有掉落）也可识别
+        if item is None:
             missing.append(name)
+            continue
+        if forge.is_forged_item(item["id"]):
+            not_sellable.append(item["name"])
             continue
         row = db.session.execute(
             db.select(UserItem).where(
@@ -546,6 +559,8 @@ def cmd_sell(user, group_id, args, at_qqs=None):
         lines.append("未找到：" + "、".join(f"「{n}」" for n in missing))
     if not_owned:
         lines.append("没有：" + "、".join(f"「{n}」" for n in not_owned))
+    if not_sellable:
+        lines.append("不可出售：" + "、".join(f"「{n}」" for n in not_sellable) + "（铁匠铺锻造装备无法出售）")
     if not lines:
         return "你没有可出售的装备。"
     lines.append(f"当前资产：{format_currency(user.copper)}")

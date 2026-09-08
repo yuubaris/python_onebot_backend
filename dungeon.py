@@ -268,6 +268,22 @@ def _all_item_meta():
     return by_id
 
 
+def find_any_item(name_or_id):
+    """从装备全集（商店 equipment.json + 铁匠铺 forge.json + Boss 稀有池 rare_drops.json）
+    按名称或 id 精确查找（大小写不敏感），找不到返回 None。
+
+    用途：出售等需要识别「非商店来源」装备（如稀有装备）的场合；
+    购买请继续使用 equipment.find_item（商店买不到稀有/锻造装）。
+    """
+    key = (name_or_id or "").strip().lower()
+    if not key:
+        return None
+    for it in _all_item_meta().values():
+        if str(it.get("name", "")).lower() == key or str(it.get("id", "")).lower() == key:
+            return it
+    return None
+
+
 def owned_items(user):
     """查询用户拥有的装备（从 JSON 中补全属性），仅返回存在定义的装备。"""
     rows = db.session.execute(
