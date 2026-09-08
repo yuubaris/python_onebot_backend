@@ -434,14 +434,17 @@ def _forge_breakdown(user, name):
     if row is None:
         return f"你还没有锻造过「{rec['name']}」，无法分解。"
     db.session.delete(row)
-    # 按配方矿石成本返还
+    # 按配方矿石成本返还：普通返半 / 稀有返六成（向下取整）/ 传说·神话每单位 50% 概率独立判定
     gained = {}
     for oid, cnt in (rec.get("cost") or {}).items():
         meta = ore.ore_meta(oid)
-        if meta and meta.get("rarity") == "common":
-            back = cnt // 2  # 普通矿石：返一半，向下取整
+        rarity = (meta or {}).get("rarity")
+        if rarity == "common":
+            back = cnt // 2
+        elif rarity == "rare":
+            back = cnt * 3 // 5  # 返还 60%，向下取整
         else:
-            back = sum(1 for _ in range(cnt) if random.random() < 0.5)  # 高级矿石：每单位 50% 独立判定
+            back = sum(1 for _ in range(cnt) if random.random() < 0.5)
         if back:
             gained[oid] = back
     ore.grant_ores(user.user_id, gained)
@@ -488,7 +491,7 @@ def cmd_forge_shop(user, group_id, args, at_qqs=None):
         cost = forge.format_cost(r.get("cost", {})) + f" + {format_currency(r.get('price', 0))}"
         lines.append(f"· {r['name']}（{TYPE_NAMES.get(r['type'], r['type'])}）{_item_desc(r)}")
         lines.append(f"   消耗：{cost}")
-    lines.append("—— 提示：铁匠铺装备无法 /出售 回收；可用 /铁匠铺 分解 回收矿石（普通返半、高级50%概率每单位判定）——")
+    lines.append("—— 提示：铁匠铺装备无法 /出售 回收；可用 /铁匠铺 分解 回收矿石（普通返半、稀有返六成、传说/神话按50%概率每单位判定）——")
     return "\n".join(lines)
 
 
@@ -841,7 +844,7 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/转职 战士|魔法师 - 选择职业（切换职业）\n"
             "/晋升 - 按地下城进度+货币提升阶级\n"
             "/地下城 进入/状态/退出 - 地下城冒险（最高 3600 层；命名守关 Boss 需战力判定，失败重置进度收益照常；状态含生效中药水/道具）\n"
-            "/铁匠铺 - 查看锻造配方；/铁匠铺 分解 <装备名> 分解锻造装回收矿石（普通返半、高级50%概率）\n"
+            "/铁匠铺 - 查看锻造配方；/铁匠铺 分解 <装备名> 分解锻造装回收矿石（普通返半、稀有返六成、传说/神话按50%概率）\n"
             "/锻造 装备名 - 消耗铜币+矿石制作装备（需职业/阶级符合）\n"
             "/boss 列表 - 查看守关 Boss（挑战统一走 /挑战 <Boss名|层数|称号>；普通每日共 3 次 / 1000·2000·3000·3600 每日各 1 次，首通必出 Boss 材料）\n"
             "/炼金 [配方名] - 查看/制作药水·道具（消耗材料+矿石）\n"
