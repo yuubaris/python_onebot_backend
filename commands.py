@@ -639,6 +639,23 @@ def _dungeon_enter(user):
             f"地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。{class_note}")
 
 
+def _buff_status_block(user):
+    """生效中的药水/道具展示块（药水/道具各自同时仅一种）；无则返回空串。"""
+    try:
+        from consumable import buffs_status_text
+        potion_txt, tool_txt = buffs_status_text(user.user_id)
+    except Exception:
+        return ""
+    parts = []
+    if potion_txt:
+        parts.append(potion_txt)
+    if tool_txt:
+        parts.append(tool_txt)
+    if not parts:
+        return ""
+    return "生效中：\n" + "\n".join(parts)
+
+
 def _dungeon_status(user):
     if user.dungeon_layer <= 0:
         if user.saved_dungeon_layer and user.saved_dungeon_layer > 0:
@@ -646,7 +663,11 @@ def _dungeon_status(user):
             remaining = max(user.saved_dungeon_progress or 0.0, 0.0)
             return (f"💾 你保存了地下城进度：第 {user.saved_dungeon_layer} 层"
                     f"（剩余 {remaining:.0f} / 总计 {total:.0f}）。\n"
-                    f"发送 /地下城 进入 可继续冒险。")
+                    f"发送 /地下城 进入 可继续冒险。\n"
+                    + _buff_status_block(user)).rstrip()
+        buff_block = _buff_status_block(user)
+        if buff_block:
+            return "你当前不在地下城中。使用 /地下城 进入 开始冒险。\n" + buff_block
         return "你当前不在地下城中。使用 /地下城 进入 开始冒险。"
     total = effective_layer_total(user.dungeon_layer)
     remaining = max(user.dungeon_progress, 0.0)
@@ -654,12 +675,15 @@ def _dungeon_status(user):
     pct = (done / total * 100) if total else 0
     bt = boss_type(user.dungeon_layer)
     bt_txt = "（BOSS）" if bt else ""
+    buff_block = _buff_status_block(user)
+    buff_line = ("\n" + buff_block) if buff_block else ""
     return (f"📍 地下城第 {user.dungeon_layer} 层{bt_txt} · {_user_title(user)}\n"
             f"进度：{pct:.1f}%（剩余 {remaining:.0f} / 总计 {total:.0f}）\n"
             f"金币速度：约 {coin_per_5sec(user.dungeon_layer):.4f} 铜币/5秒\n"
             f"本次地下城已获得 {user.dungeon_run_coins} 铜币；累计通关 {user.dungeon_cleared} 层，"
             f"累计获得 {user.dungeon_coins_earned} 铜币。\n"
-            f"当前资产：{format_currency(user.copper)}")
+            f"当前资产：{format_currency(user.copper)}"
+            f"{buff_line}")
 
 
 def _dungeon_exit(user):
@@ -703,7 +727,7 @@ def cmd_dungeon(user, group_id, args, at_qqs=None):
         return _dungeon_status(user)
     return ("地下城指令：\n"
             "/地下城 进入 - 进入/继续地下城（退出后保留进度，可直达上次位置）\n"
-            "/地下城 状态 - 查看当前层数/进度/金币/保存进度\n"
+            "/地下城 状态 - 查看当前层数/进度/金币/生效中药水·道具(剩余层数/时间)\n"
             "/地下城 退出 - 离开地下城（保存当前进度）")
 
 
@@ -719,12 +743,12 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/出售 商品名 [商品名...] - 批量出售装备（购买价 60%）\n"
             "/转职 战士|魔法师 - 选择职业（切换职业）\n"
             "/晋升 - 按地下城进度+货币提升阶级\n"
-            "/地下城 进入/状态/退出 - 地下城冒险（10/50/100 层 Boss 掉落；最高 3600 层）\n"
+            "/地下城 进入/状态/退出 - 地下城冒险（10/50/100 层 Boss 掉落；最高 3600 层；状态含生效中药水/道具）\n"
             "/铁匠铺 - 查看锻造配方（400 层解锁，超越武器库顶级）\n"
             "/锻造 装备名 - 消耗铜币+矿石制作装备（需职业/阶级符合）\n"
             "/boss 列表 / boss 挑战 Boss名 - 守关 Boss 挑战（普通每日共 3 次 / 1000·2000·3600 每日各 1 次，首通必出 Boss 材料）\n"
             "/炼金 [配方名] - 查看/制作药水·道具（消耗材料+矿石）\n"
-            "/使用 物品名 - 使用药水/道具生效\n"
+            "/使用 物品名 - 使用药水/道具(药水/道具各同时仅一种, 新用替换并刷新时长)\n"
             "/挑战 @对方 - 发起对战（随机胜负，每天 3 次）\n"
             "/踢 @对方 - 生成踢人图（30 秒冷却）\n"
             "/撅 @对方 - 生成撅人 GIF（30 秒冷却）\n"

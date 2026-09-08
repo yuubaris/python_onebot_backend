@@ -244,9 +244,10 @@ def drop_bonus(user_id, bonus_type, scope=None, now=None):
 # ---------- 使用 ----------
 
 def use_item(user, item_id, now=None):
-    """使用产物：先扣库存，成功再写入/刷新 UserBuff。返回 (ok, 提示文本)。
+    """使用产物：先扣库存，成功再写入 UserBuff。返回 (ok, 提示文本)。
 
-    - 同名已有 buff：刷新时长（时间型重置 expire_ts；层数型累加 remain_layers）；
+    - 药水/道具各自同一时间只能存在一种：使用新物品会替换同类的旧 BUFF，
+      并刷新持续时长（层数型重置为完整层数 / 时间型重置为完整时长）；
     - 层数型以当前历史最高层为起始。
     """
     meta = consumable_meta(item_id)
@@ -261,50 +262,101 @@ def use_item(user, item_id, now=None):
     dur = eff.get("duration") or {}
     dtype = dur.get("type", "time")
     dval = int(dur.get("value", 0) or 0)
+    kind = meta.get("kind", "potion")
 
-    # 查同名旧 buff（清理到期）
-    existing = None
+    # 同槽位互斥：删除该用户全部同类旧 BUFF（药水槽 / 道具槽各一）
+    replaced = []
     for r in db.session.execute(
-        db.select(UserBuff).where(UserBuff.user_id == user.user_id,
-                                  UserBuff.item_id == item_id)
+        db.select(UserBuff).where(UserBuff.user_id == user.user_id)
     ).scalars().all():
+        old = _cache["by_id"].get(r.item_id)
+        if old is None or old.get("kind", "potion") != kind:
+            continue
         if (r.expire_ts is not None and r.expire_ts <= now) or \
            (r.remain_layers is not None and r.remain_layers <= 0):
             db.session.delete(r)
             continue
-        existing = r
+        replaced.append(old.get("name", r.item_id))
+        db.session.delete(r)
 
     from dungeon import historical_best_layer
-    if existing:
-        # 刷新时长
-        if dtype == "layers":
-            existing.remain_layers = (existing.remain_layers or 0) + dval
-        else:
-            existing.expire_ts = now + dval
+    import json as _json
+    row = UserBuff(
+        user_id=user.user_id, item_id=item_id,
+        effect_json=_json.dumps(eff, ensure_ascii=False),
+    )
+    if dtype == "layers":
+        row.start_layer = historical_best_layer(user) or 0
+        row.remain_layers = dval
     else:
-        import json as _json
-        row = UserBuff(
-            user_id=user.user_id, item_id=item_id,
-            effect_json=_json.dumps(eff, ensure_ascii=False),
-        )
-        if dtype == "layers":
-            row.start_layer = historical_best_layer(user) or 0
-            row.remain_layers = dval
-        else:
-            row.expire_ts = now + dval
-        db.session.add(row)
+        row.expire_ts = now + dval
+    db.session.add(row)
     db.session.commit()
 
-    kind = meta.get("kind", "potion")
+    rep_txt = f"（替换了原「{'、'.join(replaced)}」）" if replaced else ""
     if kind == "potion":
         stat_txt = "、".join(f"{k}+{v}" for k, v in (eff.get("stats") or {}).items())
         if dtype == "layers":
-            return True, f"✨ 使用 {meta['name']}：临时提升 {stat_txt}（持续 {dval} 层）"
-        return True, f"✨ 使用 {meta['name']}：临时提升 {stat_txt}（持续 {dval} 秒）"
+            return True, f"✨ 使用 {meta['name']}：临时提升 {stat_txt}（持续 {dval} 层）{rep_txt}"
+        return True, f"✨ 使用 {meta['name']}：临时提升 {stat_txt}（持续 {dval} 秒）{rep_txt}"
     # tool
     if dtype == "layers":
-        return True, f"✨ 使用 {meta['name']}：获得掉落增益（持续 {dval} 层）"
-    return True, f"✨ 使用 {meta['name']}：获得掉落增益（持续 {dval} 秒 ≈ {dval // 60} 分钟）"
+        return True, f"✨ 使用 {meta['name']}：获得掉落增益（持续 {dval} 层）{rep_txt}"
+    return True, f"✨ 使用 {meta['name']}：获得掉落增益（持续 {dval} 秒 ≈ {dval // 60} 分钟）{rep_txt}"
+
+
+# ---------- 状态展示 ----------
+
+def buffs_status_text(user_id, now=None):
+    """状态命令展示：返回 (药水段, 道具段)，无则 None。"""
+    buffs = active_buffs(user_id, now=now)
+    if not buffs:
+        return None, None
+    now = now or time.time()
+    potion_lines, tool_lines = [], []
+    for meta, r in buffs:
+        eff = meta.get("effect", {})
+        name = meta.get("name", r.item_id)
+        if meta.get("kind", "potion") == "potion":
+            stats = "、".join(f"{k}+{v}" for k, v in (eff.get("stats") or {}).items())
+            remain = f"{r.remain_layers} 层" if r.remain_layers is not None else "?"
+            potion_lines.append(f"🧪 {name}：{stats}（剩余 {remain}）")
+        else:
+            desc = _drop_bonus_desc(eff)
+            remain = _remain_time_text(r.expire_ts, now)
+            tool_lines.append(f"🎫 {name}：{desc}（剩余 {remain}）")
+    potion_txt = "\n".join(potion_lines) or None
+    tool_txt = "\n".join(tool_lines) or None
+    return potion_txt, tool_txt
+
+
+def _drop_bonus_desc(eff):
+    """把 drop_bonus effect 转成可读文本。"""
+    btype = eff.get("bonus_type", "?")
+    scope = eff.get("scope")
+    mult = eff.get("mult", 1.0)
+    if btype == "coin":
+        t = "铜币掉落"
+    elif btype == "equipment":
+        t = "装备掉落"
+    elif btype == "material":
+        scope_txt = {"ore": "矿石", "herb": "草药", "special": "特殊材料",
+                     "all": "全部材料"}.get(scope, "材料")
+        t = f"{scope_txt}掉落"
+    else:
+        t = f"{btype}掉落"
+    return f"{t} ×{mult:g}"
+
+
+def _remain_time_text(expire_ts, now):
+    """把到期时间戳转成「X 小时 Y 分 / Y 分钟」剩余文本。"""
+    if not expire_ts:
+        return "?"
+    secs = max(0, int(expire_ts - now))
+    h, m = divmod(secs // 60, 60)
+    if h:
+        return f"{h} 小时 {m} 分"
+    return f"{m} 分钟"
 
 
 def use_by_name(user, name):
