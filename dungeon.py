@@ -12,6 +12,9 @@
   （历史最高层 ≥ 该 Lv 解锁层即可用，不卡当前阶级）。
 - 称号加成（v5）：全属性乘 TIER_ATTR_BONUS[tier]（每阶 +5%，T7=+35%），同装备下高阶称号更强。
 - Boss 关（v4）：10 层精英 / 50 层小Boss / 100 层大Boss，Boss 层进度放大，通关随机掉落。
+- 封顶（v8）：地下城最高 3600 层，通关 3600 晋 T7，之后驻留 3600 持续产出收益。
+- 命名 Boss（/boss 挑战）：1000 前每 100 / 1000 后每 200 / 2000 后每 500 层的守关 Boss（共 18 个），
+  自动推进首次经过其层时触发首通（boss 材料），重复经过只走现有掉落。
 """
 import threading
 import time
@@ -21,6 +24,7 @@ from equipment import load_equipment
 from classes import class_line, item_line, LINE_PHYSICAL, LINE_MAGIC, LINE_ANY
 from tiers import tier_of_price
 import ore
+import material
 import classes as _classes_mod
 import tiers as _tiers_mod
 
@@ -38,6 +42,10 @@ BASE_STATS = {
 
 # 单次结算的最大循环保护（防止异常长时间导致的死循环）
 _MAX_SETTLE_LAYERS = 100000
+
+# 地下城最高层（封顶层）：通关 3600 层即晋升 T7（tiers.TIER_LAYER[7]=3600）。
+# 达到封顶层后不再向更高层推进，保留在 3600 层驻留；挂机收益（铜币/矿/材料）持续产出。
+DUNGEON_MAX_LAYER = 3600
 
 # Boss 关分布（v4）：10 层精英 / 50 层小Boss / 100 层大Boss
 BOSS_ELITE_EVERY = 10
@@ -195,6 +203,16 @@ def effective_stats(user, owned):
     if tier_bonus != 1.0:
         for k in stats:
             stats[k] *= tier_bonus
+    # 属性药水 BUFF（v8）：生效中的 buff_stat 点数叠加到各属性（不乘称号，独立叠加）
+    if user is not None:
+        try:
+            import consumable as _consumable
+            extra = _consumable.buff_stat_bonus(user.user_id)
+            if extra:
+                for k, v in extra.items():
+                    stats[k] = stats.get(k, 0) + v
+        except Exception:
+            pass
     return stats
 
 
@@ -443,6 +461,21 @@ def _roll_boss_drop(user, layer, btype):
         meta = ore_meta(ore_id)
         nm = meta["name"] if meta else ore_id
         lines.append(f"💎 矿石 ×1（{nm}）")
+    # 特殊物品（精英 25% / 小Boss 45% / 大Boss 80%，R17；掉落增益 scope=special）
+    special_id = material.roll_special(btype)
+    if special_id:
+        scnt = 1
+        try:
+            import consumable as _consumable
+            _ms = _consumable.drop_bonus(user.user_id, "material", scope="special")
+            if _ms > 1.0:
+                scnt = max(1, int(_ms))
+        except Exception:
+            pass
+        material.grant_materials(user.user_id, {special_id: scnt})
+        smeta = material.material_meta(special_id)
+        snm = smeta["name"] if smeta else special_id
+        lines.append(f"✨ 特殊物品 ×{scnt}（{snm}）")
     # 稀有装备概率：精英 25% / 小Boss 55% / 大Boss 100%
     p = {"elite": 0.25, "minor": 0.55, "major": 1.0}.get(btype, 0.25)
     if random.random() < p:
@@ -452,6 +485,23 @@ def _roll_boss_drop(user, layer, btype):
             tn = _tn.get(it.get("type", "other"), it.get("type", ""))
             lines.append(f"✦ {it['name']}({tn}·稀有) new！")
     return lines
+
+
+def _auto_named_boss_first(user, layer):
+    """自动推进「首次经过」某命名守关 Boss 层 → 触发首通（给 boss 材料）。
+
+    复用 boss 模块的自动推进首通判定（该 Boss 未被 /boss 挑战/推进首通过才给，
+    且只给一次）。为避免 dungeon↔boss 循环 import，这里延迟 import boss。
+    返回播报文本行列表（可为空）。
+    """
+    try:
+        import boss as _boss
+    except Exception:
+        return []
+    try:
+        return _boss.on_auto_first_clear(user, layer)
+    except Exception:
+        return []
 
 
 def settle_dungeon(user):
@@ -476,6 +526,16 @@ def settle_dungeon(user):
     cleared = 0
     guard = 0
     report = []
+    # 掉落增益倍率（道具 drop_bonus）：金钱/矿石/草药/特殊（无 buff 则 1.0）
+    try:
+        import consumable as _consumable
+        uid = user.user_id
+        mult_coin = _consumable.drop_bonus(uid, "coin")
+        mult_ore = _consumable.drop_bonus(uid, "material", scope="ore")
+        mult_herb = _consumable.drop_bonus(uid, "material", scope="herb")
+        mult_special = _consumable.drop_bonus(uid, "material", scope="special")
+    except Exception:
+        mult_coin = mult_ore = mult_herb = mult_special = 1.0
     while remaining > 1e-9 and guard < _MAX_SETTLE_LAYERS:
         guard += 1
         total = effective_layer_total(user.dungeon_layer)
@@ -486,25 +546,56 @@ def settle_dungeon(user):
         user.dungeon_progress = prog - speed * layer_time
         remaining -= layer_time
         if user.dungeon_progress <= 1e-9 and remaining > 1e-9:
-            bt = boss_type(user.dungeon_layer)  # 刚通关的这层
-            user.dungeon_layer += 1
-            user.dungeon_progress = effective_layer_total(user.dungeon_layer)
-            cleared += 1
-            if bt:
-                # 通关 Boss 层：掉落（通关瞬间结算）
-                drops = _roll_boss_drop(user, user.dungeon_layer - 1, bt)
-                if drops:
-                    report.append(f"🎉 通关 第{user.dungeon_layer - 1}层 {_BOSS_NAME.get(bt, bt)}！" + "；".join(drops))
+            cleared_layer = user.dungeon_layer  # 刚通关的这层
+            bt = boss_type(cleared_layer)
+            if cleared_layer >= DUNGEON_MAX_LAYER:
+                # —— 封顶层（3600）：不再向更高层推进 ——
+                if not user.dungeon_capped:
+                    # 首次通关 3600：晋 T7 依据达成（历史最高层=3600），给一次最终 Boss 掉落
+                    user.dungeon_capped = 1
+                    cleared += 1
+                    if bt:
+                        drops = _roll_boss_drop(user, cleared_layer, bt)
+                        if drops:
+                            report.append(f"🎉 通关 第{cleared_layer}层 {_BOSS_NAME.get(bt, bt)}（封顶）！" + "；".join(drops))
+                # 命名 Boss 自动推进首通（100/200/…/3600 守关层）→ boss 材料（未首通才给）
+                _auto_lines = _auto_named_boss_first(user, cleared_layer)
+                if _auto_lines:
+                    report.append("；".join(_auto_lines))
+                # 驻留：进度重置为满值，收益（铜币/矿石/材料）持续产出；不再推进、不再重复触发 Boss 掉落
+                user.dungeon_progress = effective_layer_total(DUNGEON_MAX_LAYER)
+            else:
+                user.dungeon_layer += 1
+                user.dungeon_progress = effective_layer_total(user.dungeon_layer)
+                cleared += 1
+                if bt:
+                    # 通关 Boss 层：掉落（通关瞬间结算）
+                    drops = _roll_boss_drop(user, cleared_layer, bt)
+                    if drops:
+                        report.append(f"🎉 通关 第{cleared_layer}层 {_BOSS_NAME.get(bt, bt)}！" + "；".join(drops))
+                # 命名 Boss 自动推进首通（100/200/…/3600 守关层）→ boss 材料（未首通才给）
+                _auto_lines = _auto_named_boss_first(user, cleared_layer)
+                if _auto_lines:
+                    report.append("；".join(_auto_lines))
 
+    coins *= mult_coin                       # 金钱掉落增益
     coin_int = int(coins)
     if coin_int > 0:
         user.copper += coin_int
         user.dungeon_coins_earned += coin_int
         user.dungeon_run_coins += coin_int
-        coins -= coin_int
+        coins -= coin_int                    # 保留 <1 铜币小数（mult=1 时与原逻辑一致）
     user.dungeon_coin_acc = coins
     user.dungeon_cleared += cleared
     user.dungeon_last_update = now
+
+    # 层数型 BUFF（v8）：本结算推进 cleared 层 → 扣减各层数型 buff 的剩余层数（耗尽即清理）
+    if cleared > 0:
+        try:
+            import consumable as _consumable
+            _consumable.consume_layers(user.user_id, cleared)
+        except Exception:
+            pass
 
     # 稀有矿石结算（400 层以上资格；每 15 分钟一个周期，余数直接丢弃）
     if user.dungeon_ore_eligible and user.dungeon_ore_last:
@@ -517,9 +608,38 @@ def settle_dungeon(user):
                 oid = ore.roll_ore(layer_now)
                 if oid:
                     gained[oid] = gained.get(oid, 0) + 1
+            # 矿石掉率增益（采掘符 scope=ore）
+            if mult_ore > 1.0 and gained:
+                gained = {oid: max(1, int(cnt * mult_ore)) for oid, cnt in gained.items()}
             user.dungeon_ore_last = now   # 不足一周期的时间直接丢弃
             if gained:
                 ore.grant_ores(user.user_id, gained)
+
+    # 草药结算（≥150 层资格；与矿石同周期并列，互不抢占）
+    if user.dungeon_herb_eligible and user.dungeon_herb_last:
+        dt_herb = now - user.dungeon_herb_last
+        herb_cycles = int(dt_herb // material.HERB_CYCLE_SECONDS)
+        if herb_cycles > 0:
+            layer_now = max(user.dungeon_layer, 1)
+            h_gained = {}
+            for _ in range(herb_cycles):
+                hmid = material.roll_herb(layer_now)
+                if hmid:
+                    h_gained[hmid] = h_gained.get(hmid, 0) + 1
+            # 草药掉率增益（采药符 scope=herb）
+            if mult_herb > 1.0 and h_gained:
+                h_gained = {hmid: max(1, int(cnt * mult_herb)) for hmid, cnt in h_gained.items()}
+            user.dungeon_herb_last = now
+            if h_gained:
+                material.grant_materials(user.user_id, h_gained)
+                if report is None:
+                    pass
+                names = []
+                for hmid, cnt in h_gained.items():
+                    hm = material.material_meta(hmid)
+                    names.append(f"{hm['name'] if hm else hmid}×{cnt}")
+                if names:
+                    report.append("🌿 材料掉落：" + "、".join(names))
 
     if report:
         _queue_boss_report(user.user_id, report)

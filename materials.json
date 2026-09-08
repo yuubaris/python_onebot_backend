@@ -1,0 +1,17 @@
+{
+  "materials": [
+    {"id": "herb_bloodgrass", "name": "止血草", "category": "herb", "rarity": "common"},
+    {"id": "herb_wakeflower", "name": "醒神花", "category": "herb", "rarity": "common"},
+    {"id": "herb_moonmushroom", "name": "月光菇", "category": "herb", "rarity": "rare"},
+    {"id": "herb_dragonblood", "name": "龙血草", "category": "herb", "rarity": "legendary"},
+    {"id": "special_beastsoul", "name": "兽魂结晶", "category": "special", "rarity": "common"},
+    {"id": "special_element", "name": "元素之心", "category": "special", "rarity": "rare"},
+    {"id": "special_relic", "name": "古神残片", "category": "special", "rarity": "legendary"},
+    {"id": "boss_wolf", "name": "狼王灰鬃", "category": "boss", "rarity": "rare"},
+    {"id": "boss_magma", "name": "磐岩心核", "category": "boss", "rarity": "rare"},
+    {"id": "boss_bone", "name": "尸皇骨匣", "category": "boss", "rarity": "legendary"},
+    {"id": "boss_frost", "name": "霜语结晶", "category": "boss", "rarity": "legendary"},
+    {"id": "boss_ember", "name": "烬鳞龙鳞", "category": "boss", "rarity": "legendary"},
+    {"id": "boss_wangua", "name": "万瓜圣辉", "category": "boss", "rarity": "myth"}
+  ]
+}

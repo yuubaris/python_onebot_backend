@@ -1,0 +1,703 @@
+{
+  "consumables": [
+    {
+      "id": "potion_atk_1",
+      "name": "狂攻药水Ⅰ",
+      "kind": "potion",
+      "level": 1,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "attack": 15
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_atk_2",
+      "name": "狂攻药水Ⅱ",
+      "kind": "potion",
+      "level": 2,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "attack": 40
+        },
+        "duration": {
+          "type": "layers",
+          "value": 200
+        }
+      }
+    },
+    {
+      "id": "potion_atk_3",
+      "name": "狂攻药水Ⅲ",
+      "kind": "potion",
+      "level": 3,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "attack": 90
+        },
+        "duration": {
+          "type": "layers",
+          "value": 300
+        }
+      }
+    },
+    {
+      "id": "potion_atk_4",
+      "name": "狂攻药水Ⅳ",
+      "kind": "potion",
+      "level": 4,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "attack": 160
+        },
+        "duration": {
+          "type": "layers",
+          "value": 400
+        }
+      }
+    },
+    {
+      "id": "potion_atk_5",
+      "name": "狂攻药水Ⅴ",
+      "kind": "potion",
+      "level": 5,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "attack": 260
+        },
+        "duration": {
+          "type": "layers",
+          "value": 500
+        }
+      }
+    },
+    {
+      "id": "potion_int_1",
+      "name": "凝神药水Ⅰ",
+      "kind": "potion",
+      "level": 1,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "intelligence": 15
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_int_2",
+      "name": "凝神药水Ⅱ",
+      "kind": "potion",
+      "level": 2,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "intelligence": 40
+        },
+        "duration": {
+          "type": "layers",
+          "value": 200
+        }
+      }
+    },
+    {
+      "id": "potion_int_3",
+      "name": "凝神药水Ⅲ",
+      "kind": "potion",
+      "level": 3,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "intelligence": 90
+        },
+        "duration": {
+          "type": "layers",
+          "value": 300
+        }
+      }
+    },
+    {
+      "id": "potion_int_4",
+      "name": "凝神药水Ⅳ",
+      "kind": "potion",
+      "level": 4,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "intelligence": 160
+        },
+        "duration": {
+          "type": "layers",
+          "value": 400
+        }
+      }
+    },
+    {
+      "id": "potion_int_5",
+      "name": "凝神药水Ⅴ",
+      "kind": "potion",
+      "level": 5,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "intelligence": 260
+        },
+        "duration": {
+          "type": "layers",
+          "value": 500
+        }
+      }
+    },
+    {
+      "id": "potion_mp_1",
+      "name": "魔涌药水Ⅰ",
+      "kind": "potion",
+      "level": 1,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "mp": 12
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_mp_2",
+      "name": "魔涌药水Ⅱ",
+      "kind": "potion",
+      "level": 2,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "mp": 30
+        },
+        "duration": {
+          "type": "layers",
+          "value": 200
+        }
+      }
+    },
+    {
+      "id": "potion_mp_3",
+      "name": "魔涌药水Ⅲ",
+      "kind": "potion",
+      "level": 3,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "mp": 70
+        },
+        "duration": {
+          "type": "layers",
+          "value": 300
+        }
+      }
+    },
+    {
+      "id": "potion_mp_4",
+      "name": "魔涌药水Ⅳ",
+      "kind": "potion",
+      "level": 4,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "mp": 120
+        },
+        "duration": {
+          "type": "layers",
+          "value": 400
+        }
+      }
+    },
+    {
+      "id": "potion_mp_5",
+      "name": "魔涌药水Ⅴ",
+      "kind": "potion",
+      "level": 5,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "mp": 200
+        },
+        "duration": {
+          "type": "layers",
+          "value": 500
+        }
+      }
+    },
+    {
+      "id": "potion_def_1",
+      "name": "坚壁药水Ⅰ",
+      "kind": "potion",
+      "level": 1,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "defense": 20
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_def_2",
+      "name": "坚壁药水Ⅱ",
+      "kind": "potion",
+      "level": 2,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "defense": 50
+        },
+        "duration": {
+          "type": "layers",
+          "value": 200
+        }
+      }
+    },
+    {
+      "id": "potion_def_3",
+      "name": "坚壁药水Ⅲ",
+      "kind": "potion",
+      "level": 3,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "defense": 110
+        },
+        "duration": {
+          "type": "layers",
+          "value": 300
+        }
+      }
+    },
+    {
+      "id": "potion_def_4",
+      "name": "坚壁药水Ⅳ",
+      "kind": "potion",
+      "level": 4,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "defense": 190
+        },
+        "duration": {
+          "type": "layers",
+          "value": 400
+        }
+      }
+    },
+    {
+      "id": "potion_def_5",
+      "name": "坚壁药水Ⅴ",
+      "kind": "potion",
+      "level": 5,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "defense": 300
+        },
+        "duration": {
+          "type": "layers",
+          "value": 500
+        }
+      }
+    },
+    {
+      "id": "potion_hp_1",
+      "name": "血源药水Ⅰ",
+      "kind": "potion",
+      "level": 1,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "hp": 25
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_hp_2",
+      "name": "血源药水Ⅱ",
+      "kind": "potion",
+      "level": 2,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "hp": 60
+        },
+        "duration": {
+          "type": "layers",
+          "value": 200
+        }
+      }
+    },
+    {
+      "id": "potion_hp_3",
+      "name": "血源药水Ⅲ",
+      "kind": "potion",
+      "level": 3,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "hp": 130
+        },
+        "duration": {
+          "type": "layers",
+          "value": 300
+        }
+      }
+    },
+    {
+      "id": "potion_hp_4",
+      "name": "血源药水Ⅳ",
+      "kind": "potion",
+      "level": 4,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "hp": 220
+        },
+        "duration": {
+          "type": "layers",
+          "value": 400
+        }
+      }
+    },
+    {
+      "id": "potion_hp_5",
+      "name": "血源药水Ⅴ",
+      "kind": "potion",
+      "level": 5,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "hp": 350
+        },
+        "duration": {
+          "type": "layers",
+          "value": 500
+        }
+      }
+    },
+    {
+      "id": "potion_agi_1",
+      "name": "疾风药水Ⅰ",
+      "kind": "potion",
+      "level": 1,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "agility": 10
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_agi_2",
+      "name": "疾风药水Ⅱ",
+      "kind": "potion",
+      "level": 2,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "agility": 25
+        },
+        "duration": {
+          "type": "layers",
+          "value": 200
+        }
+      }
+    },
+    {
+      "id": "potion_agi_3",
+      "name": "疾风药水Ⅲ",
+      "kind": "potion",
+      "level": 3,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "agility": 60
+        },
+        "duration": {
+          "type": "layers",
+          "value": 300
+        }
+      }
+    },
+    {
+      "id": "potion_agi_4",
+      "name": "疾风药水Ⅳ",
+      "kind": "potion",
+      "level": 4,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "agility": 110
+        },
+        "duration": {
+          "type": "layers",
+          "value": 400
+        }
+      }
+    },
+    {
+      "id": "potion_agi_5",
+      "name": "疾风药水Ⅴ",
+      "kind": "potion",
+      "level": 5,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "agility": 180
+        },
+        "duration": {
+          "type": "layers",
+          "value": 500
+        }
+      }
+    },
+    {
+      "id": "tool_coin_1",
+      "name": "聚财符Ⅰ",
+      "kind": "tool",
+      "level": 1,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "coin",
+        "mult": 1.2,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_coin_2",
+      "name": "聚财符Ⅱ",
+      "kind": "tool",
+      "level": 2,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "coin",
+        "mult": 1.4,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_coin_3",
+      "name": "聚财符Ⅲ",
+      "kind": "tool",
+      "level": 3,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "coin",
+        "mult": 1.6,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_equip_2",
+      "name": "寻宝符Ⅱ",
+      "kind": "tool",
+      "level": 2,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "equipment",
+        "mult": 1.3,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_equip_3",
+      "name": "寻宝符Ⅲ",
+      "kind": "tool",
+      "level": 3,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "equipment",
+        "mult": 1.5,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_ore_1",
+      "name": "采掘符Ⅰ",
+      "kind": "tool",
+      "level": 1,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "material",
+        "scope": "ore",
+        "mult": 1.3,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_ore_2",
+      "name": "采掘符Ⅱ",
+      "kind": "tool",
+      "level": 2,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "material",
+        "scope": "ore",
+        "mult": 1.5,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_ore_3",
+      "name": "采掘符Ⅲ",
+      "kind": "tool",
+      "level": 3,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "material",
+        "scope": "ore",
+        "mult": 1.8,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_herb_1",
+      "name": "采药符Ⅰ",
+      "kind": "tool",
+      "level": 1,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "material",
+        "scope": "herb",
+        "mult": 1.3,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_herb_2",
+      "name": "采药符Ⅱ",
+      "kind": "tool",
+      "level": 2,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "material",
+        "scope": "herb",
+        "mult": 1.5,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_herb_3",
+      "name": "采药符Ⅲ",
+      "kind": "tool",
+      "level": 3,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "material",
+        "scope": "herb",
+        "mult": 1.8,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_special_2",
+      "name": "祈灵符Ⅱ",
+      "kind": "tool",
+      "level": 2,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "material",
+        "scope": "special",
+        "mult": 1.4,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_special_3",
+      "name": "祈灵符Ⅲ",
+      "kind": "tool",
+      "level": 3,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "material",
+        "scope": "special",
+        "mult": 1.7,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    },
+    {
+      "id": "tool_all_3",
+      "name": "万象符Ⅲ",
+      "kind": "tool",
+      "level": 3,
+      "effect": {
+        "type": "drop_bonus",
+        "bonus_type": "material",
+        "scope": "all",
+        "mult": 1.5,
+        "duration": {
+          "type": "time",
+          "value": 1800
+        }
+      }
+    }
+  ]
+}

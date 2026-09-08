@@ -53,6 +53,11 @@ class User(db.Model):
     # 地下城稀有矿石（400 层以上）：进入时资格快照 + 上次矿石结算时间戳
     dungeon_ore_eligible = db.Column(db.Integer, default=0, nullable=False)  # 本轮是否有矿石资格
     dungeon_ore_last = db.Column(db.Float, nullable=True)                    # 上次矿石结算时间戳
+    # 地下城封顶（v8）：是否已通关 3600 封顶层（晋 T7 依据）；通关后驻留 3600 层持续产出收益
+    dungeon_capped = db.Column(db.Integer, default=0, nullable=False)
+    # 地下城草药（v8）：进入时层数 ≥150 获得草药周期资格（与矿石周期并列、互不抢占）
+    dungeon_herb_eligible = db.Column(db.Integer, default=0, nullable=False)
+    dungeon_herb_last = db.Column(db.Float, nullable=True)                    # 上次草药结算时间戳
     # 职业与阶级（装备系统 v3）：profession=职业标识(空=未转职)；tier=当前阶级(0~6，默认0)
     profession = db.Column(db.String(32), default="", nullable=False)
     tier = db.Column(db.Integer, default=0, nullable=False)
@@ -134,4 +139,60 @@ class CheckinRecord(db.Model):
     checkin_date = db.Column(db.Date, index=True)
     streak_after = db.Column(db.Integer, default=0)   # 本次签到后的连续天数
     reward = db.Column(db.BigInteger, default=0)      # 本次奖励（铜币）
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+
+class UserMaterial(db.Model):
+    """用户材料持有量（草药/特殊物品/boss 材料；属性在 materials.json 中维护）。"""
+    __tablename__ = "user_material"
+    __table_args__ = (db.UniqueConstraint("user_id", "material_id", name="uq_user_material"),)
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.BigInteger, index=True, nullable=False)
+    material_id = db.Column(db.String(64), nullable=False)   # 对应 materials.json 中的 id
+    count = db.Column(db.Integer, default=0, nullable=False)
+
+
+class UserConsumable(db.Model):
+    """用户炼金产物持有量（药水/道具；属性在 consumables.json 中维护）。"""
+    __tablename__ = "user_consumable"
+    __table_args__ = (db.UniqueConstraint("user_id", "item_id", name="uq_user_consumable"),)
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.BigInteger, index=True, nullable=False)
+    item_id = db.Column(db.String(64), nullable=False)   # 对应 consumables.json 中的 id
+    count = db.Column(db.Integer, default=0, nullable=False)
+
+
+class UserBoss(db.Model):
+    """玩家 × 命名守关 Boss 的进度：首通日期 / 永久累计成功次数 / 当日挑战计数。"""
+    __tablename__ = "user_boss"
+    __table_args__ = (db.UniqueConstraint("user_id", "boss_id", name="uq_user_boss"),)
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.BigInteger, index=True, nullable=False)
+    boss_id = db.Column(db.String(64), nullable=False)        # 对应 bosses.json 中的 id
+    first_clear_date = db.Column(db.String(10), default="", nullable=False)  # YYYY-MM-DD 首通日
+    total_wins = db.Column(db.Integer, default=0, nullable=False)   # 永久累计成功次数（跨日不清零）
+    fight_date = db.Column(db.String(10), default="", nullable=False)  # 最近挑战日 YYYY-MM-DD
+    fight_count = db.Column(db.Integer, default=0, nullable=False)     # 当日已挑战次数
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+
+class UserBuff(db.Model):
+    """生效中的 BUFF（药水属性 / 道具掉落增益）。
+
+    effect_json 快照产物效果（含 duration 口径）；过期二选一：
+    - 时间型：expire_ts 时间戳到期；
+    - 层数型：start_layer 起始层 + remain_layers 剩余可推进层数（dungeon 结算时扣减）。
+    """
+    __tablename__ = "user_buff"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.BigInteger, index=True, nullable=False)
+    item_id = db.Column(db.String(64), nullable=False)      # 对应 consumables.json 中的 id
+    effect_json = db.Column(db.Text, default="{}", nullable=False)  # 效果快照
+    expire_ts = db.Column(db.Float, nullable=True)          # 时间型到期时间戳
+    start_layer = db.Column(db.Integer, nullable=True)      # 层数型起始层
+    remain_layers = db.Column(db.Integer, nullable=True)    # 层数型剩余层数
     created_at = db.Column(db.DateTime, default=datetime.now)

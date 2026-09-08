@@ -41,7 +41,11 @@ from dungeon import (
 )
 from kick import check_cooldown, mark_cooldown, build_kick_image, build_beat_image, build_jue_image, build_dalao_image
 import ore
+import material
 import forge
+import boss
+import alchemy
+import consumable
 
 # 未知指令触发阈值：累计超过该次数后，发送 beat.jpeg 且不再响应该用户的未知指令
 UNKNOWN_LIMIT = 3
@@ -196,6 +200,25 @@ def cmd_bag(user, group_id, args, at_qqs=None):
         _ore_mark = {"myth": "★", "legendary": "✦", "rare": "◆", "common": "·"}
         for o in ores:
             lines.append(f"{_ore_mark.get(o['rarity'], '·')} {o['name']} ×{o['count']}")
+    # 材料展示（草药/特殊/boss 材料）
+    mats = material.owned_materials(user.user_id)
+    if mats:
+        lines.append("—— 🧪 材料 ——")
+        _cat_name = {"herb": "草药", "special": "特殊", "boss": "Boss材料"}
+        _mat_mark = {"myth": "★", "legendary": "✦", "rare": "◆", "common": "·"}
+        cur_cat = None
+        for m in mats:
+            if m["category"] != cur_cat:
+                cur_cat = m["category"]
+                lines.append(f"· {_cat_name.get(cur_cat, cur_cat)}：")
+            lines.append(f"  {_mat_mark.get(m['rarity'], '·')} {m['name']} ×{m['count']}")
+    # 炼金产物（药水/道具）
+    cons = consumable.owned_consumables(user.user_id)
+    if cons:
+        lines.append("—— ⚗️ 药水/道具 ——")
+        for it in cons:
+            kind = "药水" if it["kind"] == "potion" else "道具"
+            lines.append(f"· {it['name']}（{kind} Lv{it['level']}）×{it['count']}")
     lines.append(f"当前资产：{format_currency(user.copper)}")
     return "\n".join(lines)
 
@@ -512,15 +535,20 @@ def cmd_sell(user, group_id, args, at_qqs=None):
 # ---------- 地下城 ----------
 
 def _set_ore_entry_state(user, layer):
-    """进入地下城时快照矿石资格：当前层数 > 400 本轮可掉落矿石（进入时判定，本轮有效）。"""
+    """进入地下城时快照掉落资格：矿石 >400 层；草药 ≥150 层（进入时判定，本轮有效）。"""
     user.dungeon_ore_eligible = 1 if layer > ore.ORE_MIN_LAYER else 0
     user.dungeon_ore_last = time.time()
+    user.dungeon_herb_eligible = 1 if layer >= material.HERB_MIN_LAYER else 0
+    user.dungeon_herb_last = time.time()
 
 
 def _ore_entry_note(layer):
+    notes = []
     if layer > ore.ORE_MIN_LAYER:
-        return "\n💎 你已解锁稀有矿石掉落（每 15 分钟一个结算周期）！"
-    return ""
+        notes.append("💎 已解锁稀有矿石掉落（每 15 分钟一个结算周期）！")
+    if layer >= material.HERB_MIN_LAYER:
+        notes.append("🌿 已解锁草药采集（每 15 分钟一个结算周期）！")
+    return ("\n" + "\n".join(notes)) if notes else ""
 
 
 def _dungeon_enter(user):
@@ -615,9 +643,11 @@ def _dungeon_exit(user):
     user.dungeon_last_update = None
     user.dungeon_coin_acc = 0.0
     user.dungeon_run_coins = 0
-    # 退出后矿石资格作废，下次进入重新判定
+    # 退出后矿石/草药资格作废，下次进入重新判定
     user.dungeon_ore_eligible = 0
     user.dungeon_ore_last = None
+    user.dungeon_herb_eligible = 0
+    user.dungeon_herb_last = None
     db.session.commit()
     return (f"🚪 你已离开地下城（第 {layer} 层，剩余进度 {progress:.0f}）。\n"
             f"进度已保存，下次 /地下城 进入 可从第 {layer} 层继续冒险。\n"
@@ -654,9 +684,12 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/出售 商品名 [商品名...] - 批量出售装备（购买价 60%）\n"
             "/转职 战士|魔法师 - 选择职业（切换职业）\n"
             "/晋升 - 按地下城进度+货币提升阶级\n"
-            "/地下城 进入/状态/退出 - 地下城冒险（10/50/100 层 Boss 掉落）\n"
+            "/地下城 进入/状态/退出 - 地下城冒险（10/50/100 层 Boss 掉落；最高 3600 层）\n"
             "/铁匠铺 - 查看锻造配方（400 层解锁，超越武器库顶级）\n"
             "/锻造 装备名 - 消耗铜币+矿石制作装备（需职业/阶级符合）\n"
+            "/boss 列表 / boss 挑战 Boss名 - 守关 Boss 挑战（每日各 3 次，首通必出 Boss 材料）\n"
+            "/炼金 [配方名] - 查看/制作药水·道具（消耗材料+矿石）\n"
+            "/使用 物品名 - 使用药水/道具生效\n"
             "/挑战 @对方 - 发起对战（随机胜负，每天 3 次）\n"
             "/踢 @对方 - 生成踢人图（30 秒冷却）\n"
             "/撅 @对方 - 生成撅人 GIF（30 秒冷却）\n"
@@ -854,6 +887,71 @@ def cmd_lao(user, group_id, args, at_qqs=None):
         "target": target,
         "group_id": group_id,
     }
+
+
+# ---------- Boss 挑战（/boss 列表 / 挑战 <名>） ----------
+
+def cmd_boss(user, group_id, args, at_qqs=None):
+    """/boss：列表查看 / 挑战指定守关 Boss（每日 3 次 / 成功率按装备强度）。"""
+    arg = (args or "").strip()
+    low = arg.lower()
+    if low.startswith("挑战") or low.startswith("fight") or low.startswith("challenge"):
+        # /boss 挑战 <Boss名> 或 /挑战 boss名（兼容）
+        parts = arg.split(maxsplit=1)
+        name = parts[1].strip() if len(parts) > 1 else parts[0][2:].strip()
+        if not name:
+            return "用法：/boss 挑战 <Boss名>（如 /boss 挑战 裂风狼王·灰鬃）"
+        target = boss.find_boss(name)
+        if target is None:
+            hits = boss.suggest_bosses(name)
+            hint = f"，你是不是想挑战：{'、'.join(h['name'] for h in hits)}" if hits else ""
+            return f"没有「{name}」这个 Boss{hint}\n发送 /boss 列表 查看全部守关 Boss。"
+        return boss.challenge_boss(user, target)[0]
+    if low in ("", "列表", "list", "状态", "status", "我的"):
+        return boss.boss_list_text(user)
+    # 直接给 Boss 名 → 当作挑战
+    target = boss.find_boss(arg)
+    if target is None:
+        hits = boss.suggest_bosses(arg)
+        hint = f"，你是不是想挑战：{'、'.join(h['name'] for h in hits)}" if hits else ""
+        return f"没有「{arg}」这个 Boss{hint}\n发送 /boss 列表 查看全部守关 Boss。"
+    return boss.challenge_boss(user, target)[0]
+
+
+# ---------- 炼金（/炼金 [配方名]） ----------
+
+def cmd_alchemy(user, group_id, args, at_qqs=None):
+    """/炼金：查看配方 / 制作药水·道具（消耗材料+矿石+铜币）。"""
+    name = (args or "").strip()
+    if not name:
+        return alchemy.recipe_list_text(user)
+    recipe = alchemy.find_recipe(name)
+    if recipe is None:
+        hits = alchemy.suggest_recipes(name)
+        hint = f"，你是不是想炼：{'、'.join(h['name'] for h in hits)}" if hits else ""
+        return f"炼金铺没有「{name}」配方{hint}\n发送 /炼金 查看全部配方。"
+    return alchemy.forge_recipe(user, recipe)
+
+
+# ---------- 使用（/使用 <物品名>） ----------
+
+def cmd_use(user, group_id, args, at_qqs=None):
+    """/使用 <药水/道具名>：消耗 1 个并生效（药水→属性 BUFF / 道具→掉落增益）。"""
+    name = (args or "").strip()
+    if not name:
+        # 展示持有的炼金物品
+        own = consumable.owned_consumables(user.user_id)
+        if not own:
+            return "你还没有任何药水/道具。先 /炼金 制作，或 /boss 挑战 /地下城 获得材料。"
+        lines = ["🎒 我的炼金物品："]
+        for it in own:
+            kind = "药水" if it["kind"] == "potion" else "道具"
+            lines.append(f"· {it['name']}（{kind} Lv{it['level']}）×{it['count']}")
+        lines.append("—— 用法：/使用 <物品名> 生效 ——")
+        return "\n".join(lines)
+    return consumable.use_by_name(user, name)
+
+
 COMMANDS = {
     "签到": cmd_checkin, "checkin": cmd_checkin, "qiandao": cmd_checkin,
     "余额": cmd_balance, "balance": cmd_balance, "yue": cmd_balance,
@@ -871,6 +969,9 @@ COMMANDS = {
     "撅": cmd_jue, "jue": cmd_jue,
     "佬": cmd_lao, "lao": cmd_lao,
     "挑战": cmd_challenge, "challenge": cmd_challenge, "tiaozhan": cmd_challenge,
+    "boss": cmd_boss, "bosslist": cmd_boss, "b": cmd_boss,
+    "炼金": cmd_alchemy, "alchemy": cmd_alchemy, "lianjin": cmd_alchemy,
+    "使用": cmd_use, "use": cmd_use, "shiyong": cmd_use,
     "帮助": cmd_help, "help": cmd_help, "bangzhu": cmd_help,
 }
 
@@ -886,7 +987,10 @@ DUNGEON_ALLOWED = {"签到", "checkin", "qiandao",
                    "踢", "kick", "ti",
                    "撅", "jue",
                    "佬", "lao",
-                   "挑战", "challenge", "tiaozhan"}
+                   "挑战", "challenge", "tiaozhan",
+                   "boss", "bosslist", "b",
+                   "炼金", "alchemy", "lianjin",
+                   "使用", "use", "shiyong"}
 
 
 # 会展示“地下城 Boss 战报”的命令 handler：仅自身状态/结算类查看命令

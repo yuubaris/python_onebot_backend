@@ -1,0 +1,22 @@
+{
+  "bosses": [
+    {"id": "boss_l100", "layer": 100,  "name": "裂风狼王·灰鬃",   "tag": "兽王", "material": "boss_wolf",   "tier_cap": 1},
+    {"id": "boss_l200", "layer": 200,  "name": "黑铁魔像·磐岩",   "tag": "魔像", "material": "boss_magma",  "tier_cap": 2},
+    {"id": "boss_l300", "layer": 300,  "name": "幽魂尸皇·枯骨",   "tag": "亡灵", "material": "boss_magma",  "tier_cap": 2},
+    {"id": "boss_l400", "layer": 400,  "name": "霜语巫后·寒霜",   "tag": "巫后", "material": "boss_bone",   "tier_cap": 3},
+    {"id": "boss_l500", "layer": 500,  "name": "赤炎魔龙·烬鳞",   "tag": "巨龙", "material": "boss_bone",   "tier_cap": 3},
+    {"id": "boss_l600", "layer": 600,  "name": "白骨圣主·冥渊",   "tag": "圣骸", "material": "boss_bone",   "tier_cap": 3},
+    {"id": "boss_l700", "layer": 700,  "name": "暗夜霸主·噬星",   "tag": "魔主", "material": "boss_bone",   "tier_cap": 3},
+    {"id": "boss_l800", "layer": 800,  "name": "虚空大君·裂渊",   "tag": "虚空", "material": "boss_frost",  "tier_cap": 4},
+    {"id": "boss_l900", "layer": 900,  "name": "混沌魔尊·灭世",   "tag": "灭世", "material": "boss_frost",  "tier_cap": 4},
+    {"id": "boss_l1000", "layer": 1000, "name": "万古魔主·终焉",   "tag": "究极", "material": "boss_frost",  "tier_cap": 4},
+    {"id": "boss_l1200", "layer": 1200, "name": "荒潮龙王·吞海",   "tag": "龙王", "material": "boss_frost",  "tier_cap": 4},
+    {"id": "boss_l1400", "layer": 1400, "name": "星陨泰坦·裂空",   "tag": "泰坦", "material": "boss_frost",  "tier_cap": 4},
+    {"id": "boss_l1600", "layer": 1600, "name": "焚世炎魔·赤渊",   "tag": "炎魔", "material": "boss_ember",  "tier_cap": 5},
+    {"id": "boss_l1800", "layer": 1800, "name": "天启神官·净世",   "tag": "神官", "material": "boss_ember",  "tier_cap": 5},
+    {"id": "boss_l2000", "layer": 2000, "name": "万劫魔帝·归墟",   "tag": "魔帝", "material": "boss_ember",  "tier_cap": 5},
+    {"id": "boss_l2500", "layer": 2500, "name": "噬界古神·渊灭",   "tag": "古神", "material": "boss_ember",  "tier_cap": 5},
+    {"id": "boss_l3000", "layer": 3000, "name": "寰宇至尊·裂界",   "tag": "至尊", "material": "boss_ember",  "tier_cap": 5},
+    {"id": "boss_l3600", "layer": 3600, "name": "万瓜之主·夕张",   "tag": "最终", "material": "boss_wangua", "tier_cap": 7}
+  ]
+}

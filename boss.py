@@ -1,0 +1,276 @@
+# -*- coding: utf-8 -*-
+"""命名守关 Boss 挑战模块（/boss 列表、/boss 挑战 <名>）。
+
+Boss 数据在 bosses.json（18 个命名守关 Boss：1000 前每100 / 1000 后每200 /
+2000 后每500 / 3600 最终「万瓜之主·夕张」），player 进度记于 user_boss 表。
+
+规则：
+- 解锁：历史最高层 ≥ boss.layer；
+- 成功率：玩家强度 S = dungeon_speed(effective_stats(...))；Boss 基准 B0 =
+  effective_layer_total(layer)/3600；p = clamp(0.03, 0.97, x^3/(1+x^3))，x=S/B0；
+- 每日 3 次 / Boss（按日期重置，胜败均扣）；
+- 掉落：Boss 材料 首通必出、重复成功固定 60%（不随次数递减）；
+  铜币 = 基准×max(0.2, 0.8^n)；稀有掉率 = 基础×max(0.1, 0.8^n)（n=累计成功次数，
+  永久递减跨日不清零）；稀有 tier ≤ min(玩家阶级, boss.tier_cap)（低级 Boss 只掉低级装）；
+- 自动推进首通：settle_dungeon 经过命名 Boss 层且首次击破 → 给 Boss 材料一次（dungeon 调用）。
+"""
+import json
+import os
+import random
+import time
+from datetime import datetime
+
+from models import db, UserBoss
+import material
+import dungeon
+
+BOSSES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bosses.json")
+
+BOSS_DAILY_LIMIT = 3          # 每 Boss 每日挑战次数
+REPEAT_DROP_RATE = 0.60       # 重复挑战成功时 Boss 材料随机掉率（不随次数递减）
+COIN_DECAY_BASE = 0.8         # 铜币永久衰减速率
+COIN_DECAY_FLOOR = 0.2        # 铜币衰减下限
+RARE_DECAY_BASE = 0.8         # 稀有掉率永久衰减速率
+RARE_DECAY_FLOOR = 0.1        # 稀有掉率衰减下限
+RARE_BASE_RATE = 1.0          # 挑战稀有基础掉率（大Boss级，首次 100%）
+
+_cache = {"mtime": None, "bosses": [], "by_id": {}, "by_name": {}, "by_layer": {}}
+
+
+def load_bosses(force=False):
+    """读取命名守关 Boss 列表（带 mtime 缓存）。"""
+    mtime = os.path.getmtime(BOSSES_FILE)
+    if not force and _cache["mtime"] == mtime:
+        return _cache["bosses"]
+    with open(BOSSES_FILE, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    bosses = data.get("bosses", [])
+    _cache["mtime"] = mtime
+    _cache["bosses"] = bosses
+    _cache["by_id"] = {b["id"]: b for b in bosses}
+    _cache["by_name"] = {b["name"]: b for b in bosses}
+    _cache["by_layer"] = {int(b["layer"]): b for b in bosses}
+    return bosses
+
+
+def all_bosses():
+    """按层升序返回全部命名 Boss。"""
+    return sorted(load_bosses(), key=lambda b: b.get("layer", 0))
+
+
+def find_boss(name_or_id):
+    """按名称/id 精确查找；找不到返回 None（兼容省略 tag 前后空格）。"""
+    load_bosses()
+    key = (name_or_id or "").strip()
+    if not key:
+        return None
+    if key in _cache["by_name"]:
+        return _cache["by_name"][key]
+    if key in _cache["by_id"]:
+        return _cache["by_id"][key]
+    low = key.lower()
+    for iid, b in _cache["by_id"].items():
+        if iid.lower() == low:
+            return b
+    for name, b in _cache["by_name"].items():
+        if name.lower() == low:
+            return b
+    return None
+
+
+def suggest_bosses(keyword, limit=5):
+    """按名称/id 包含关系给建议。"""
+    load_bosses()
+    kw = (keyword or "").strip()
+    if not kw:
+        return []
+    hits = [b for b in _cache["bosses"] if kw in b["name"] or kw in b["id"]]
+    return hits[:limit]
+
+
+def boss_for_layer(layer):
+    """返回指定层（自动推进通关层）对应的命名 Boss；非命名层返回 None。"""
+    load_bosses()
+    return _cache["by_layer"].get(int(layer or 0))
+
+
+def boss_by_id(boss_id):
+    load_bosses()
+    return _cache["by_id"].get(boss_id)
+
+
+def _today():
+    return datetime.now().strftime("%Y-%m-%d")
+
+
+def _get_state(user, boss):
+    """取 (UserBoss, is_new) —— 无记录则建新行（不提交，由调用方 commit）。"""
+    row = db.session.execute(
+        db.select(UserBoss).where(UserBoss.user_id == user.user_id,
+                                  UserBoss.boss_id == boss["id"])
+    ).scalars().first()
+    if row is None:
+        row = UserBoss(user_id=user.user_id, boss_id=boss["id"])
+        db.session.add(row)
+    return row
+
+
+def _success_rate(user, boss):
+    """按当前装备强度计算挑战成功率（0.03 ~ 0.97）。"""
+    S = dungeon.dungeon_speed(dungeon.effective_stats(user, dungeon.owned_items(user)))
+    if S <= 0:
+        S = 1.0
+    layer = int(boss.get("layer", 100))
+    B0 = dungeon.effective_layer_total(layer) / 3600.0
+    if B0 <= 0:
+        B0 = 1.0
+    x = S / B0
+    p = (x ** 3) / (1 + x ** 3)
+    return max(0.03, min(0.97, p))
+
+
+def _coin_bonus(layer, wins):
+    """挑战成功铜币 = 大Boss 40 分钟产币基准 × 永久衰减（n=累计成功次数）。"""
+    base = dungeon._boss_coin_bonus(layer, "major")
+    mult = max(COIN_DECAY_FLOOR, COIN_DECAY_BASE ** wins)
+    return max(1, int(base * mult))
+
+
+def _roll_rare(user, boss, wins):
+    """稀有装备掉落（概率随成功次数永久递减；tier ≤ min(玩家阶级, boss.tier_cap)）。"""
+    if wins and random.random() >= RARE_BASE_RATE * max(RARE_DECAY_FLOOR, RARE_DECAY_BASE ** wins):
+        return None
+    from classes import item_line, LINE_ANY, class_line
+    prof = (user.profession or "") or ""
+    cl = class_line(prof) if prof else None
+    tier_cap = min(user.tier or 0, int(boss.get("tier_cap", 0) or 0))
+    pool = dungeon._load_rare_pool()
+    cand = []
+    for it in pool:
+        line = item_line(it)
+        if cl:
+            if line not in (cl, LINE_ANY):
+                continue
+        elif line != LINE_ANY:
+            continue
+        t = int(it.get("tier", 0) or 0)
+        if t > tier_cap:
+            continue
+        cand.append((it, t))
+    if not cand:
+        return None
+    # 偏向当前可用的最高档（目标 = tier_cap 就近）
+    by_tier = {}
+    for it, t in cand:
+        by_tier.setdefault(t, []).append(it)
+    target = tier_cap
+    while target > 0 and target not in by_tier:
+        target -= 1
+    if target not in by_tier:
+        return None
+    return random.choice(by_tier[target])
+
+
+def on_auto_first_clear(user, layer):
+    """自动推进首次经过命名 Boss 层：未首通则给 Boss 材料并记首通（只给一次）。
+
+    由 dungeon.settle_dungeon 调用；返回播报文本行（可为空）。
+    """
+    boss = boss_for_layer(layer)
+    if boss is None:
+        return []
+    row = _get_state(user, boss)
+    if row.first_clear_date:      # 已首通（挑战或推进）→ 不再给
+        return []
+    row.first_clear_date = _today()
+    material.grant_materials(user.user_id, {boss["material"]: 1})
+    db.session.commit()
+    mm = material.material_meta(boss["material"])
+    mname = mm["name"] if mm else boss["material"]
+    return [f"🎁 通关 {boss['name']}（守关 Boss）首通！获得 Boss 材料：{mname} ×1"]
+
+
+def challenge_boss(user, boss):
+    """挑战指定 Boss：判定 → 结算。返回 (文本, 是否挑战成功)。
+
+    每日 3 次；胜/败都扣次数；掉落按 §1.7 规则。
+    """
+    today = _today()
+    row = _get_state(user, boss)
+    if row.fight_date != today:
+        row.fight_date = today
+        row.fight_count = 0
+    if row.fight_count >= BOSS_DAILY_LIMIT:
+        return f"「{boss['name']}」今日挑战次数已用完（{BOSS_DAILY_LIMIT}/{BOSS_DAILY_LIMIT}），明天再来吧！", False
+    if dungeon.historical_best_layer(user) < int(boss.get("layer", 100)):
+        return f"🔒 挑战「{boss['name']}」需地下城历史最高层 ≥ {boss['layer']} 层（当前 {dungeon.historical_best_layer(user)}）。", False
+
+    p = _success_rate(user, boss)
+    row.fight_count += 1
+    win = random.random() < p
+    if not win:
+        db.session.commit()
+        return (f"⚔️ 挑战 {boss['name']}…胜率 {p * 100:.0f}%\n"
+                f"💀 惜败！今日剩余挑战次数 {BOSS_DAILY_LIMIT - row.fight_count}/{BOSS_DAILY_LIMIT}。"), False
+
+    # —— 胜利结算 ——
+    lines = [f"⚔️ 挑战 {boss['name']}…胜率 {p * 100:.0f}%", "🎉 击败！"]
+    first_clear = not row.first_clear_date
+    if first_clear:
+        row.first_clear_date = today
+    wins = row.total_wins + 1          # 本次成功后累计次数（用于衰减）
+    row.total_wins = wins
+
+    # 铜币（永久递减）
+    bonus = _coin_bonus(int(boss.get("layer", 100)), wins - 1 if not first_clear else 0)
+    user.copper += bonus
+    lines.append(f"💰 +{bonus} 铜币（本 Boss 累计成功 {wins} 次）")
+
+    # Boss 材料：首通必出；重复成功固定 60%（不随次数递减）
+    if first_clear or random.random() < REPEAT_DROP_RATE:
+        material.grant_materials(user.user_id, {boss["material"]: 1})
+        mm = material.material_meta(boss["material"])
+        mname = mm["name"] if mm else boss["material"]
+        lines.append(("🎁 首通奖励 " if first_clear else "🎁 ") + f"Boss 材料：{mname} ×1")
+
+    # 稀有装备（永久递减；低级 Boss 只掉低级稀有）
+    rare = _roll_rare(user, boss, wins - 1 if not first_clear else 0)
+    if rare:
+        from classes import TYPE_NAMES as _tn
+        tn = _tn.get(rare.get("type", "other"), rare.get("type", ""))
+        from models import UserItem
+        db.session.add(UserItem(user_id=user.user_id, item_id=rare["id"], is_new=1))
+        lines.append(f"✦ {rare['name']}({tn}·稀有) new！")
+
+    lines.append(f"今日剩余挑战次数 {BOSS_DAILY_LIMIT - row.fight_count}/{BOSS_DAILY_LIMIT}。")
+    db.session.commit()
+    return "\n".join(lines), True
+
+
+def boss_list_text(user):
+    """/boss 列表：按 T 档/层展示全部命名 Boss（未解锁标锁）。"""
+    today = _today()
+    best = dungeon.historical_best_layer(user)
+    rows = {}
+    for b in all_bosses():
+        st = db.session.execute(
+            db.select(UserBoss).where(UserBoss.user_id == user.user_id,
+                                      UserBoss.boss_id == b["id"])
+        ).scalars().first()
+        rows[b["id"]] = st
+    out = ["🎯 Boss 挑战（每日各 3 次 · 首通必出材料 · 铜币/稀有永久递减）"]
+    for b in all_bosses():
+        st = rows[b["id"]]
+        unlocked = best >= int(b.get("layer", 100))
+        mm = material.material_meta(b["material"])
+        mname = mm["name"] if mm else b["material"]
+        first = "已首通" if (st and st.first_clear_date) else "未首通"
+        if not unlocked:
+            out.append(f"🔒 {b['layer']}层 {b['name']}（{b.get('tag','')}）需历史最高层 ≥ {b['layer']}")
+        else:
+            remain = BOSS_DAILY_LIMIT
+            if st and st.fight_date == today:
+                remain = max(0, BOSS_DAILY_LIMIT - st.fight_count)
+            out.append(f"· {b['layer']}层 {b['name']}（{b.get('tag','')}）[{first}] 剩 {remain}/{BOSS_DAILY_LIMIT} · 材料：{mname}")
+    out.append("—— 用法：/boss 挑战 <Boss名>（如 /boss 挑战 裂风狼王·灰鬃）；/boss 列表 查看 ——")
+    return "\n".join(out)

@@ -115,6 +115,7 @@
     <li><a href="#shop">装备系统（武器库/职业/晋升/稀有）</a></li>
     <li><a href="#dungeon">地下城</a></li>
     <li><a href="#ore">稀有矿石</a></li>
+    <li><a href="#bossalchemy">Boss挑战·材料·炼金</a></li>
     <li><a href="#forge">铁匠铺</a></li>
     <li><a href="#challenge">对战系统</a></li>
     <li><a href="#img">互动图像</a></li>
@@ -176,6 +177,10 @@
     <tr><td><code class="inline">/铁匠铺</code></td><td>查看锻造配方</td><td>400 层开 Lv1，分级至 Lv4@3200</td></tr>
     <tr><td><code class="inline">/锻造 名称</code></td><td>锻造装备</td><td>消耗铜币 + 矿石，不能赊账</td></tr>
     <tr><td><code class="inline">/挑战 @对方</code></td><td>发起对战</td><td>随机胜负，每天 3 次</td></tr>
+    <tr><td><code class="inline">/boss 列表</code></td><td>守关 Boss 列表</td><td>按历史层解锁；各 Boss 首通/今日剩余</td></tr>
+    <tr><td><code class="inline">/boss 挑战 Boss名</code></td><td>挑战守关 Boss</td><td>每日各 3 次；成功率按装备强度；首通必出 Boss 材料；铜币/稀有永久递减</td></tr>
+    <tr><td><code class="inline">/炼金 [配方名]</code></td><td>炼金（药水/道具）</td><td>消耗 材料+矿石+铜币</td></tr>
+    <tr><td><code class="inline">/使用 物品名</code></td><td>使用药水/道具</td><td>药水=属性 BUFF；道具=掉落增益</td></tr>
     <tr><td><code class="inline">/踢 @对方</code></td><td>生成踢人图</td><td>30 秒冷却</td></tr>
     <tr><td><code class="inline">/撅 @对方</code></td><td>生成撅人 GIF</td><td>30 秒冷却，2% 反撅</td></tr>
     <tr><td><code class="inline">/佬 @对方</code></td><td>生成大佬致敬图</td><td>30 秒冷却</td></tr>
@@ -222,8 +227,9 @@
     <tr><td>T4</td><td>苍穹</td><td>800</td><td>~26000</td></tr>
     <tr><td>T5</td><td>神谕</td><td>1600</td><td>45000（武具店封顶）+ 铁匠铺 Lv1/Lv2</td></tr>
     <tr><td>T6</td><td>灭世</td><td>3200</td><td>铁匠铺 Lv3（顶级锻造）</td></tr>
-    <tr><td>T7</td><td>至尊</td><td>5000</td><td>铁匠铺 Lv4（锻造毕业）+ 全属性 +35%</td></tr>
+    <tr><td>T7</td><td>至尊</td><td>3600（通关 3600 达成）</td><td>铁匠铺 Lv4（锻造毕业）+ 全属性 +35%</td></tr>
   </table>
+  <p>🏁 <b>地下城封顶 3600 层</b>：通关 3600 即达成 T7（最高档）；此后不再推进、保留 3600 层驻留，挂机收益（铜币/矿石/材料）持续产出。</p>
   <p>全员一律从 <b>T0 见习</b> 起步；<code class="inline">/晋升</code>：历史最高层达标 + 消耗铜币<b>逐级</b>晋升（老玩家不自动继承，同样从 T0 逐级晋升）。<b>称号提供属性加成</b>：每阶全属性 <b>+5%</b>（T7 封顶 +35%），作用于地下城推进/Boss 通关/状态展示——同装备下高阶称号更强。商店（武器库）顶配 T5=45000 随阶级解锁；<b>铁匠铺按层分级</b>（Lv1@400 → Lv4@3200）为毕业线，锻造顶级供 T6 灭世 / T7 至尊 追装（不再纯称号）；武器库同类装备排一起、低于当前阶级也可购（便于换装）。</p>
 
   <h3>武器库装备（68 件 / 14 档）</h3>
@@ -250,7 +256,7 @@
   <h3>进入条件与限制</h3>
   <ul>
     <li>持有<b>任意 1 件</b>装备即可进入（<code class="inline">/地下城 进入</code>）。</li>
-    <li>进入后除 <code class="inline">/签到</code>、<code class="inline">/地下城</code>（退出/状态）、<code class="inline">/余额</code>、<code class="inline">/背包</code>、<code class="inline">/帮助</code>、<code class="inline">/踢</code>、<code class="inline">/撅</code>、<code class="inline">/佬</code>、<code class="inline">/挑战</code> 外，其余动作一律拒绝。</li>
+    <li>进入后除 <code class="inline">/签到</code>、<code class="inline">/地下城</code>（退出/状态）、<code class="inline">/余额</code>、<code class="inline">/背包</code>、<code class="inline">/帮助</code>、<code class="inline">/踢</code>、<code class="inline">/撅</code>、<code class="inline">/佬</code>、<code class="inline">/挑战</code>、<code class="inline">/boss</code>、<code class="inline">/炼金</code>、<code class="inline">/使用</code>（即时结算，可在地下层内使用）外，其余动作一律拒绝。</li>
     <li>退出时保存进度（层数 + 剩余进度），再次进入可<b>直达续上</b>。</li>
   </ul>
 
@@ -328,6 +334,42 @@
   <div class="formula">传说档概率 = 2% × (层数 / 400)^0.5　上限 30%；神话档 = 0.1% × (层数 / 400)^0.5　上限 1%</div>
   <p>例：401 层传说≈2%、667 层≈2.58%、1600 层≈4%、极高楼层封顶 30%；神话档在普通层为<b>极小惊喜</b>（主要来源仍是大 Boss）。</p>
   <div class="note">矿石用途：铁匠铺锻造材料（战士线金属矿 / 法师线魔力矿 / 饰品全矿物），Boss 关也会即时掉落矿石。</div>
+</section>
+
+<!-- ============ Boss挑战 / 材料 / 炼金 ============ -->
+<section id="bossalchemy">
+  <h2>🎯 Boss 挑战 · 材料 · 炼金（v2.7）</h2>
+  <p>地下城 <b>最高 3600 层</b>（通关 3600 达成 T7，此后驻留 3600 持续产出收益）。新增 <code class="inline">/boss</code>、<code class="inline">/炼金</code>、<code class="inline">/使用</code>。设计详见 <code class="inline">docs/alchemy-boss-consumable-request.md</code>。</p>
+
+  <h3>守关 Boss（bosses.json，18 个）</h3>
+  <p>分布：<b>1000 前每 100 层</b>（100~900）→ <b>1000 究极</b>「万古魔主·终焉」单独冠名 → <b>1000 后每 200</b>（1200/1400/1600/1800）→ <b>2000</b>「万劫魔帝·归墟」独立命名 → <b>2000 后每 500</b>（2500/3000）→ <b>3600 最终</b>「万瓜之主·夕张」。</p>
+  <table>
+    <tr><th>机制</th><th>规则</th></tr>
+    <tr><td>列表 / 挑战</td><td><code class="inline">/boss 列表</code> 按历史最高层解锁展示；<code class="inline">/boss 挑战 Boss名</code> 发起挑战</td></tr>
+    <tr><td>每日次数</td><td>每 Boss 每天 <b>3 次</b>（胜/败均扣，按日期重置）</td></tr>
+    <tr><td>成功率</td><td>按当前装备强度：<span class="formula">S = dungeon_speed(effective_stats)；B0 = 该层血量 / 3600s；p = x³/(1+x³)，x=S/B0</span>（3%~97% 保底/封顶）</td></tr>
+    <tr><td>掉落</td><td>首通<b>必出</b> Boss 材料；重复成功随机 <b>60%</b>（不掉率递减）</td></tr>
+    <tr><td>永久递减</td><td>铜币 <code>×max(0.2, 0.8ⁿ)</code>、稀有掉率 <code>×max(0.1, 0.8ⁿ)</code>（n=该 Boss 累计成功次数，跨日不清零）</td></tr>
+    <tr><td>低级 Boss</td><td>稀有装备 tier ≤ Boss T 档（100 层 Boss 掉不出高阶稀有）</td></tr>
+    <tr><td>自动推进首通</td><td>经过命名 Boss 层首次击破 → 必掉 Boss 材料一次（挑战/推进共用首通标记；重复不再给）</td></tr>
+  </table>
+
+  <h3>地下城材料掉落（materials.json）</h3>
+  <table>
+    <tr><th>类别</th><th>来源</th><th>示例</th></tr>
+    <tr><td>草药 herb</td><td>普通层 <b>≥150 层</b> 周期掉落（15 分钟/次：普通35 / 稀有8 / 传说随层 / 神话极小）</td><td>止血草 / 月光菇 / 龙血草</td></tr>
+    <tr><td>特殊物品 special</td><td>精英 25% / 小Boss 45% / 大Boss 80%</td><td>兽魂结晶 / 元素之心 / 古神残片</td></tr>
+    <tr><td>Boss 材料</td><td><code class="inline">/boss</code> 挑战 + 自动推进首通（按 Boss T 档共料）</td><td>狼王灰鬃 / 万瓜圣辉</td></tr>
+  </table>
+
+  <h3>炼金 / 使用</h3>
+  <p><code class="inline">/炼金</code> 查看配方、<code class="inline">/炼金 配方名</code> 制作：消耗 <b>草药/特殊/Boss 材料 + 矿石 + 铜币</b> → 药水/道具（44 配方种子）。</p>
+  <table>
+    <tr><th>产物</th><th>效果</th><th>等级</th></tr>
+    <tr><td>药水（属性强化）</td><td>狂攻(+攻)/凝神(+智)/魔涌(+魔)/坚壁(+防)/血源(+命)/疾风(+敏)；加成并入有效属性（提升推进与 Boss 胜率）</td><td>Lv1~5，数值递增</td></tr>
+    <tr><td>道具（掉落增益）</td><td>聚财(金钱)/寻宝(装备)/采掘(矿石)/采药(草药)/祈灵(特殊)/万象(材料全加成)</td><td>Lv1~3；稀有道具（寻宝/祈灵/万象）低等级不提供</td></tr>
+  </table>
+  <p>持续：<b>持续 N 层</b>（地下城推进 N 层后失效）或 <b>持续 N 时间</b>（N 秒自然到期）；同名 buff <b>刷新时长</b>（层数型累加、时间型重置）。<code class="inline">/使用 物品名</code> 生效；<code class="inline">/背包</code> 查看材料与药水/道具持有。</p>
 </section>
 
 <!-- ============ 铁匠铺 ============ -->
@@ -492,7 +534,7 @@
     <tr><td>管理页</td><td>Web 前端（群白名单、频率限制、直播/动态监控配置与日志）</td></tr>
     <tr><td>图片合成</td><td>Pillow（圆形裁切 / GIF 多帧 / 坐标贴图）</td></tr>
     <tr><td>监控请求</td><td>CDP（Chrome DevTools Protocol） + curl.exe 降级</td></tr>
-    <tr><td>数据文件</td><td>equipment.json / forge.json / ores.json / rare_drops.json（改数值即生效；classes.py / tiers.py 定义职业与阶级）</td></tr>
+    <tr><td>数据文件</td><td>equipment.json / forge.json / ores.json / rare_drops.json / materials.json / bosses.json / consumables.json / alchemy_recipes.json（改数值即生效；classes.py / tiers.py 定义职业与阶级）</td></tr>
   </table>
   <h3>设计原则</h3>
   <ul>

@@ -718,6 +718,14 @@ def _migrate_schema():
         if "dungeon_ore_last" not in cols:
             conn.execute("ALTER TABLE user ADD COLUMN dungeon_ore_last REAL")
         conn.commit()
+        # 地下城封顶 + 草药（v8）：存量库补列
+        if "dungeon_capped" not in cols:
+            conn.execute("ALTER TABLE user ADD COLUMN dungeon_capped INTEGER DEFAULT 0")
+        if "dungeon_herb_eligible" not in cols:
+            conn.execute("ALTER TABLE user ADD COLUMN dungeon_herb_eligible INTEGER DEFAULT 0")
+        if "dungeon_herb_last" not in cols:
+            conn.execute("ALTER TABLE user ADD COLUMN dungeon_herb_last REAL")
+        conn.commit()
         conn.close()
     except Exception as exc:
         log(f"数据库迁移失败: {exc}")
