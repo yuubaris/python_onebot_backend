@@ -104,6 +104,27 @@ def main():
     print(f"== 同价格档武器/法杖强偏差数: {warn} ==")
     print("提示：>3% 属同档多选等价目标范围外，实施时在数值表中微调；>15% 建议改数值。")
 
+    print()
+    print("== 主手形态检查（weapon/staff 不应『肉装化』：输出词条占比过低、靠防/命撑分）==")
+    # 输出占比 = off / (off + 防2 + 命1.2)。主手应输出主导；<0.35 视为肉装化。
+    # （锻造毕业装数值整体偏高但输出仍主导，不会误报）
+    form_problems = 0
+    for it in eq + forge:
+        if it.get("type") not in ("weapon", "staff"):
+            continue
+        a = it.get("attack", 0); g = it.get("agility", 0)
+        i = it.get("intelligence", 0); m = it.get("mp", 0)
+        d = it.get("defense", 0); h = it.get("hp", 0)
+        off = a * 2 + g * 1.5 + i * 1.25 + m * 1.2
+        denom = off + d * 2 + h * 1.2
+        ratio = off / denom if denom else 0
+        if ratio < 0.35:
+            form_problems += 1
+            print(f"  ❌ {it['name']}（{it.get('type')}）输出占比 {ratio * 100:.0f}%"
+                  f"（攻{a} 敏{g} 智{i} 魔{m} vs 防{d} 命{h}）—— 疑似肉装化")
+    print(f"== 主手形态问题数: {form_problems} ==")
+    print("提示：主手（武器/法杖）应以输出为主，防/命仅少量；超标用 docs/fix_tanky_equipment.py 修复。")
+
 
 if __name__ == "__main__":
     main()
