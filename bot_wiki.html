@@ -347,7 +347,7 @@
     <tr><th>机制</th><th>规则</th></tr>
     <tr><td>列表 / 挑战</td><td><code class="inline">/boss 列表</code> 按历史最高层解锁展示；挑战统一走 <code class="inline">/挑战 &lt;Boss名|层数|称号&gt;</code>（<code class="inline">/boss 挑战 Boss名</code> 仍兼容）</td></tr>
     <tr><td>每日次数</td><td>普通守关（除 1000/2000/3000/3600 外）每日组内 <b>共 3 次</b>（跨 Boss 共享）；大 Boss（1000/2000/3000/3600）每日<b>各 1 次</b>（独立计数）。胜/败均扣，按日期重置</td></tr>
-    <tr><td>成功率</td><td>按当前装备强度：<span class="formula">S = dungeon_speed(effective_stats)；B0 = 该层血量 / 3600s；p = x³/(1+x³)，x=S/B0</span>（3%~97% 保底/封顶）</td></tr>
+    <tr><td>成功率</td><td>按当前装备强度：<span class="formula">S = dungeon_speed(effective_stats)；B0 = 穿满对应装备档的 S ÷ 1.327；p = x³/(1+x³)，x=S/B0</span>（3%~97% 保底/封顶）。<b>Boss 战力锚定装备档</b>：100→商店T1、200~300→T2、400~700→T3、800~1400→T4、1600~2500→T5、<b>3000→锻造Lv3、3600→锻造Lv4</b>（后段对应锻造装难度）——穿满对应装备时胜率≈70%，穿低档装备胜率明显下降（3000 层商店装约 20%，需锻造）</td></tr>
     <tr><td>掉落</td><td>首通<b>必出</b> Boss 材料；重复成功随机 <b>60%</b>（不掉率递减）</td></tr>
     <tr><td>永久递减</td><td>铜币 <code>×max(0.2, 0.8ⁿ)</code>、稀有掉率 <code>×max(0.1, 0.8ⁿ)</code>（n=该 Boss 累计成功次数，跨日不清零）</td></tr>
     <tr><td>低级 Boss</td><td>稀有装备 tier ≤ Boss T 档（100 层 Boss 掉不出高阶稀有）</td></tr>

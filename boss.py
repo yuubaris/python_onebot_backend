@@ -183,7 +183,8 @@ def _success_rate(user, boss):
     if S <= 0:
         S = 1.0
     layer = int(boss.get("layer", 100))
-    B0 = dungeon.effective_layer_total(layer) / 3600.0
+    # 命名 Boss 战力锚点：穿满对应装备档 ≈70% 胜率（3000/3600 对应锻造装难度）
+    B0 = dungeon.named_boss_b0(user, layer) if boss.get("layer") else dungeon.effective_layer_total(layer) / 3600.0
     if B0 <= 0:
         B0 = 1.0
     x = S / B0

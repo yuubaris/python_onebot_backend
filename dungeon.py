@@ -455,6 +455,84 @@ def _grant_boss_rare(user, layer, btype):
 BOSS_COIN_MINUTES = {"elite": 5, "minor": 15, "major": 40}
 
 
+
+# —— 命名 Boss 战力锚点（v2.11.16）——
+# 命名 Boss 不再用「层血量/3600」当 B0，改为锚定「穿满该层对应装备档」的玩家战力，
+# 使穿满对应装备时挑战胜率 ≈ 70%（x = S/B0 = 1.327 → p = 70%）；
+# 3000/3600 后段按「锻造装备」难度锚定（商店装封顶后需锻造补面板）。
+_SHOP_EQ = None
+_FORGE_EQ = None
+
+
+def _load_shop_meta():
+    global _SHOP_EQ
+    if _SHOP_EQ is None:
+        try:
+            _SHOP_EQ = load_equipment()
+        except Exception:
+            _SHOP_EQ = []
+    return _SHOP_EQ
+
+
+def _load_forge_meta():
+    global _FORGE_EQ
+    if _FORGE_EQ is None:
+        try:
+            from forge import load_forges
+            _FORGE_EQ = list(load_forges())
+        except Exception:
+            _FORGE_EQ = []
+    return _FORGE_EQ
+
+
+def _anchor_combo_s(pool, line, tier_max=None, forge_lv=None, title_bonus=1.0):
+    """穿满指定装备池后的 dungeon_speed（商店按 tier≤tier_max / 锻造按 level≤forge_lv；
+    同类型取公式收益最高一件叠加，乘称号加成）。"""
+    best = {}
+    for it in pool:
+        if tier_max is not None and int(it.get('tier', 0)) > tier_max:
+            continue
+        if forge_lv is not None and int(it.get('level', 99)) > forge_lv:
+            continue
+        if item_line(it) not in (line, LINE_ANY):
+            continue
+        score = item_formula_score(it)
+        t = it.get('type', 'other')
+        if t not in best or score > best[t]['score']:
+            best[t] = {'item': it, 'score': score}
+    stats = dict(BASE_STATS)
+    for d in best.values():
+        it = d['item']
+        for k in ('attack', 'mp', 'agility', 'intelligence', 'defense', 'hp'):
+            stats[k] += it.get(k, 0)
+    stats = {k: v * title_bonus for k, v in stats.items()}
+    return dungeon_speed(stats)
+
+
+def named_boss_b0(user, layer):
+    """命名 Boss 基准战力 B0：穿满「该层对应装备档」的玩家挑战胜率 ≈ 70%。
+
+    装备档：100→商店T1、200~300→T2、400~700→T3、800~1400→T4、1600~2500→T5、
+    3000→锻造Lv3、3600→锻造Lv4（后段对应锻造装备难度）。
+    """
+    line = class_line(user.profession)
+    if layer >= 3600:
+        s = _anchor_combo_s(_load_forge_meta(), line, forge_lv=4, title_bonus=_tiers_mod.TIER_ATTR_BONUS[7])
+    elif layer >= 3000:
+        s = _anchor_combo_s(_load_forge_meta(), line, forge_lv=3, title_bonus=_tiers_mod.TIER_ATTR_BONUS[5])
+    elif layer >= 1600:
+        s = _anchor_combo_s(_load_shop_meta(), line, tier_max=5, title_bonus=_tiers_mod.TIER_ATTR_BONUS[5])
+    elif layer >= 800:
+        s = _anchor_combo_s(_load_shop_meta(), line, tier_max=4, title_bonus=_tiers_mod.TIER_ATTR_BONUS[4])
+    elif layer >= 400:
+        s = _anchor_combo_s(_load_shop_meta(), line, tier_max=3, title_bonus=_tiers_mod.TIER_ATTR_BONUS[3])
+    elif layer >= 200:
+        s = _anchor_combo_s(_load_shop_meta(), line, tier_max=2, title_bonus=_tiers_mod.TIER_ATTR_BONUS[2])
+    else:
+        s = _anchor_combo_s(_load_shop_meta(), line, tier_max=1, title_bonus=_tiers_mod.TIER_ATTR_BONUS[1])
+    return max(1.0, s / 1.327)   # x = S/B0 = 1.327 → p = x³/(1+x³) = 70%
+
+
 def _boss_coin_bonus(layer, btype):
     """通关某 Boss 层的额外铜币奖励（即时入账，不随挂机 coins 小数累积）。"""
     rate = coin_rate_per_sec(layer)                    # (1/60) × n^0.6 铜/秒
