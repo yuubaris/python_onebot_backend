@@ -368,5 +368,5 @@ def boss_list_text(user):
                 out.append(f"🔒 {b['layer']}层 {b['name']}（{b.get('tag','')}）需历史最高层 ≥ {b['layer']}")
             else:
                 out.append(f"· {b['layer']}层 {b['name']}（{b.get('tag','')}）[{first}] · 材料：{mname}{suffix}")
-    out.append("—— 用法：/boss 挑战 <Boss名>（如 /boss 挑战 裂风狼王·灰鬃）；/boss 列表 查看 ——")
+    out.append("—— 用法：/挑战 <Boss名|层数|称号>（如 /挑战 裂风狼王 / 挑战 1000层）；/挑战 列表 查看 ——")
     return "\n".join(out)

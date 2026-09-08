@@ -763,7 +763,7 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/boss 列表 - 查看守关 Boss（挑战统一走 /挑战 <Boss名|层数|称号>；普通每日共 3 次 / 1000·2000·3000·3600 每日各 1 次，首通必出 Boss 材料）\n"
             "/炼金 [配方名] - 查看/制作药水·道具（消耗材料+矿石）\n"
             "/使用 物品名 - 使用药水/道具(药水/道具各同时仅一种, 新用替换并刷新时长)\n"
-            "/挑战 @对方 / <Boss名|层数|称号> - 玩家对战 或 Boss 挑战（如 挑战 裂风狼王 / 挑战 1000层 / 挑战 究极）\n"
+            "/挑战 @对方 / 列表 / <Boss名|层数|称号> - 玩家对战 · Boss 清单 · Boss 挑战（如 挑战 1000层）\n"
             "/踢 @对方 - 生成踢人图（30 秒冷却）\n"
             "/撅 @对方 - 生成撅人 GIF（30 秒冷却）\n"
             "/佬 @对方 - 生成大佬致敬图（30 秒冷却）\n"
@@ -849,8 +849,10 @@ def cmd_challenge(user, group_id, args, at_qqs=None):
     text = (args or "").strip()
     if not text:
         return ("用法：/挑战 @对方（玩家对战，每天 3 次）\n"
-                "/挑战 <Boss名|层数|称号>（如 挑战 裂风狼王 / 挑战 1000层 / 挑战 究极）\n"
-                "/boss 列表 查看全部守关 Boss。")
+                "/挑战 列表 - 查看 Boss 清单与今日剩余次数\n"
+                "/挑战 <Boss名|层数|称号>（如 挑战 裂风狼王 / 挑战 1000层 / 挑战 究极）")
+    if text.lower() in ("列表", "list", "清单", "all", "全部"):
+        return boss.boss_list_text(user)
     boss_obj = boss.find_boss(text)
     if boss_obj:
         return boss.challenge_boss(user, boss_obj)[0]
