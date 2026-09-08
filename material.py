@@ -5,10 +5,10 @@
 数据库 user_material 表只记录持有 id 与数量（镜像 ore.py）。
 
 掉落（与矿石平行、互不抢占）：
-- 草药 herb：普通层周期结算（入口层 ≥150，15 分钟一周期）——
-  普通 35% / 稀有 8% / 传说 2%×√(层/150)≤20% / 神话 0.1%×√(层/150)≤1%；
-- 特殊物品 special：Boss 关结算额外 roll（精英 25% / 小Boss 45% / 大Boss 80%），
-  大 Boss 高稀有占比；
+- 草药 herb + 特殊物品 special：普通层周期结算（入口层 ≥150，15 分钟一周期）——
+  两者**同池同概率**（普通 35% / 稀有 8% / 传说 2%×√(层/150)≤20% / 神话 0.1%×√(层/150)≤1%），
+  命中档位后再在该档的草药+特殊材料中随机，保证同级配方成本期望一致；
+- 特殊物品另有 Boss 关结算额外 roll（精英 25% / 小Boss 45% / 大Boss 80%，大 Boss 高稀有占比）；
 - boss 材料 boss：由 /boss 挑战 + 自动推进首通产出（见 boss.py）。
 """
 import json
@@ -16,7 +16,7 @@ import os
 
 MATERIALS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "materials.json")
 
-HERB_MIN_LAYER = 150          # 草药资格入口层
+HERB_MIN_LAYER = 150          # 周期材料资格入口层
 HERB_CYCLE_SECONDS = 15 * 60  # 与矿石同周期
 HERB_COMMON_PCT = 0.35        # 普通 35%
 HERB_RARE_PCT = 0.08          # 稀有 8%
@@ -65,34 +65,39 @@ def herb_myth_probability(layer):
     return min(p, HERB_MYTH_CAP)
 
 
-def roll_herb(layer, rand=None):
-    """普通层周期掷草药：返回掉落草药 id；未掉落返回 None（<150 层直接 None）。"""
+def roll_material(layer, rand=None):
+    """普通层周期掷周期材料（草药+特殊同池同概率）：返回材料 id；未掉落返回 None（<150 层直接 None）。"""
     import random
     if layer < HERB_MIN_LAYER:
         return None
     load_materials()
     rand = rand or random.random
-    pool = _cache["by_category"].get("herb", [])
+    pool = (_cache["by_category"].get("herb", []) +
+            _cache["by_category"].get("special", []))
     if not pool:
         return None
     r = rand()
     if r < herb_myth_probability(layer):
-        return _pick_rarity_herb("myth") or random.choice(pool)
+        return _pick_rarity_material("myth") or random.choice(pool)
     if r < herb_myth_probability(layer) + herb_legend_probability(layer):
-        return _pick_rarity_herb("legendary") or random.choice(pool)
+        return _pick_rarity_material("legendary") or random.choice(pool)
     if r < herb_myth_probability(layer) + herb_legend_probability(layer) + HERB_RARE_PCT:
-        return _pick_rarity_herb("rare") or random.choice(pool)
+        return _pick_rarity_material("rare") or random.choice(pool)
     if r < herb_myth_probability(layer) + herb_legend_probability(layer) + HERB_RARE_PCT + HERB_COMMON_PCT:
-        return _pick_rarity_herb("common") or random.choice(pool)
+        return _pick_rarity_material("common") or random.choice(pool)
     return None
 
 
-def _pick_rarity_herb(rarity):
-    """从指定稀有度草药池随机抽一个 id；无则返回 None。"""
+# 兼容旧名（调用方均已改为 roll_material）
+roll_herb = roll_material
+
+
+def _pick_rarity_material(rarity):
+    """从指定稀有度的周期材料池（草药+特殊）随机抽一个 id；无则返回 None。"""
     import random
-    herbs = [m["id"] for m in _cache["materials"]
-             if m.get("category") == "herb" and m.get("rarity") == rarity]
-    return random.choice(herbs) if herbs else None
+    mats = [m["id"] for m in _cache["materials"]
+            if m.get("category") in ("herb", "special") and m.get("rarity") == rarity]
+    return random.choice(mats) if mats else None
 
 
 def roll_special(btype, rand=None):

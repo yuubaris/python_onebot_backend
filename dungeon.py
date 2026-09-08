@@ -638,31 +638,37 @@ def settle_dungeon(user):
             if gained:
                 ore.grant_ores(user.user_id, gained)
 
-    # 草药结算（≥150 层资格；与矿石同周期并列，互不抢占）
+    # 材料结算（≥150 层资格；草药+特殊同频同概率，与矿石同周期并列，互不抢占）
     if user.dungeon_herb_eligible and user.dungeon_herb_last:
         dt_herb = now - user.dungeon_herb_last
         herb_cycles = int(dt_herb // material.HERB_CYCLE_SECONDS)
         if herb_cycles > 0:
             layer_now = max(user.dungeon_layer, 1)
-            h_gained = {}
+            h_gained, s_gained = {}, {}
             for _ in range(herb_cycles):
-                hmid = material.roll_herb(layer_now)
-                if hmid:
-                    h_gained[hmid] = h_gained.get(hmid, 0) + 1
-            # 草药掉率增益（采药符 scope=herb）
+                mid = material.roll_material(layer_now)
+                if not mid:
+                    continue
+                meta = material.material_meta(mid)
+                if meta and meta.get("category") == "special":
+                    s_gained[mid] = s_gained.get(mid, 0) + 1
+                else:
+                    h_gained[mid] = h_gained.get(mid, 0) + 1
+            # 掉率增益：草药乘采药符(scope=herb)、特殊乘祈灵符(scope=special)
             if mult_herb > 1.0 and h_gained:
-                h_gained = {hmid: max(1, int(cnt * mult_herb)) for hmid, cnt in h_gained.items()}
+                h_gained = {mid: max(1, int(cnt * mult_herb)) for mid, cnt in h_gained.items()}
+            if mult_special > 1.0 and s_gained:
+                s_gained = {mid: max(1, int(cnt * mult_special)) for mid, cnt in s_gained.items()}
             user.dungeon_herb_last = now
-            if h_gained:
-                material.grant_materials(user.user_id, h_gained)
-                if report is None:
-                    pass
+            gained = {**h_gained, **s_gained}
+            if gained:
+                material.grant_materials(user.user_id, gained)
                 names = []
-                for hmid, cnt in h_gained.items():
-                    hm = material.material_meta(hmid)
-                    names.append(f"{hm['name'] if hm else hmid}×{cnt}")
+                for mid, cnt in gained.items():
+                    hm = material.material_meta(mid)
+                    names.append(f"{hm['name'] if hm else mid}×{cnt}")
                 if names:
-                    report.append("🌿 材料掉落：" + "、".join(names))
+                    report.append("📦 材料掉落：" + "、".join(names))
 
     if report:
         _queue_boss_report(user.user_id, report)

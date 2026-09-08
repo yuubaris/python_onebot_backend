@@ -9,7 +9,7 @@
       "cost": {
         "materials": {
           "herb_bloodgrass": 4,
-          "herb_wakeflower": 1
+          "special_beastsoul": 1
         },
         "copper": 100
       },
@@ -27,7 +27,7 @@
       "cost": {
         "materials": {
           "boss_magma": 1,
-          "herb_bloodgrass": 2,
+          "herb_bloodgrass": 3,
           "herb_moonmushroom": 1,
           "special_beastsoul": 1
         },
@@ -104,8 +104,9 @@
       "desc": "临时提升 mp +15（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_wakeflower": 4,
-          "herb_bloodgrass": 1
+          "herb_bloodgrass": 3,
+          "herb_wakeflower": 1,
+          "special_beastsoul": 1
         },
         "copper": 100
       },
@@ -123,8 +124,8 @@
       "cost": {
         "materials": {
           "boss_magma": 1,
-          "herb_moonmushroom": 2,
           "herb_bloodgrass": 1,
+          "herb_moonmushroom": 2,
           "special_beastsoul": 1
         },
         "copper": 400
@@ -144,6 +145,7 @@
         "materials": {
           "boss_bone": 1,
           "herb_moonmushroom": 2,
+          "special_beastsoul": 1,
           "special_element": 1
         },
         "copper": 1200
@@ -162,8 +164,9 @@
       "cost": {
         "materials": {
           "boss_frost": 1,
-          "herb_dragonblood": 2,
-          "special_relic": 1
+          "herb_dragonblood": 1,
+          "herb_moonmushroom": 2,
+          "herb_bloodgrass": 1
         },
         "copper": 4000
       },
@@ -181,8 +184,8 @@
       "cost": {
         "materials": {
           "boss_ember": 1,
-          "herb_dragonblood": 1,
-          "special_relic": 2
+          "herb_moonmushroom": 3,
+          "special_relic": 1
         },
         "copper": 12000
       },
@@ -200,7 +203,8 @@
       "cost": {
         "materials": {
           "herb_wakeflower": 3,
-          "herb_bloodgrass": 2
+          "herb_bloodgrass": 1,
+          "special_beastsoul": 1
         },
         "copper": 100
       },
@@ -218,8 +222,8 @@
       "cost": {
         "materials": {
           "boss_magma": 1,
-          "herb_moonmushroom": 2,
           "herb_wakeflower": 1,
+          "herb_moonmushroom": 2,
           "special_beastsoul": 1
         },
         "copper": 400
@@ -238,7 +242,7 @@
       "cost": {
         "materials": {
           "boss_bone": 1,
-          "herb_moonmushroom": 2,
+          "herb_moonmushroom": 3,
           "special_beastsoul": 1
         },
         "copper": 1200
@@ -257,8 +261,8 @@
       "cost": {
         "materials": {
           "boss_frost": 1,
-          "herb_dragonblood": 1,
-          "herb_moonmushroom": 1,
+          "herb_moonmushroom": 2,
+          "special_beastsoul": 1,
           "special_relic": 1
         },
         "copper": 4000
@@ -277,8 +281,9 @@
       "cost": {
         "materials": {
           "boss_ember": 1,
-          "herb_moonmushroom": 1,
-          "special_relic": 2
+          "herb_dragonblood": 1,
+          "herb_moonmushroom": 2,
+          "special_element": 1
         },
         "copper": 12000
       },
@@ -295,8 +300,8 @@
       "desc": "临时提升 agility +20（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_bloodgrass": 3,
-          "herb_wakeflower": 2
+          "herb_wakeflower": 4,
+          "special_beastsoul": 1
         },
         "copper": 100
       },
@@ -314,7 +319,7 @@
       "cost": {
         "materials": {
           "boss_magma": 1,
-          "herb_wakeflower": 2,
+          "herb_wakeflower": 3,
           "herb_moonmushroom": 1,
           "special_beastsoul": 1
         },
@@ -355,8 +360,8 @@
         "materials": {
           "boss_frost": 1,
           "herb_dragonblood": 1,
-          "herb_moonmushroom": 2,
-          "special_element": 1
+          "herb_moonmushroom": 1,
+          "special_relic": 1
         },
         "copper": 4000
       },
@@ -374,8 +379,8 @@
       "cost": {
         "materials": {
           "boss_ember": 1,
-          "herb_dragonblood": 2,
-          "special_element": 1
+          "herb_dragonblood": 1,
+          "special_relic": 2
         },
         "copper": 12000
       },
@@ -392,7 +397,8 @@
       "desc": "临时提升 defense +20（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_bloodgrass": 3,
+          "herb_bloodgrass": 2,
+          "herb_wakeflower": 2,
           "special_beastsoul": 1
         },
         "copper": 100
@@ -412,7 +418,7 @@
         "materials": {
           "boss_magma": 1,
           "herb_moonmushroom": 2,
-          "special_beastsoul": 1
+          "special_beastsoul": 2
         },
         "copper": 400
       },
@@ -430,8 +436,8 @@
       "cost": {
         "materials": {
           "boss_bone": 1,
+          "herb_bloodgrass": 3,
           "herb_moonmushroom": 1,
-          "herb_wakeflower": 1,
           "special_element": 1
         },
         "copper": 1200
@@ -450,8 +456,8 @@
       "cost": {
         "materials": {
           "boss_frost": 1,
-          "herb_dragonblood": 1,
-          "special_element": 2
+          "herb_dragonblood": 2,
+          "special_beastsoul": 2
         },
         "copper": 4000
       },
@@ -470,6 +476,7 @@
         "materials": {
           "boss_ember": 1,
           "herb_moonmushroom": 2,
+          "special_element": 1,
           "special_relic": 1
         },
         "copper": 12000
@@ -487,8 +494,8 @@
       "desc": "临时提升 hp +25（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_wakeflower": 3,
-          "special_beastsoul": 1
+          "herb_bloodgrass": 2,
+          "special_beastsoul": 3
         },
         "copper": 100
       },
@@ -506,8 +513,9 @@
       "cost": {
         "materials": {
           "boss_magma": 1,
-          "herb_moonmushroom": 3,
-          "special_beastsoul": 1
+          "herb_bloodgrass": 3,
+          "special_beastsoul": 1,
+          "special_element": 1
         },
         "copper": 400
       },
@@ -525,7 +533,8 @@
       "cost": {
         "materials": {
           "boss_bone": 1,
-          "herb_moonmushroom": 3,
+          "herb_wakeflower": 3,
+          "herb_moonmushroom": 1,
           "special_element": 1
         },
         "copper": 1200
@@ -544,8 +553,10 @@
       "cost": {
         "materials": {
           "boss_frost": 1,
-          "herb_dragonblood": 3,
-          "special_element": 1
+          "herb_moonmushroom": 1,
+          "herb_bloodgrass": 1,
+          "special_element": 1,
+          "special_relic": 1
         },
         "copper": 4000
       },
@@ -563,8 +574,9 @@
       "cost": {
         "materials": {
           "boss_ember": 1,
-          "herb_dragonblood": 3,
-          "special_relic": 1
+          "herb_dragonblood": 1,
+          "herb_moonmushroom": 1,
+          "special_element": 2
         },
         "copper": 12000
       },
