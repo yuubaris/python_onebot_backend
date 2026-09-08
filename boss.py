@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """命名守关 Boss 挑战模块（/boss 列表、/boss 挑战 <名>）。
 
-Boss 数据在 bosses.json（19 个命名守关 Boss：1000 前每100 / 1000 后每200 /
+Boss 数据在 bosses.json（18 个命名守关 Boss：1000 前每100 / 1000 后每200 /
 2000 后每500 / 3000 大 Boss「万渊魔尊·裂界」/ 3600 最终「万瓜之主·夕张」），player 进度记于 user_boss 表。
 
 规则：

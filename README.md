@@ -267,8 +267,8 @@ python_onebot_backend/
 ├── rare_drops.json      # Boss 稀有装备掉落池（41 件，覆盖全部位）
 ├── materials.json       # 地下城材料（草药/特殊/Boss 材料）
 ├── bosses.json          # 命名守关 Boss（18 个：层/名/材料/稀有上限）
-├── consumables.json     # 炼金产物（药水/道具，44 条；seed_consumables.py 生成）
-├── alchemy_recipes.json # 炼金配方（44 条；seed_consumables.py 生成）
+├── consumables.json     # 炼金产物（药水/道具，47 条；seed_consumables.py 生成）
+├── alchemy_recipes.json # 炼金配方（47 条；seed_consumables.py 生成）
 ├── boss.py              # 守关 Boss 挑战（列表/成功率/永久递减/次数/首通/掉落）
 ├── material.py          # 材料掉落与持有（镜像 ore.py）
 ├── alchemy.py           # 炼金（配方加载与制作）
