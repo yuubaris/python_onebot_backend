@@ -1,6 +1,6 @@
 # 炼金 · Boss 挑战 · 材料掉落 玩法设计稿（需求澄清 + 落地方案）
 
-> 状态：**✅ 定稿 v4（2026-09-08）** —— 全部骨架口径已确认收口（Q1~Q3/Q5 已定；仅 Q4 药水/道具效果数值待下一轮补充）。
+> 状态：**✅ 定稿 v5（2026-09-08）** —— 骨架 + 药水/道具效果体系均已确认（Q1~Q5 已定，等级 Lv1~5 与刷新时长已确认；数值为示例级，实施前可校准）。
 > 范围：`python_onebot_backend`（QQ 群签到/地下城/装备机器人）
 > 关联：`docs/equipment-system-redo-plan.md`、`docs/dungeon-boss-plan.md`、`docs/tier-forge-title-rework-request.md`。
 > 涉及新增命令：**`/boss`、`/炼金`、`/使用`**。
@@ -15,7 +15,7 @@
 | R2 | 地下城**掉材料**（逻辑≈矿石） | `material.py` 镜像 `ore.py`，与矿石/Boss 关互不抢占 |
 | R3 | 材料分 **草药 / 特殊物品 / boss 材料** | `materials.json`：`herb`/`special`/`boss` |
 | R4 | 炼金（草药/矿石/特殊/boss 材料）→ **药水/道具** | `alchemy_recipes.json` + `consumables.json` |
-| R5 | 药水 BUFF / 道具效果 → **下轮给** | 本轮数据/链路占位 |
+| R5 | 药水=**属性强化**(攻/魔等)；道具=**掉落增益**(金钱/装备/材料=矿石·草药·特殊)；持续 N 层或 N 时间；**分级**数值递增；**稀有效果低等级不提供** ✅ | §3.3/§4（2026-09-08 定稿） |
 | R6 | boss = **列表** + **挑战+boss名** | `/boss 列表`、`/boss 挑战 <名>` |
 | R7 | **1000 究极单独冠名**；**2000 对标 1000 强化版** ✅ | 见 §1.5 |
 | R8 | boss 材料**按地下城 T 等级分档**（同档共料）✅ | §1.4 |
@@ -165,16 +165,88 @@
 - 含 boss 材料的配方默认需「历史最高层 ≥ 该 Boss 层」防跳段。
 - `/炼金` 列表 · `/炼金 <配方名>` 制作（缺料逐项提示，仿 `cmd_forge`）。
 
-产物占位示例：回春药水(回复) / 狼血药水(临时攻击) / 龙力药水(攻命) / 挑战护符(刷新次数) / 双倍徽记(时限双倍)。**效果数值下轮填**。
+### 3.3 产物体系（药水 / 道具 · 分级 + 两种持续）—— 2026-09-08 定稿
+
+**A. 药水 `potion` —— 属性强化**（加攻击 / 魔法等属性）
+- 按属性分系：狂攻药水(attack) / 凝神药水(intelligence) / 魔涌药水(mp) / 坚壁药水(defense) / 血源药水(hp) / 疾风药水(agility) 等（覆盖 `BASE_STATS` 六属性）；
+- 每系分**等级 Lv1~Lv5**（用户确认 5 档足够）：效果同型、数值随级递增；
+- 使用后临时提升对应属性 → 提高地下城推进速度与 Boss 挑战成功率。
+
+示例（属性+点数，占位可调）：
+
+| 药水 | 属性 | Lv1 | Lv2 | Lv3 | Lv4 | Lv5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 狂攻药水 | 攻击 | +15 | +40 | +90 | +160 | +260 |
+| 凝神药水 | 智力 | +15 | +40 | +90 | +160 | +260 |
+| 魔涌药水 | 魔力 | +12 | +30 | +70 | +120 | +200 |
+| 坚壁药水 | 防御 | +20 | +50 | +110 | +190 | +300 |
+
+**B. 道具 `tool` —— 掉落增益**（加金钱掉落 / 加装备掉落率 / 加材料掉落率）
+- 加**金钱掉落**(coin)：挂机/挑战铜币 ×mult；
+- 加**装备掉落率**(equipment)：稀有装备掉率加成；
+- 加**材料掉落率**(material，细分为 矿石 ore / 草药 herb / 特殊 special)：对应材料 roll 掉率加成
+  （**不含 boss 材料**——boss 材料走挑战/首通，不做挂机掉率加成）；
+- 每类也分等级，倍率随级递增。
+
+示例（占位可调）：
+
+| 道具 | 效果 | Lv1 | Lv2 | Lv3 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+| 聚财符 | 金钱掉落 | ×1.2 | ×1.4 | ×1.6 | |
+| 寻宝符 | 装备掉落率 | — | ×1.3 | ×1.5 | **稀有：Lv1 不提供** |
+| 采掘符 | 矿石掉率 | ×1.3 | ×1.5 | ×1.8 | |
+| 采药符 | 草药掉率 | ×1.3 | ×1.5 | ×1.8 | |
+| 祈灵符 | 特殊掉率 | — | ×1.4 | ×1.7 | **稀有：Lv1 不提供** |
+| 万象符 | 材料全加成 | — | — | ×1.5 | **稀有：仅高阶提供** |
+
+**C. 持续时间（两种）**
+- `layers`：持续 **N 层** —— 生效起地下城推进 N 层后失效（适合属性药水：护住一段冲层）；
+- `time`：持续 **N 时间** —— 生效后 N 秒自然到期（适合挂机掉落道具）；
+- 每种产物在数据里声明 `duration.type ∈ {layers, time}` + `duration.value`（不同产物/等级可不同）。
+
+**D. 等级解锁与稀有**
+- 炼金配方按等级与材料档挂钩：低 Lv 只用草药/低档矿石；高 Lv 需要特殊物品与 boss 材料；
+- 配方带「层解锁」门槛（镜像铁匠铺 Lv 按历史最高层），高阶配方需更高层；
+- **稀有效果（装备掉率 / 特殊与材料全加成 / 高倍率）从较高 Lv 才提供**（低等级炼不出），体现「稀有道具低等级不提供」。
 
 ---
 
-## 四、使用系统（/使用）—— 效果数值下轮补充
+## 四、使用系统（/使用）—— 效果体系（2026-09-08 定稿）
 
-- `consumables.json`：`{id,name,kind:potion|tool,effect:{...占位}}`。
-- 药水：写 `UserBuff(user_id,buff_id,expires_at)`，在 `effective_stats` 并入（机制仿称号加成）→ 提升地下城与 Boss 成功率。
-- 道具：一次性触发 effect（如刷 Boss 次数/双倍），扣 1 个。
-- `/使用 <物品名>`：消耗 `UserConsumable` 1 个；未持有提示。
+### 4.1 `consumables.json` 结构（含等级 / 效果 / 持续）
+
+```jsonc
+{
+  "consumables": [
+    {"id": "potion_atk_1", "name": "狂攻药水Ⅰ", "kind": "potion", "level": 1,
+     "effect": {"type": "buff_stat", "stats": {"attack": 15},
+                 "duration": {"type": "layers", "value": 100}}},
+    {"id": "potion_atk_3", "name": "狂攻药水Ⅲ", "kind": "potion", "level": 3,
+     "effect": {"type": "buff_stat", "stats": {"attack": 90},
+                 "duration": {"type": "time", "value": 1800}}},
+    {"id": "tool_coin_1", "name": "聚财符Ⅰ", "kind": "tool", "level": 1,
+     "effect": {"type": "drop_bonus", "bonus_type": "coin", "mult": 1.2,
+                 "duration": {"type": "time", "value": 1800}}},
+    {"id": "tool_mat_ore_2", "name": "采掘符Ⅱ", "kind": "tool", "level": 2,
+     "effect": {"type": "drop_bonus", "bonus_type": "material", "scope": "ore", "mult": 1.5,
+                 "duration": {"type": "layers", "value": 300}}}
+  ]
+}
+```
+
+- `effect.type`：`buff_stat`（属性药水）/ `drop_bonus`（掉落道具）；
+- `drop_bonus.bonus_type`：`coin` | `equipment` | `material`（material 再按 `scope`：ore / herb / special）；
+- `duration.type`：`layers`（推进 N 层后过期）| `time`（N 秒后过期）；`duration.value` 数值。
+
+### 4.2 生效链路
+
+- **药水（buff_stat）**：`/使用` 后写入 `UserBuff`（buff_id + 效果快照 + 过期口径）；
+  - `effective_stats`（dungeon.py）并入生效属性 buff（仿称号加成插入点）→ 提升地下城推进速度与 Boss 成功率；
+  - 时间型：按 `expires_at` 自然失效；层数型：`settle_dungeon` 推进层数时扣减 `remain_layers`，归零失效。
+- **道具（drop_bonus）**：`/使用` 后同样写入 `UserBuff`（两种过期一致）；
+  - 掉落结算时查生效 buff：金钱按 mult；装备掉率、材料掉率按 mult 加成；
+  - 材料加成按 `scope` 决定作用于 矿石 / 草药 / 特殊 哪一路 roll。
+- `/使用 <物品名>`：消耗 `UserConsumable` 1 个；未持有提示；同名 buff **刷新时长（2026-09-08 用户确认）**——层数型累加剩余层数，时间型重置时长。
 
 ---
 
@@ -187,7 +259,7 @@
 - `UserMaterial`(user_id, material_id, count) 仿 UserOre；
 - `UserConsumable`(user_id, item_id, count)；
 - `UserBoss`(user_id, boss_id, **first_clear_date**, **total_wins** 永久成功次数, fight_date, fight_count)；
-- `UserBuff`(user_id, buff_id, expires_at)。
+- `UserBuff`(user_id, buff_id, effect_json 快照, expire_ts 可空, start_layer 可空, remain_layers 可空)：统一记录属性药水/掉落道具，时间型与层数型都支持。
 
 ### 5.3 模块
 `material.py`(镜像 ore) · `boss.py`(列表/成功率/永久递减/次数/掉落) · `alchemy.py`(镜像 forge) · `consumable.py`(/使用) · `models.py` · `commands.py`
@@ -236,6 +308,9 @@ T5·2000层 万古魔主·终焉·贰（1000强化版）[未首通] 剩3/3
 | 草药入口/概率 | ≥150层，15min，35/8/传说2%·√(层/150)≤20/神话0.1%·√≤1 |
 | 特殊物品 | 精英25% / 小45% / 大80% |
 | 挑战胜铜币基准 | ≈ 大Boss 40 分钟产币（复用 `_boss_coin_bonus`） |
+| 药水/道具等级 | 分系分级 **Lv1~Lv5**，数值随级递增（用户确认 5 档；示例见 §3.3） |
+| 持续时间 | `layers` 推进 N 层 / `time` N 秒（产物各自声明） |
+| 稀有道具门槛 | 装备掉率 / 特殊·材料全加成等仅较高 Lv 提供（低等级不提供） |
 
 ---
 
@@ -244,7 +319,7 @@ T5·2000层 万古魔主·终焉·贰（1000强化版）[未首通] 剩3/3
 - ~~Q1~~ ✅ **已定**：通关 3600 晋升 T7；3600 后不再推进、收益续产（§1.2）。
 - ~~Q2~~ ✅ **已定**：采用新名字（1200~3000 新增层 + 2000「万古魔主·终焉·贰」）；Boss 名互不重复。
 - ~~Q3~~ ✅ **已定**：永久递减参数（0.8^n、下限 0.2/0.1）接受，即按默认；不额外设低保。
-- **Q4**：药水 BUFF / 道具效果清单与数值 —— **下一轮给出**（本轮仅链路/数据占位）。
+- ~~Q4~~ ✅ **已定**：药水=属性强化（攻/魔等，分系分级）；道具=掉落增益（金钱/装备/材料=矿石·草药·特殊）；持续 N 层或 N 时间；等级低→高数值递增；稀有效果低等级不提供（§3.3/§4）。
 - ~~Q5~~ ✅ **已定**：自动推进重复经过命名 Boss 只保留现有金钱/矿/稀有；Boss 材料仅首通给一次。
 
 ---
