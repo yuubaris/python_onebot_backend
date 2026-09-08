@@ -538,7 +538,7 @@
         "tin_ore": 28,
         "mithril_ore": 55,
         "gold_ore": 33,
-        "star_iron": 20
+        "oracle_stone": 20
       },
       "line": "physical",
       "tier": 6
@@ -556,12 +556,12 @@
       "intelligence": 60,
       "price": 260000,
       "cost": {
-        "oracle_stone": 10,
         "stardust_sand": 43,
         "silver_ore": 43,
         "lead_ore": 33,
         "iron_ore": 33,
-        "dragon_soul_crystal": 20
+        "dragon_soul_crystal": 20,
+        "star_iron": 10
       },
       "line": "magic",
       "tier": 6
