@@ -97,7 +97,10 @@ def coin_per_5sec(layer):
 def item_formula_score(item):
     """单个装备套入进度公式的收益分（用于同类型取最优）。
 
-    评分 = (攻击×2 + 敏捷×1.5 + 智力×1.25 + 魔力×1.2) × (1+防御/400) × (1+生命/600)。
+    评分 = (攻击×2 + 魔力×2 + 敏捷×1.5 + 智力×1.5) × (1+防御/400) × (1+生命/600)。
+
+    （2026-09-08 方案A）输出权重对称化：攻击=魔力、敏捷=智力（攻=魔=2.0、敏=智=1.5），
+    使物理/魔法两线每点输出词条价值相等，法师不再需要堆超高智/魔来对齐战士。
 
     对纯防御向装备（攻击/敏捷/智力/魔力均为 0，如 防具类），分子恒为 0，
     会导致同类型多件装备评分全部相同而永远选中第一件（最常见误选）——
@@ -110,7 +113,7 @@ def item_formula_score(item):
     mp = item.get("mp", 0)
     defense = item.get("defense", 0)
     hp = item.get("hp", 0)
-    offence = atk * 2 + agi * 1.5 + inte * 1.25 + mp * 1.2
+    offence = atk * 2 + mp * 2 + agi * 1.5 + inte * 1.5
     if offence <= 0:
         # 纯防御向：按防御/生命折算保底分，保证同类型内能选出最强
         return (defense * 2 + hp * 1.2) * 1.0
@@ -217,12 +220,16 @@ def effective_stats(user, owned):
 
 
 def dungeon_speed(stats):
-    """地下城推进速度【公式】。"""
+    """地下城推进速度【公式】。
+
+    （2026-09-08 方案A）输出权重对称化：攻击=魔力=2.0、敏捷=智力=1.5，
+    物理/魔法两线每点输出词条价值相等（法师无需堆超高智/魔）；保留生存乘区。
+    """
     return (
         stats["attack"] * 2
+        + stats["mp"] * 2
         + stats["agility"] * 1.5
-        + stats["intelligence"] * 1.25
-        + stats["mp"] * 1.2
+        + stats["intelligence"] * 1.5
     ) * (1 + stats["defense"] / 400) * (1 + stats["hp"] / 600)
 
 
