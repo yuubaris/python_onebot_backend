@@ -28,7 +28,7 @@
         },
         "duration": {
           "type": "layers",
-          "value": 200
+          "value": 100
         }
       }
     },
@@ -44,7 +44,7 @@
         },
         "duration": {
           "type": "layers",
-          "value": 300
+          "value": 100
         }
       }
     },
@@ -60,7 +60,7 @@
         },
         "duration": {
           "type": "layers",
-          "value": 400
+          "value": 100
         }
       }
     },
@@ -76,87 +76,7 @@
         },
         "duration": {
           "type": "layers",
-          "value": 500
-        }
-      }
-    },
-    {
-      "id": "potion_int_1",
-      "name": "凝神药水Ⅰ",
-      "kind": "potion",
-      "level": 1,
-      "effect": {
-        "type": "buff_stat",
-        "stats": {
-          "intelligence": 15
-        },
-        "duration": {
-          "type": "layers",
           "value": 100
-        }
-      }
-    },
-    {
-      "id": "potion_int_2",
-      "name": "凝神药水Ⅱ",
-      "kind": "potion",
-      "level": 2,
-      "effect": {
-        "type": "buff_stat",
-        "stats": {
-          "intelligence": 40
-        },
-        "duration": {
-          "type": "layers",
-          "value": 200
-        }
-      }
-    },
-    {
-      "id": "potion_int_3",
-      "name": "凝神药水Ⅲ",
-      "kind": "potion",
-      "level": 3,
-      "effect": {
-        "type": "buff_stat",
-        "stats": {
-          "intelligence": 90
-        },
-        "duration": {
-          "type": "layers",
-          "value": 300
-        }
-      }
-    },
-    {
-      "id": "potion_int_4",
-      "name": "凝神药水Ⅳ",
-      "kind": "potion",
-      "level": 4,
-      "effect": {
-        "type": "buff_stat",
-        "stats": {
-          "intelligence": 160
-        },
-        "duration": {
-          "type": "layers",
-          "value": 400
-        }
-      }
-    },
-    {
-      "id": "potion_int_5",
-      "name": "凝神药水Ⅴ",
-      "kind": "potion",
-      "level": 5,
-      "effect": {
-        "type": "buff_stat",
-        "stats": {
-          "intelligence": 260
-        },
-        "duration": {
-          "type": "layers",
-          "value": 500
         }
       }
     },
@@ -168,7 +88,7 @@
       "effect": {
         "type": "buff_stat",
         "stats": {
-          "mp": 12
+          "mp": 15
         },
         "duration": {
           "type": "layers",
@@ -184,11 +104,11 @@
       "effect": {
         "type": "buff_stat",
         "stats": {
-          "mp": 30
+          "mp": 40
         },
         "duration": {
           "type": "layers",
-          "value": 200
+          "value": 100
         }
       }
     },
@@ -200,11 +120,11 @@
       "effect": {
         "type": "buff_stat",
         "stats": {
-          "mp": 70
+          "mp": 90
         },
         "duration": {
           "type": "layers",
-          "value": 300
+          "value": 100
         }
       }
     },
@@ -216,11 +136,11 @@
       "effect": {
         "type": "buff_stat",
         "stats": {
-          "mp": 120
+          "mp": 160
         },
         "duration": {
           "type": "layers",
-          "value": 400
+          "value": 100
         }
       }
     },
@@ -232,11 +152,171 @@
       "effect": {
         "type": "buff_stat",
         "stats": {
-          "mp": 200
+          "mp": 260
         },
         "duration": {
           "type": "layers",
-          "value": 500
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_int_1",
+      "name": "凝神药水Ⅰ",
+      "kind": "potion",
+      "level": 1,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "intelligence": 20
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_int_2",
+      "name": "凝神药水Ⅱ",
+      "kind": "potion",
+      "level": 2,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "intelligence": 53
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_int_3",
+      "name": "凝神药水Ⅲ",
+      "kind": "potion",
+      "level": 3,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "intelligence": 120
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_int_4",
+      "name": "凝神药水Ⅳ",
+      "kind": "potion",
+      "level": 4,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "intelligence": 213
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_int_5",
+      "name": "凝神药水Ⅴ",
+      "kind": "potion",
+      "level": 5,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "intelligence": 347
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_agi_1",
+      "name": "疾风药水Ⅰ",
+      "kind": "potion",
+      "level": 1,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "agility": 20
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_agi_2",
+      "name": "疾风药水Ⅱ",
+      "kind": "potion",
+      "level": 2,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "agility": 53
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_agi_3",
+      "name": "疾风药水Ⅲ",
+      "kind": "potion",
+      "level": 3,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "agility": 120
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_agi_4",
+      "name": "疾风药水Ⅳ",
+      "kind": "potion",
+      "level": 4,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "agility": 213
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
+        }
+      }
+    },
+    {
+      "id": "potion_agi_5",
+      "name": "疾风药水Ⅴ",
+      "kind": "potion",
+      "level": 5,
+      "effect": {
+        "type": "buff_stat",
+        "stats": {
+          "agility": 347
+        },
+        "duration": {
+          "type": "layers",
+          "value": 100
         }
       }
     },
@@ -268,7 +348,7 @@
         },
         "duration": {
           "type": "layers",
-          "value": 200
+          "value": 100
         }
       }
     },
@@ -284,7 +364,7 @@
         },
         "duration": {
           "type": "layers",
-          "value": 300
+          "value": 100
         }
       }
     },
@@ -300,7 +380,7 @@
         },
         "duration": {
           "type": "layers",
-          "value": 400
+          "value": 100
         }
       }
     },
@@ -316,7 +396,7 @@
         },
         "duration": {
           "type": "layers",
-          "value": 500
+          "value": 100
         }
       }
     },
@@ -348,7 +428,7 @@
         },
         "duration": {
           "type": "layers",
-          "value": 200
+          "value": 100
         }
       }
     },
@@ -364,7 +444,7 @@
         },
         "duration": {
           "type": "layers",
-          "value": 300
+          "value": 100
         }
       }
     },
@@ -380,7 +460,7 @@
         },
         "duration": {
           "type": "layers",
-          "value": 400
+          "value": 100
         }
       }
     },
@@ -396,87 +476,7 @@
         },
         "duration": {
           "type": "layers",
-          "value": 500
-        }
-      }
-    },
-    {
-      "id": "potion_agi_1",
-      "name": "疾风药水Ⅰ",
-      "kind": "potion",
-      "level": 1,
-      "effect": {
-        "type": "buff_stat",
-        "stats": {
-          "agility": 10
-        },
-        "duration": {
-          "type": "layers",
           "value": 100
-        }
-      }
-    },
-    {
-      "id": "potion_agi_2",
-      "name": "疾风药水Ⅱ",
-      "kind": "potion",
-      "level": 2,
-      "effect": {
-        "type": "buff_stat",
-        "stats": {
-          "agility": 25
-        },
-        "duration": {
-          "type": "layers",
-          "value": 200
-        }
-      }
-    },
-    {
-      "id": "potion_agi_3",
-      "name": "疾风药水Ⅲ",
-      "kind": "potion",
-      "level": 3,
-      "effect": {
-        "type": "buff_stat",
-        "stats": {
-          "agility": 60
-        },
-        "duration": {
-          "type": "layers",
-          "value": 300
-        }
-      }
-    },
-    {
-      "id": "potion_agi_4",
-      "name": "疾风药水Ⅳ",
-      "kind": "potion",
-      "level": 4,
-      "effect": {
-        "type": "buff_stat",
-        "stats": {
-          "agility": 110
-        },
-        "duration": {
-          "type": "layers",
-          "value": 400
-        }
-      }
-    },
-    {
-      "id": "potion_agi_5",
-      "name": "疾风药水Ⅴ",
-      "kind": "potion",
-      "level": 5,
-      "effect": {
-        "type": "buff_stat",
-        "stats": {
-          "agility": 180
-        },
-        "duration": {
-          "type": "layers",
-          "value": 500
         }
       }
     },
@@ -491,7 +491,7 @@
         "mult": 1.2,
         "duration": {
           "type": "time",
-          "value": 1800
+          "value": 14400
         }
       }
     },
@@ -506,7 +506,7 @@
         "mult": 1.4,
         "duration": {
           "type": "time",
-          "value": 1800
+          "value": 14400
         }
       }
     },
@@ -521,7 +521,7 @@
         "mult": 1.6,
         "duration": {
           "type": "time",
-          "value": 1800
+          "value": 14400
         }
       }
     },
@@ -536,7 +536,7 @@
         "mult": 1.3,
         "duration": {
           "type": "time",
-          "value": 1800
+          "value": 14400
         }
       }
     },
@@ -551,7 +551,7 @@
         "mult": 1.5,
         "duration": {
           "type": "time",
-          "value": 1800
+          "value": 14400
         }
       }
     },
@@ -563,12 +563,12 @@
       "effect": {
         "type": "drop_bonus",
         "bonus_type": "material",
-        "scope": "ore",
         "mult": 1.3,
         "duration": {
           "type": "time",
-          "value": 1800
-        }
+          "value": 14400
+        },
+        "scope": "ore"
       }
     },
     {
@@ -579,12 +579,12 @@
       "effect": {
         "type": "drop_bonus",
         "bonus_type": "material",
-        "scope": "ore",
         "mult": 1.5,
         "duration": {
           "type": "time",
-          "value": 1800
-        }
+          "value": 14400
+        },
+        "scope": "ore"
       }
     },
     {
@@ -595,12 +595,12 @@
       "effect": {
         "type": "drop_bonus",
         "bonus_type": "material",
-        "scope": "ore",
         "mult": 1.8,
         "duration": {
           "type": "time",
-          "value": 1800
-        }
+          "value": 14400
+        },
+        "scope": "ore"
       }
     },
     {
@@ -611,12 +611,12 @@
       "effect": {
         "type": "drop_bonus",
         "bonus_type": "material",
-        "scope": "herb",
         "mult": 1.3,
         "duration": {
           "type": "time",
-          "value": 1800
-        }
+          "value": 14400
+        },
+        "scope": "herb"
       }
     },
     {
@@ -627,12 +627,12 @@
       "effect": {
         "type": "drop_bonus",
         "bonus_type": "material",
-        "scope": "herb",
         "mult": 1.5,
         "duration": {
           "type": "time",
-          "value": 1800
-        }
+          "value": 14400
+        },
+        "scope": "herb"
       }
     },
     {
@@ -643,12 +643,12 @@
       "effect": {
         "type": "drop_bonus",
         "bonus_type": "material",
-        "scope": "herb",
         "mult": 1.8,
         "duration": {
           "type": "time",
-          "value": 1800
-        }
+          "value": 14400
+        },
+        "scope": "herb"
       }
     },
     {
@@ -659,12 +659,12 @@
       "effect": {
         "type": "drop_bonus",
         "bonus_type": "material",
-        "scope": "special",
         "mult": 1.4,
         "duration": {
           "type": "time",
-          "value": 1800
-        }
+          "value": 14400
+        },
+        "scope": "special"
       }
     },
     {
@@ -675,12 +675,12 @@
       "effect": {
         "type": "drop_bonus",
         "bonus_type": "material",
-        "scope": "special",
         "mult": 1.7,
         "duration": {
           "type": "time",
-          "value": 1800
-        }
+          "value": 14400
+        },
+        "scope": "special"
       }
     },
     {
@@ -691,12 +691,12 @@
       "effect": {
         "type": "drop_bonus",
         "bonus_type": "material",
-        "scope": "all",
         "mult": 1.5,
         "duration": {
           "type": "time",
-          "value": 1800
-        }
+          "value": 14400
+        },
+        "scope": "all"
       }
     }
   ]

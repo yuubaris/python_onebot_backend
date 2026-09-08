@@ -9,263 +9,376 @@
         "materials": {
           "herb_bloodgrass": 3
         },
-        "copper": 100,
-        "ores": {}
+        "ores": {
+          "copper_ore": 1
+        },
+        "copper": 100
       },
       "output": {
         "item_id": "potion_atk_1",
         "count": 1
-      }
+      },
+      "level": 1
     },
     {
       "id": "alc_potion_atk_2",
       "name": "炼金·狂攻药水Ⅱ",
       "kind": "potion",
-      "desc": "临时提升 attack +40（持续 200 层）",
+      "desc": "临时提升 attack +40（持续 100 层）",
       "cost": {
         "materials": {
           "herb_wakeflower": 3
         },
-        "copper": 400,
-        "ores": {}
+        "ores": {
+          "iron_ore": 1
+        },
+        "copper": 400
       },
       "output": {
         "item_id": "potion_atk_2",
         "count": 1
-      }
+      },
+      "level": 2
     },
     {
       "id": "alc_potion_atk_3",
       "name": "炼金·狂攻药水Ⅲ",
       "kind": "potion",
-      "desc": "临时提升 attack +90（持续 300 层）",
+      "desc": "临时提升 attack +90（持续 100 层）",
       "cost": {
         "materials": {
           "herb_moonmushroom": 3
         },
         "ores": {
-          "iron_ore": 1
+          "silver_ore": 1
         },
         "copper": 1200
       },
       "output": {
         "item_id": "potion_atk_3",
         "count": 1
-      }
+      },
+      "level": 3
     },
     {
       "id": "alc_potion_atk_4",
       "name": "炼金·狂攻药水Ⅳ",
       "kind": "potion",
-      "desc": "临时提升 attack +160（持续 400 层）",
+      "desc": "临时提升 attack +160（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_dragonblood": 2,
-          "special_element": 1
+          "herb_dragonblood": 2
         },
-        "copper": 4000,
-        "ores": {}
+        "ores": {
+          "adamantite_ore": 2
+        },
+        "copper": 4000
       },
       "output": {
         "item_id": "potion_atk_4",
         "count": 1
-      }
+      },
+      "level": 4
     },
     {
       "id": "alc_potion_atk_5",
       "name": "炼金·狂攻药水Ⅴ",
       "kind": "potion",
-      "desc": "临时提升 attack +260（持续 500 层）",
+      "desc": "临时提升 attack +260（持续 100 层）",
       "cost": {
         "materials": {
-          "special_relic": 1,
-          "boss_ember": 1
+          "special_relic": 1
         },
-        "copper": 12000,
-        "ores": {}
+        "ores": {
+          "star_iron": 1
+        },
+        "copper": 12000
       },
       "output": {
         "item_id": "potion_atk_5",
         "count": 1
-      }
-    },
-    {
-      "id": "alc_potion_int_1",
-      "name": "炼金·凝神药水Ⅰ",
-      "kind": "potion",
-      "desc": "临时提升 intelligence +15（持续 100 层）",
-      "cost": {
-        "materials": {
-          "herb_bloodgrass": 3
-        },
-        "copper": 100,
-        "ores": {}
       },
-      "output": {
-        "item_id": "potion_int_1",
-        "count": 1
-      }
-    },
-    {
-      "id": "alc_potion_int_2",
-      "name": "炼金·凝神药水Ⅱ",
-      "kind": "potion",
-      "desc": "临时提升 intelligence +40（持续 200 层）",
-      "cost": {
-        "materials": {
-          "herb_wakeflower": 3
-        },
-        "copper": 400,
-        "ores": {}
-      },
-      "output": {
-        "item_id": "potion_int_2",
-        "count": 1
-      }
-    },
-    {
-      "id": "alc_potion_int_3",
-      "name": "炼金·凝神药水Ⅲ",
-      "kind": "potion",
-      "desc": "临时提升 intelligence +90（持续 300 层）",
-      "cost": {
-        "materials": {
-          "herb_moonmushroom": 3
-        },
-        "ores": {
-          "iron_ore": 1
-        },
-        "copper": 1200
-      },
-      "output": {
-        "item_id": "potion_int_3",
-        "count": 1
-      }
-    },
-    {
-      "id": "alc_potion_int_4",
-      "name": "炼金·凝神药水Ⅳ",
-      "kind": "potion",
-      "desc": "临时提升 intelligence +160（持续 400 层）",
-      "cost": {
-        "materials": {
-          "herb_dragonblood": 2,
-          "special_element": 1
-        },
-        "copper": 4000,
-        "ores": {}
-      },
-      "output": {
-        "item_id": "potion_int_4",
-        "count": 1
-      }
-    },
-    {
-      "id": "alc_potion_int_5",
-      "name": "炼金·凝神药水Ⅴ",
-      "kind": "potion",
-      "desc": "临时提升 intelligence +260（持续 500 层）",
-      "cost": {
-        "materials": {
-          "special_relic": 1,
-          "boss_ember": 1
-        },
-        "copper": 12000,
-        "ores": {}
-      },
-      "output": {
-        "item_id": "potion_int_5",
-        "count": 1
-      }
+      "level": 5
     },
     {
       "id": "alc_potion_mp_1",
       "name": "炼金·魔涌药水Ⅰ",
       "kind": "potion",
-      "desc": "临时提升 mp +12（持续 100 层）",
+      "desc": "临时提升 mp +15（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_bloodgrass": 3
+          "herb_bloodgrass": 3,
+          "herb_wakeflower": 1
         },
-        "copper": 100,
-        "ores": {}
+        "copper": 100
       },
       "output": {
         "item_id": "potion_mp_1",
         "count": 1
-      }
+      },
+      "level": 1
     },
     {
       "id": "alc_potion_mp_2",
       "name": "炼金·魔涌药水Ⅱ",
       "kind": "potion",
-      "desc": "临时提升 mp +30（持续 200 层）",
+      "desc": "临时提升 mp +40（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_wakeflower": 3
+          "herb_wakeflower": 3,
+          "special_beastsoul": 1
         },
-        "copper": 400,
-        "ores": {}
+        "copper": 400
       },
       "output": {
         "item_id": "potion_mp_2",
         "count": 1
-      }
+      },
+      "level": 2
     },
     {
       "id": "alc_potion_mp_3",
       "name": "炼金·魔涌药水Ⅲ",
       "kind": "potion",
-      "desc": "临时提升 mp +70（持续 300 层）",
+      "desc": "临时提升 mp +90（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_moonmushroom": 3
-        },
-        "ores": {
-          "iron_ore": 1
+          "herb_moonmushroom": 3,
+          "special_element": 1
         },
         "copper": 1200
       },
       "output": {
         "item_id": "potion_mp_3",
         "count": 1
-      }
+      },
+      "level": 3
     },
     {
       "id": "alc_potion_mp_4",
       "name": "炼金·魔涌药水Ⅳ",
       "kind": "potion",
-      "desc": "临时提升 mp +120（持续 400 层）",
+      "desc": "临时提升 mp +160（持续 100 层）",
       "cost": {
         "materials": {
           "herb_dragonblood": 2,
-          "special_element": 1
+          "special_element": 2
         },
-        "copper": 4000,
-        "ores": {}
+        "copper": 4000
       },
       "output": {
         "item_id": "potion_mp_4",
         "count": 1
-      }
+      },
+      "level": 4
     },
     {
       "id": "alc_potion_mp_5",
       "name": "炼金·魔涌药水Ⅴ",
       "kind": "potion",
-      "desc": "临时提升 mp +200（持续 500 层）",
+      "desc": "临时提升 mp +260（持续 100 层）",
       "cost": {
         "materials": {
-          "special_relic": 1,
-          "boss_ember": 1
+          "special_relic": 2,
+          "herb_dragonblood": 2
         },
-        "copper": 12000,
-        "ores": {}
+        "copper": 12000
       },
       "output": {
         "item_id": "potion_mp_5",
         "count": 1
-      }
+      },
+      "level": 5
+    },
+    {
+      "id": "alc_potion_int_1",
+      "name": "炼金·凝神药水Ⅰ",
+      "kind": "potion",
+      "desc": "临时提升 intelligence +20（持续 100 层）",
+      "cost": {
+        "materials": {
+          "herb_wakeflower": 3,
+          "herb_bloodgrass": 1
+        },
+        "copper": 100
+      },
+      "output": {
+        "item_id": "potion_int_1",
+        "count": 1
+      },
+      "level": 1
+    },
+    {
+      "id": "alc_potion_int_2",
+      "name": "炼金·凝神药水Ⅱ",
+      "kind": "potion",
+      "desc": "临时提升 intelligence +53（持续 100 层）",
+      "cost": {
+        "materials": {
+          "herb_moonmushroom": 2,
+          "herb_wakeflower": 2
+        },
+        "copper": 400
+      },
+      "output": {
+        "item_id": "potion_int_2",
+        "count": 1
+      },
+      "level": 2
+    },
+    {
+      "id": "alc_potion_int_3",
+      "name": "炼金·凝神药水Ⅲ",
+      "kind": "potion",
+      "desc": "临时提升 intelligence +120（持续 100 层）",
+      "cost": {
+        "materials": {
+          "herb_moonmushroom": 4,
+          "special_beastsoul": 1
+        },
+        "copper": 1200
+      },
+      "output": {
+        "item_id": "potion_int_3",
+        "count": 1
+      },
+      "level": 3
+    },
+    {
+      "id": "alc_potion_int_4",
+      "name": "炼金·凝神药水Ⅳ",
+      "kind": "potion",
+      "desc": "临时提升 intelligence +213（持续 100 层）",
+      "cost": {
+        "materials": {
+          "herb_dragonblood": 3,
+          "herb_moonmushroom": 2
+        },
+        "copper": 4000
+      },
+      "output": {
+        "item_id": "potion_int_4",
+        "count": 1
+      },
+      "level": 4
+    },
+    {
+      "id": "alc_potion_int_5",
+      "name": "炼金·凝神药水Ⅴ",
+      "kind": "potion",
+      "desc": "临时提升 intelligence +347（持续 100 层）",
+      "cost": {
+        "materials": {
+          "special_relic": 2,
+          "special_element": 1
+        },
+        "copper": 12000
+      },
+      "output": {
+        "item_id": "potion_int_5",
+        "count": 1
+      },
+      "level": 5
+    },
+    {
+      "id": "alc_potion_agi_1",
+      "name": "炼金·疾风药水Ⅰ",
+      "kind": "potion",
+      "desc": "临时提升 agility +20（持续 100 层）",
+      "cost": {
+        "materials": {
+          "herb_bloodgrass": 3
+        },
+        "ores": {
+          "tin_ore": 1
+        },
+        "copper": 100
+      },
+      "output": {
+        "item_id": "potion_agi_1",
+        "count": 1
+      },
+      "level": 1
+    },
+    {
+      "id": "alc_potion_agi_2",
+      "name": "炼金·疾风药水Ⅱ",
+      "kind": "potion",
+      "desc": "临时提升 agility +53（持续 100 层）",
+      "cost": {
+        "materials": {
+          "herb_wakeflower": 3
+        },
+        "ores": {
+          "lead_ore": 1
+        },
+        "copper": 400
+      },
+      "output": {
+        "item_id": "potion_agi_2",
+        "count": 1
+      },
+      "level": 2
+    },
+    {
+      "id": "alc_potion_agi_3",
+      "name": "炼金·疾风药水Ⅲ",
+      "kind": "potion",
+      "desc": "临时提升 agility +120（持续 100 层）",
+      "cost": {
+        "materials": {
+          "herb_moonmushroom": 3
+        },
+        "ores": {
+          "mithril_ore": 1
+        },
+        "copper": 1200
+      },
+      "output": {
+        "item_id": "potion_agi_3",
+        "count": 1
+      },
+      "level": 3
+    },
+    {
+      "id": "alc_potion_agi_4",
+      "name": "炼金·疾风药水Ⅳ",
+      "kind": "potion",
+      "desc": "临时提升 agility +213（持续 100 层）",
+      "cost": {
+        "materials": {
+          "herb_dragonblood": 2
+        },
+        "ores": {
+          "stardust_sand": 2
+        },
+        "copper": 4000
+      },
+      "output": {
+        "item_id": "potion_agi_4",
+        "count": 1
+      },
+      "level": 4
+    },
+    {
+      "id": "alc_potion_agi_5",
+      "name": "炼金·疾风药水Ⅴ",
+      "kind": "potion",
+      "desc": "临时提升 agility +347（持续 100 层）",
+      "cost": {
+        "materials": {
+          "special_relic": 1
+        },
+        "ores": {
+          "oracle_stone": 1
+        },
+        "copper": 12000
+      },
+      "output": {
+        "item_id": "potion_agi_5",
+        "count": 1
+      },
+      "level": 5
     },
     {
       "id": "alc_potion_def_1",
@@ -274,87 +387,90 @@
       "desc": "临时提升 defense +20（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_bloodgrass": 3
+          "special_beastsoul": 2,
+          "herb_bloodgrass": 1
         },
-        "copper": 100,
-        "ores": {}
+        "copper": 100
       },
       "output": {
         "item_id": "potion_def_1",
         "count": 1
-      }
+      },
+      "level": 1
     },
     {
       "id": "alc_potion_def_2",
       "name": "炼金·坚壁药水Ⅱ",
       "kind": "potion",
-      "desc": "临时提升 defense +50（持续 200 层）",
+      "desc": "临时提升 defense +50（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_wakeflower": 3
+          "special_beastsoul": 3,
+          "herb_wakeflower": 1
         },
-        "copper": 400,
-        "ores": {}
+        "copper": 400
       },
       "output": {
         "item_id": "potion_def_2",
         "count": 1
-      }
+      },
+      "level": 2
     },
     {
       "id": "alc_potion_def_3",
       "name": "炼金·坚壁药水Ⅲ",
       "kind": "potion",
-      "desc": "临时提升 defense +110（持续 300 层）",
+      "desc": "临时提升 defense +110（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_moonmushroom": 3
-        },
-        "ores": {
-          "iron_ore": 1
+          "special_element": 2,
+          "herb_moonmushroom": 2
         },
         "copper": 1200
       },
       "output": {
         "item_id": "potion_def_3",
         "count": 1
-      }
+      },
+      "level": 3
     },
     {
       "id": "alc_potion_def_4",
       "name": "炼金·坚壁药水Ⅳ",
       "kind": "potion",
-      "desc": "临时提升 defense +190（持续 400 层）",
+      "desc": "临时提升 defense +190（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_dragonblood": 2,
-          "special_element": 1
+          "special_element": 3,
+          "herb_dragonblood": 1
         },
-        "copper": 4000,
-        "ores": {}
+        "copper": 4000
       },
       "output": {
         "item_id": "potion_def_4",
         "count": 1
-      }
+      },
+      "level": 4
     },
     {
       "id": "alc_potion_def_5",
       "name": "炼金·坚壁药水Ⅴ",
       "kind": "potion",
-      "desc": "临时提升 defense +300（持续 500 层）",
+      "desc": "临时提升 defense +300（持续 100 层）",
       "cost": {
         "materials": {
-          "special_relic": 1,
-          "boss_ember": 1
+          "special_relic": 2
         },
         "copper": 12000,
-        "ores": {}
+        "ores": {
+          "star_iron": 1
+        }
       },
       "output": {
         "item_id": "potion_def_5",
         "count": 1
-      }
+      },
+      "level": 5
     },
     {
       "id": "alc_potion_hp_1",
@@ -363,200 +479,112 @@
       "desc": "临时提升 hp +25（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_bloodgrass": 3
+          "herb_bloodgrass": 4,
+          "special_beastsoul": 1
         },
-        "copper": 100,
-        "ores": {}
+        "copper": 100
       },
       "output": {
         "item_id": "potion_hp_1",
         "count": 1
-      }
+      },
+      "level": 1
     },
     {
       "id": "alc_potion_hp_2",
       "name": "炼金·血源药水Ⅱ",
       "kind": "potion",
-      "desc": "临时提升 hp +60（持续 200 层）",
+      "desc": "临时提升 hp +60（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_wakeflower": 3
+          "herb_wakeflower": 4,
+          "herb_moonmushroom": 1
         },
-        "copper": 400,
-        "ores": {}
+        "copper": 400
       },
       "output": {
         "item_id": "potion_hp_2",
         "count": 1
-      }
+      },
+      "level": 2
     },
     {
       "id": "alc_potion_hp_3",
       "name": "炼金·血源药水Ⅲ",
       "kind": "potion",
-      "desc": "临时提升 hp +130（持续 300 层）",
+      "desc": "临时提升 hp +130（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_moonmushroom": 3
-        },
-        "ores": {
-          "iron_ore": 1
+          "herb_moonmushroom": 4,
+          "special_element": 1
         },
         "copper": 1200
       },
       "output": {
         "item_id": "potion_hp_3",
         "count": 1
-      }
+      },
+      "level": 3
     },
     {
       "id": "alc_potion_hp_4",
       "name": "炼金·血源药水Ⅳ",
       "kind": "potion",
-      "desc": "临时提升 hp +220（持续 400 层）",
+      "desc": "临时提升 hp +220（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_dragonblood": 2,
+          "herb_dragonblood": 4,
           "special_element": 1
         },
-        "copper": 4000,
-        "ores": {}
+        "copper": 4000
       },
       "output": {
         "item_id": "potion_hp_4",
         "count": 1
-      }
+      },
+      "level": 4
     },
     {
       "id": "alc_potion_hp_5",
       "name": "炼金·血源药水Ⅴ",
       "kind": "potion",
-      "desc": "临时提升 hp +350（持续 500 层）",
+      "desc": "临时提升 hp +350（持续 100 层）",
       "cost": {
         "materials": {
-          "special_relic": 1,
-          "boss_ember": 1
+          "herb_dragonblood": 4,
+          "special_relic": 1
         },
-        "copper": 12000,
-        "ores": {}
+        "copper": 12000
       },
       "output": {
         "item_id": "potion_hp_5",
         "count": 1
-      }
-    },
-    {
-      "id": "alc_potion_agi_1",
-      "name": "炼金·疾风药水Ⅰ",
-      "kind": "potion",
-      "desc": "临时提升 agility +10（持续 100 层）",
-      "cost": {
-        "materials": {
-          "herb_bloodgrass": 3
-        },
-        "copper": 100,
-        "ores": {}
       },
-      "output": {
-        "item_id": "potion_agi_1",
-        "count": 1
-      }
-    },
-    {
-      "id": "alc_potion_agi_2",
-      "name": "炼金·疾风药水Ⅱ",
-      "kind": "potion",
-      "desc": "临时提升 agility +25（持续 200 层）",
-      "cost": {
-        "materials": {
-          "herb_wakeflower": 3
-        },
-        "copper": 400,
-        "ores": {}
-      },
-      "output": {
-        "item_id": "potion_agi_2",
-        "count": 1
-      }
-    },
-    {
-      "id": "alc_potion_agi_3",
-      "name": "炼金·疾风药水Ⅲ",
-      "kind": "potion",
-      "desc": "临时提升 agility +60（持续 300 层）",
-      "cost": {
-        "materials": {
-          "herb_moonmushroom": 3
-        },
-        "ores": {
-          "iron_ore": 1
-        },
-        "copper": 1200
-      },
-      "output": {
-        "item_id": "potion_agi_3",
-        "count": 1
-      }
-    },
-    {
-      "id": "alc_potion_agi_4",
-      "name": "炼金·疾风药水Ⅳ",
-      "kind": "potion",
-      "desc": "临时提升 agility +110（持续 400 层）",
-      "cost": {
-        "materials": {
-          "herb_dragonblood": 2,
-          "special_element": 1
-        },
-        "copper": 4000,
-        "ores": {}
-      },
-      "output": {
-        "item_id": "potion_agi_4",
-        "count": 1
-      }
-    },
-    {
-      "id": "alc_potion_agi_5",
-      "name": "炼金·疾风药水Ⅴ",
-      "kind": "potion",
-      "desc": "临时提升 agility +180（持续 500 层）",
-      "cost": {
-        "materials": {
-          "special_relic": 1,
-          "boss_ember": 1
-        },
-        "copper": 12000,
-        "ores": {}
-      },
-      "output": {
-        "item_id": "potion_agi_5",
-        "count": 1
-      }
+      "level": 5
     },
     {
       "id": "alc_tool_coin_1",
       "name": "炼金·聚财符Ⅰ",
       "kind": "tool",
-      "desc": "金钱掉落 ×1.2（持续 30 分钟）",
+      "desc": "金钱掉落 ×1.2（持续 4 小时）",
       "cost": {
         "materials": {
           "special_beastsoul": 2,
           "herb_moonmushroom": 1
         },
-        "copper": 800,
-        "ores": {}
+        "copper": 800
       },
       "output": {
         "item_id": "tool_coin_1",
         "count": 1
-      }
+      },
+      "level": 1
     },
     {
       "id": "alc_tool_coin_2",
       "name": "炼金·聚财符Ⅱ",
       "kind": "tool",
-      "desc": "金钱掉落 ×1.4（持续 30 分钟）",
+      "desc": "金钱掉落 ×1.4（持续 4 小时）",
       "cost": {
         "materials": {
           "special_element": 2,
@@ -570,231 +598,231 @@
       "output": {
         "item_id": "tool_coin_2",
         "count": 1
-      }
+      },
+      "level": 2
     },
     {
       "id": "alc_tool_coin_3",
       "name": "炼金·聚财符Ⅲ",
       "kind": "tool",
-      "desc": "金钱掉落 ×1.6（持续 30 分钟）",
+      "desc": "金钱掉落 ×1.6（持续 4 小时）",
       "cost": {
         "materials": {
           "special_relic": 2,
           "boss_frost": 1
         },
-        "copper": 8000,
-        "ores": {}
+        "copper": 8000
       },
       "output": {
         "item_id": "tool_coin_3",
         "count": 1
-      }
+      },
+      "level": 3
     },
     {
       "id": "alc_tool_equip_2",
       "name": "炼金·寻宝符Ⅱ",
       "kind": "tool",
-      "desc": "装备掉落率 ×1.3（持续 30 分钟）",
+      "desc": "装备掉落 ×1.3（持续 4 小时）",
       "cost": {
         "materials": {
-          "special_element": 2,
-          "herb_dragonblood": 1
-        },
-        "ores": {
-          "silver_ore": 1
+          "boss_wolf": 2,
+          "special_element": 1
         },
         "copper": 2500
       },
       "output": {
         "item_id": "tool_equip_2",
         "count": 1
-      }
+      },
+      "level": 2
     },
     {
       "id": "alc_tool_equip_3",
       "name": "炼金·寻宝符Ⅲ",
       "kind": "tool",
-      "desc": "装备掉落率 ×1.5（持续 30 分钟）",
+      "desc": "装备掉落 ×1.5（持续 4 小时）",
       "cost": {
         "materials": {
-          "special_relic": 2,
-          "boss_frost": 1
+          "boss_frost": 2,
+          "special_relic": 1
         },
-        "copper": 8000,
-        "ores": {}
+        "copper": 8000
       },
       "output": {
         "item_id": "tool_equip_3",
         "count": 1
-      }
+      },
+      "level": 3
     },
     {
       "id": "alc_tool_ore_1",
       "name": "炼金·采掘符Ⅰ",
       "kind": "tool",
-      "desc": "矿石掉落率 ×1.3（持续 30 分钟）",
+      "desc": "矿石掉落 ×1.3（持续 4 小时）",
       "cost": {
         "materials": {
-          "special_beastsoul": 2,
-          "herb_moonmushroom": 1
+          "herb_bloodgrass": 1
         },
-        "copper": 800,
-        "ores": {}
+        "ores": {
+          "copper_ore": 4
+        },
+        "copper": 800
       },
       "output": {
         "item_id": "tool_ore_1",
         "count": 1
-      }
+      },
+      "level": 1
     },
     {
       "id": "alc_tool_ore_2",
       "name": "炼金·采掘符Ⅱ",
       "kind": "tool",
-      "desc": "矿石掉落率 ×1.5（持续 30 分钟）",
+      "desc": "矿石掉落 ×1.5（持续 4 小时）",
       "cost": {
         "materials": {
-          "special_element": 2,
-          "herb_dragonblood": 1
+          "herb_moonmushroom": 1
         },
         "ores": {
-          "silver_ore": 1
+          "mithril_ore": 4
         },
         "copper": 2500
       },
       "output": {
         "item_id": "tool_ore_2",
         "count": 1
-      }
+      },
+      "level": 2
     },
     {
       "id": "alc_tool_ore_3",
       "name": "炼金·采掘符Ⅲ",
       "kind": "tool",
-      "desc": "矿石掉落率 ×1.8（持续 30 分钟）",
+      "desc": "矿石掉落 ×1.8（持续 4 小时）",
       "cost": {
         "materials": {
-          "special_relic": 2,
-          "boss_frost": 1
+          "herb_dragonblood": 1
         },
-        "copper": 8000,
-        "ores": {}
+        "ores": {
+          "dragon_crystal": 4
+        },
+        "copper": 8000
       },
       "output": {
         "item_id": "tool_ore_3",
         "count": 1
-      }
+      },
+      "level": 3
     },
     {
       "id": "alc_tool_herb_1",
       "name": "炼金·采药符Ⅰ",
       "kind": "tool",
-      "desc": "草药掉落率 ×1.3（持续 30 分钟）",
+      "desc": "草药掉落 ×1.3（持续 4 小时）",
       "cost": {
         "materials": {
-          "special_beastsoul": 2,
-          "herb_moonmushroom": 1
+          "herb_bloodgrass": 6,
+          "special_beastsoul": 1
         },
-        "copper": 800,
-        "ores": {}
+        "copper": 800
       },
       "output": {
         "item_id": "tool_herb_1",
         "count": 1
-      }
+      },
+      "level": 1
     },
     {
       "id": "alc_tool_herb_2",
       "name": "炼金·采药符Ⅱ",
       "kind": "tool",
-      "desc": "草药掉落率 ×1.5（持续 30 分钟）",
+      "desc": "草药掉落 ×1.5（持续 4 小时）",
       "cost": {
         "materials": {
-          "special_element": 2,
-          "herb_dragonblood": 1
-        },
-        "ores": {
-          "silver_ore": 1
+          "herb_moonmushroom": 5,
+          "special_element": 1
         },
         "copper": 2500
       },
       "output": {
         "item_id": "tool_herb_2",
         "count": 1
-      }
+      },
+      "level": 2
     },
     {
       "id": "alc_tool_herb_3",
       "name": "炼金·采药符Ⅲ",
       "kind": "tool",
-      "desc": "草药掉落率 ×1.8（持续 30 分钟）",
+      "desc": "草药掉落 ×1.8（持续 4 小时）",
       "cost": {
         "materials": {
-          "special_relic": 2,
-          "boss_frost": 1
+          "herb_dragonblood": 4,
+          "special_relic": 1
         },
-        "copper": 8000,
-        "ores": {}
+        "copper": 8000
       },
       "output": {
         "item_id": "tool_herb_3",
         "count": 1
-      }
+      },
+      "level": 3
     },
     {
       "id": "alc_tool_special_2",
       "name": "炼金·祈灵符Ⅱ",
       "kind": "tool",
-      "desc": "特殊物品掉落率 ×1.4（持续 30 分钟）",
+      "desc": "特殊物品掉落 ×1.4（持续 4 小时）",
       "cost": {
         "materials": {
-          "special_element": 2,
-          "herb_dragonblood": 1
-        },
-        "ores": {
-          "silver_ore": 1
+          "special_element": 4,
+          "herb_moonmushroom": 2
         },
         "copper": 2500
       },
       "output": {
         "item_id": "tool_special_2",
         "count": 1
-      }
+      },
+      "level": 2
     },
     {
       "id": "alc_tool_special_3",
       "name": "炼金·祈灵符Ⅲ",
       "kind": "tool",
-      "desc": "特殊物品掉落率 ×1.7（持续 30 分钟）",
+      "desc": "特殊物品掉落 ×1.7（持续 4 小时）",
       "cost": {
         "materials": {
-          "special_relic": 2,
-          "boss_frost": 1
+          "special_relic": 3,
+          "herb_dragonblood": 2
         },
-        "copper": 8000,
-        "ores": {}
+        "copper": 8000
       },
       "output": {
         "item_id": "tool_special_3",
         "count": 1
-      }
+      },
+      "level": 3
     },
     {
       "id": "alc_tool_all_3",
       "name": "炼金·万象符Ⅲ",
       "kind": "tool",
-      "desc": "全部材料掉落率 ×1.5（持续 30 分钟）",
+      "desc": "全部材料掉落 ×1.5（持续 4 小时）",
       "cost": {
         "materials": {
           "special_relic": 2,
-          "boss_frost": 1
+          "boss_frost": 1,
+          "herb_dragonblood": 2
         },
-        "copper": 8000,
-        "ores": {}
+        "copper": 8000
       },
       "output": {
         "item_id": "tool_all_3",
         "count": 1
-      }
+      },
+      "level": 3
     }
   ]
 }
