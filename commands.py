@@ -247,11 +247,11 @@ def _item_desc(it):
 
 
 def cmd_shop(user, group_id, args, at_qqs=None):
-    """武器库：按职业可用(line/any) + 类型分组展示；同类装备排在一起（D-issue3）。
+    """武器库：按等级（T 档 = 所需称号）拆分展示。
 
-    展示规则：未转职先引导转职；已转职展示本职业可用全部档位并按类型分组，
-    组内从低阶到高阶排列 —— 低于/等于当前阶级的都可直接购买（便于低阶换装，D-issue2），
-    高于当前阶级的带 🔒（晋升解锁，仅预览不逐条刷屏）。
+    展示规则：未转职先引导转职；已转职把本职业可用装备按「T 档」分组，
+    每档标题注明所需称号（如 T3·银辉战士）。当前称号（当前阶级）能买 ≤ 当前档
+    的全部装备；更高档标 🔒 并提示需晋升到什么称号（该档只预览最低价几件，防刷屏）。
     """
     prof = (user.profession or "") or ""
     if not prof:
@@ -263,27 +263,30 @@ def cmd_shop(user, group_id, args, at_qqs=None):
     items = load_equipment()
     # 本职业可用（职业 line 或 通用 any）
     usable = [it for it in items if item_line(it) in (line, LINE_ANY)]
-    # 类型展示顺序（两职业通用的放前，便于换装时一眼找到同类）
-    order = ["weapon", "staff", "shield", "focus", "armor", "robe", "accessory", "other"]
-    groups = {}
+    if not usable:
+        return "武器库暂无可购装备。"
+    # 按 T 档分组
+    from collections import defaultdict
+    by_tier = defaultdict(list)
     for it in usable:
-        groups.setdefault(it.get("type", "other"), []).append(it)
-    lines = [f"⚔️ 武器库 · {_user_title(user)}（同类排在一起；当前阶级可购全部档，更高阶 🔒 需晋升）"]
-    for ty in order:
-        if ty not in groups:
-            continue
-        arr = sorted(groups[ty], key=lambda x: (_item_tier(x), x["price"]))
-        purchasable = [it for it in arr if _item_tier(it) <= my_tier]
-        locked = [it for it in arr if _item_tier(it) > my_tier]
+        by_tier[_item_tier(it)].append(it)
+    max_shop = max(_item_tier(it) for it in usable)
+    lines = [f"⚔️ 武器库 · {_user_title(user)}（当前称号可购 T0~T{my_tier} 档）"]
+    for ti in range(0, max_shop + 1):
+        arr = sorted(by_tier.get(ti, []), key=lambda x: (x["price"], x["name"]))
         if not arr:
             continue
-        lines.append(f"—— {TYPE_NAMES.get(ty, ty)} ——")
-        for it in purchasable:
-            lines.append(f"· {it['name']}（{_item_desc(it)}）{format_currency(it['price'])}")
-        if locked:
-            t0 = _item_tier(locked[0])
-            lines.append(f"· 🔒 更高阶 {TYPE_NAMES.get(ty, ty)}（T{t0} 起）需 /晋升 解锁")
-    lines.append("—— 提示：/购买 装备名；/转职 切换职业；/晋升 提升阶级解锁更高阶 ——")
+        title_name = tier_title(prof, ti)  # 如 见习战士 / 疾风战士 …
+        if ti <= my_tier:
+            lines.append(f"—— T{ti} · {title_name} ——")
+            for it in arr:
+                lines.append(f"· {it['name']}（{_item_desc(it)}）{format_currency(it['price'])}")
+        else:
+            lines.append(f"—— 🔒 T{ti} · {title_name} 需 /晋升 至「{title_name}」——")
+            preview = "、".join(it["name"] for it in arr[:4])
+            more = f" 等 {len(arr)} 件" if len(arr) > 4 else ""
+            lines.append(f"   预览：{preview}{more}")
+    lines.append("—— 提示：/购买 装备名；/晋升 提升称号解锁更高档；/铁匠铺 超越商店顶级 ——")
     return "\n".join(lines)
 
 
@@ -361,10 +364,13 @@ def _forge_status(user):
 
 
 def cmd_forge_shop(user, group_id, args, at_qqs=None):
-    """查看铁匠铺配方：按历史最高层分级展示已解锁 Lv（未解锁的标解锁层）。"""
+    """查看铁匠铺配方：按铁匠铺 Lv 分级展示，标题注明解锁层与所需称号段。"""
+    from tiers import tier_of_layer
+    prof = (user.profession or "") or ""
     if not _forge_unlocked(user):
         return ("🔨 铁匠铺尚未开放。\n"
-                f"到达地下城第 {forge.FORGE_LV_LAYER[1]} 层后开启 Lv1，可锻造超越武具店顶级的装备！")
+                f"到达地下城第 {forge.FORGE_LV_LAYER[1]} 层（≈{tier_title(prof, tier_of_layer(forge.FORGE_LV_LAYER[1]))} 称号段）后开启 Lv1，"
+                "可锻造超越武具店顶级的装备！")
     recs = forge.all_forges()
     open_lvs = _forge_status(user)
     lines = [f"🔨 铁匠铺（/锻造 装备名 制作；已开放 Lv{'/'.join(map(str, open_lvs))}）"]
@@ -373,11 +379,16 @@ def cmd_forge_shop(user, group_id, args, at_qqs=None):
         if r.get("level") != cur_level:
             cur_level = r.get("level")
             lv_open = cur_level in open_lvs
+            need = forge.FORGE_LV_LAYER.get(cur_level)
+            tier_need = tier_of_layer(need) if need else 0
+            title_req = tier_title(prof, tier_need) or f"T{tier_need} 段"
+            # 该 Lv 产物的强度档（配方 tier 集合）
+            lv_tiers = sorted({int(rr.get("tier", 0) or 0) for rr in recs if rr.get("level") == cur_level})
+            tier_txt = f"产物 T{'/'.join(map(str, lv_tiers))}"
             if lv_open:
-                lines.append(f"—— Lv{cur_level} ——")
+                lines.append(f"—— Lv{cur_level}（{tier_txt} · 到 {need} 层 ≈「{title_req}」）——")
             else:
-                need = forge.FORGE_LV_LAYER.get(cur_level)
-                lines.append(f"—— 🔒 Lv{cur_level}（到达地下城 {need} 层解锁）——")
+                lines.append(f"—— 🔒 Lv{cur_level}（{tier_txt}）需到地下城 {need} 层 ≈「{title_req}」——")
         cost = forge.format_cost(r.get("cost", {})) + f" + {format_currency(r.get('price', 0))}"
         lines.append(f"· {r['name']}（{TYPE_NAMES.get(r['type'], r['type'])}）{_item_desc(r)}")
         lines.append(f"   消耗：{cost}")
@@ -411,8 +422,12 @@ def cmd_forge(user, group_id, args, at_qqs=None):
     # 等级解锁校验（新口径）：配方按铁匠铺 Lv 分级，需历史最高层达到该 Lv 解锁层
     lv = int(rec.get("level", 1))
     if not _forge_level_open(user, lv):
+        from tiers import tier_of_layer
         need = forge.FORGE_LV_LAYER.get(lv)
-        return (f"🔒 「{rec['name']}」属于铁匠铺 Lv{lv}，到达地下城第 {need} 层后解锁。\n"
+        prof2 = (user.profession or "") or ""
+        title_req = tier_title(prof2, tier_of_layer(need)) if need else f"T{lv} 段"
+        return (f"🔒 「{rec['name']}」属于铁匠铺 Lv{lv}，需到地下城第 {need} 层"
+                f"（≈「{title_req}」称号段）解锁。\n"
                 f"（当前历史最高层 {historical_best_layer(user)}）")
     price = rec.get("price", 0)
     if user.copper < price:
@@ -469,8 +484,9 @@ def cmd_buy(user, group_id, args, at_qqs=None):
         if req_tier is None:
             req_tier = tier_of_price(it.get("price", 0))
         if (user.tier or 0) < int(req_tier):
-            return (f"🔒 「{it['name']}」需要晋升到更高阶级才能购买。\n"
-                    f"当前阶级 {_user_title(user)}；发送 /晋升 查看晋升条件。")
+            need_title = tier_title(prof, int(req_tier)) or f"T{req_tier} 段"
+            return (f"🔒 「{it['name']}」需晋升至「{need_title}」称号才能购买。\n"
+                    f"当前称号 {_user_title(user)}；发送 /晋升 查看晋升条件。")
     total = sum(it["price"] for it in items)
     if user.copper < total:
         return (f"铜币不足，不能赊账！购买这 {len(items)} 件装备共需 {format_currency(total)}，"
