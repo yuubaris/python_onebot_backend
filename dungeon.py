@@ -357,11 +357,12 @@ def rare_item_ids():
 
 
 def _roll_boss_ore(layer, btype):
-    """Boss 通关掉落矿石：按 Boss 类型给稀有度权重，返回 ore_id。
+    """Boss 通关掉落矿石：按 Boss 类型给稀有度权重，返回 (ore_id, count)。
 
     相对普通层（ore.roll_ore，档位概率固定）Boss 层掉率概率更高：
     高稀有档占比随 Boss 类型提升（精英→小Boss→大Boss 递增），且 Boss 必掉。
     矿石从对应档位全池随机（含扩充后的新矿）；神话档仅大 Boss 掉落。
+    掉落数量（v2.11.30）：1 + 层数梯度（每 100 层 +1）+ Boss 类型加成（大Boss+2/小Boss+1），封顶 8。
     """
     import random
     from ore import load_ores
@@ -383,7 +384,9 @@ def _roll_boss_ore(layer, btype):
     for rarity, w in weights:
         acc += w
         if r <= acc and by_rar.get(rarity):
-            return random.choice(by_rar[rarity])
+            bonus = 2 if btype == "major" else (1 if btype == "minor" else 0)
+            count = min(1 + layer // 100 + bonus, 8)
+            return random.choice(by_rar[rarity]), count
     return None
 
 
@@ -577,10 +580,11 @@ def _roll_boss_drop(user, layer, btype):
         user.dungeon_coins_earned += bonus
         user.dungeon_run_coins += bonus
         coin_bonus = bonus
-    ore_id = _roll_boss_ore(layer, btype)
-    if ore_id:
-        ore.grant_ores(user.user_id, {ore_id: 1})
-        ore_count = 1
+    ore_res = _roll_boss_ore(layer, btype)
+    if ore_res:
+        ore_id, ore_n = ore_res
+        ore.grant_ores(user.user_id, {ore_id: ore_n})
+        ore_count = ore_n
     # 特殊物品（精英 25% / 小Boss 45% / 大Boss 80%，R17；掉落增益 scope=special）→ 有名字单独列
     special_id = material.roll_special(btype)
     if special_id:
