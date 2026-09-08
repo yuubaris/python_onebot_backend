@@ -176,9 +176,9 @@
     <tr><td><code class="inline">/地下城 进入/状态/退出</code></td><td>地下城冒险</td><td>退出保留进度可续；含 Boss 关掉落</td></tr>
     <tr><td><code class="inline">/铁匠铺</code></td><td>查看锻造配方</td><td>400 层开 Lv1，分级至 Lv4@3200</td></tr>
     <tr><td><code class="inline">/锻造 名称</code></td><td>锻造装备</td><td>消耗铜币 + 矿石，不能赊账</td></tr>
-    <tr><td><code class="inline">/挑战 @对方</code></td><td>发起对战</td><td>随机胜负，每天 3 次</td></tr>
-    <tr><td><code class="inline">/boss 列表</code></td><td>守关 Boss 列表</td><td>按历史层解锁；各 Boss 首通/今日剩余</td></tr>
-    <tr><td><code class="inline">/boss 挑战 Boss名</code></td><td>挑战守关 Boss</td><td>普通守关每日共 3 次（共享）/ 大 Boss 1000·2000·3000·3600 每日各 1 次；成功率按装备强度；首通必出 Boss 材料；大 Boss 额外必掉「万宝源晶」；铜币/稀有永久递减</td></tr>
+    <tr><td><code class="inline">/挑战 @对方</code></td><td>玩家对战</td><td>随机胜负，每天 3 次</td></tr>
+    <tr><td><code class="inline">/挑战 &lt;Boss名|层数|称号&gt;</code></td><td>Boss 挑战（统一入口）</td><td>无 @ 即按 Boss 挑战；兼容完整名/部分名/层数（如 <code class="inline">1000 层</code>）/称号（如 <code class="inline">究极</code>）</td></tr>
+    <tr><td><code class="inline">/boss 列表</code></td><td>守关 Boss 列表</td><td>按历史层解锁；各 Boss 首通/今日剩余（挑战统一走 <code class="inline">/挑战</code>；<code class="inline">/boss 挑战 Boss名</code> 仍兼容）</td></tr>
     <tr><td><code class="inline">/炼金 [配方名]</code></td><td>炼金（药水/道具）</td><td>消耗 材料+矿石+铜币</td></tr>
     <tr><td><code class="inline">/使用 物品名</code></td><td>使用药水/道具</td><td>药水=属性 BUFF；道具=掉落增益</td></tr>
     <tr><td><code class="inline">/踢 @对方</code></td><td>生成踢人图</td><td>30 秒冷却</td></tr>
@@ -345,7 +345,7 @@
   <p>分布：<b>1000 前每 100 层</b>（100~900）→ <b>1000 究极</b>「万古魔主·终焉」单独冠名 → <b>1000 后每 200</b>（1200/1400/1600/1800）→ <b>2000</b>「万劫魔帝·归墟」独立命名 → <b>2000 后每 500</b>（2500/3000）→ <b>3000 究极</b>「万渊魔尊·裂界」→ <b>3600 最终</b>「万瓜之主·夕张」。</p>
   <table>
     <tr><th>机制</th><th>规则</th></tr>
-    <tr><td>列表 / 挑战</td><td><code class="inline">/boss 列表</code> 按历史最高层解锁展示；<code class="inline">/boss 挑战 Boss名</code> 发起挑战</td></tr>
+    <tr><td>列表 / 挑战</td><td><code class="inline">/boss 列表</code> 按历史最高层解锁展示；挑战统一走 <code class="inline">/挑战 &lt;Boss名|层数|称号&gt;</code>（<code class="inline">/boss 挑战 Boss名</code> 仍兼容）</td></tr>
     <tr><td>每日次数</td><td>普通守关（除 1000/2000/3000/3600 外）每日组内 <b>共 3 次</b>（跨 Boss 共享）；大 Boss（1000/2000/3000/3600）每日<b>各 1 次</b>（独立计数）。胜/败均扣，按日期重置</td></tr>
     <tr><td>成功率</td><td>按当前装备强度：<span class="formula">S = dungeon_speed(effective_stats)；B0 = 该层血量 / 3600s；p = x³/(1+x³)，x=S/B0</span>（3%~97% 保底/封顶）</td></tr>
     <tr><td>掉落</td><td>首通<b>必出</b> Boss 材料；重复成功随机 <b>60%</b>（不掉率递减）</td></tr>

@@ -71,11 +71,16 @@ def all_bosses():
 
 
 def find_boss(name_or_id):
-    """按名称/id 精确查找；找不到返回 None（兼容省略 tag 前后空格）。"""
+    """统一 Boss 匹配（供 /挑战 <Boss名|层数|称号> 与 /boss 挑战 使用）。
+
+    兼容写法：完整名 / id / 层数（"1000"、"1000 层"）/ 称号 tag（"究极"）/ 部分名唯一命中；
+    部分名多命中返回 None（由调用方列建议）。
+    """
     load_bosses()
     key = (name_or_id or "").strip()
     if not key:
         return None
+    # 1) 精确名/id
     if key in _cache["by_name"]:
         return _cache["by_name"][key]
     if key in _cache["by_id"]:
@@ -87,7 +92,19 @@ def find_boss(name_or_id):
     for name, b in _cache["by_name"].items():
         if name.lower() == low:
             return b
-    return None
+    # 2) 层数（"1000"、"1000 层"、"1000层"）
+    num = key.replace("层", "").strip()
+    if num.isdigit():
+        return _cache["by_layer"].get(int(num))
+    # 3) 去 "boss" 前缀壳（"boss裂风狼王"）后按称号/部分名匹配
+    bare = key
+    if bare.lower().startswith("boss") and len(bare) > 4:
+        bare = bare[4:].strip()
+    for b in _cache["bosses"]:
+        if (b.get("tag") or "").strip() == bare:
+            return b
+    hits = [b for b in _cache["bosses"] if bare in b["name"] or bare.lower() in b["id"].lower()]
+    return hits[0] if len(hits) == 1 else None
 
 
 def suggest_bosses(keyword, limit=5):

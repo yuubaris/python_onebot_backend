@@ -760,10 +760,10 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/地下城 进入/状态/退出 - 地下城冒险（10/50/100 层 Boss 掉落；最高 3600 层；状态含生效中药水/道具）\n"
             "/铁匠铺 - 查看锻造配方（400 层解锁，超越武器库顶级）\n"
             "/锻造 装备名 - 消耗铜币+矿石制作装备（需职业/阶级符合）\n"
-            "/boss 列表 / boss 挑战 Boss名 - 守关 Boss 挑战（普通每日共 3 次 / 1000·2000·3600 每日各 1 次，首通必出 Boss 材料）\n"
+            "/boss 列表 - 查看守关 Boss（挑战统一走 /挑战 <Boss名|层数|称号>；普通每日共 3 次 / 1000·2000·3000·3600 每日各 1 次，首通必出 Boss 材料）\n"
             "/炼金 [配方名] - 查看/制作药水·道具（消耗材料+矿石）\n"
             "/使用 物品名 - 使用药水/道具(药水/道具各同时仅一种, 新用替换并刷新时长)\n"
-            "/挑战 @对方 - 发起对战（随机胜负，每天 3 次）\n"
+            "/挑战 @对方 / <Boss名|层数|称号> - 玩家对战 或 Boss 挑战（如 挑战 裂风狼王 / 挑战 1000 层 / 挑战 究极）\n"
             "/踢 @对方 - 生成踢人图（30 秒冷却）\n"
             "/撅 @对方 - 生成撅人 GIF（30 秒冷却）\n"
             "/佬 @对方 - 生成大佬致敬图（30 秒冷却）\n"
@@ -838,15 +838,35 @@ def _copper_median():
 
 
 def cmd_challenge(user, group_id, args, at_qqs=None):
+    """/挑战 统一入口：
+    - /挑战 @对方 → 玩家对战（原逻辑：随机 50/50，三条文字演出，每天 3 次）；
+    - /挑战 <Boss名|层数|称号> → Boss 挑战（如 挑战 裂风狼王 / 挑战 1000 层 / 挑战 究极，
+      兼容完整名/部分名/层数/称号，成功按 Boss 规则结算）。
+    """
+    targets = at_qqs or []
+    if targets:
+        return _player_duel(user, group_id, targets)
+    text = (args or "").strip()
+    if not text:
+        return ("用法：/挑战 @对方（玩家对战，每天 3 次）\n"
+                "/挑战 <Boss名|层数|称号>（如 挑战 裂风狼王 / 挑战 1000 层 / 挑战 究极）\n"
+                "/boss 列表 查看全部守关 Boss。")
+    boss_obj = boss.find_boss(text)
+    if boss_obj:
+        return boss.challenge_boss(user, boss_obj)[0]
+    hits = boss.suggest_bosses(text)
+    hint = f"，你是不是想挑战：{'、'.join(h['name'] for h in hits)}" if hits else ""
+    return (f"没有找到「{text}」对应的 Boss{hint}\n"
+            f"发送 /挑战 查看用法，或 /boss 列表 查看全部守关 Boss。")
+
+
+def _player_duel(user, group_id, targets):
     """/挑战 @B：随机 50/50 胜负，三条文字演出（各间隔 2 秒）。
 
     赌注基准 = max(全服资产中位数 × 3%, 500 铜币)；
     挑战方败 → 支付 基准×1.2；被挑战方败 → 支付 基准×0.8；
     不能赊账（资产不足则全部支付）；发起方每天限 3 次。
     """
-    targets = at_qqs or []
-    if not targets:
-        return "用法：/挑战 @对方（每天 3 次）"
     target = targets[0]
     if target == user.user_id:
         return "不能挑战自己"
