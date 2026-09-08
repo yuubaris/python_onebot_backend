@@ -26,7 +26,8 @@
       "desc": "临时提升 attack +40（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_bloodgrass": 5,
+          "boss_magma": 1,
+          "herb_bloodgrass": 4,
           "herb_moonmushroom": 1
         },
         "copper": 400
@@ -44,8 +45,9 @@
       "desc": "临时提升 attack +90（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_moonmushroom": 4,
-          "herb_wakeflower": 2
+          "boss_bone": 1,
+          "herb_moonmushroom": 3,
+          "herb_wakeflower": 1
         },
         "copper": 1200
       },
@@ -62,8 +64,9 @@
       "desc": "临时提升 attack +160（持续 100 层）",
       "cost": {
         "materials": {
+          "boss_frost": 1,
           "herb_dragonblood": 2,
-          "herb_moonmushroom": 3
+          "herb_moonmushroom": 2
         },
         "copper": 4000
       },
@@ -116,8 +119,9 @@
       "desc": "临时提升 mp +40（持续 100 层）",
       "cost": {
         "materials": {
+          "boss_magma": 1,
           "herb_moonmushroom": 2,
-          "herb_bloodgrass": 3
+          "herb_bloodgrass": 2
         },
         "copper": 400
       },
@@ -135,7 +139,8 @@
       "cost": {
         "materials": {
           "boss_bone": 1,
-          "herb_moonmushroom": 3
+          "herb_moonmushroom": 2,
+          "special_element": 1
         },
         "copper": 1200
       },
@@ -152,8 +157,9 @@
       "desc": "临时提升 mp +160（持续 100 层）",
       "cost": {
         "materials": {
+          "boss_frost": 1,
           "herb_dragonblood": 2,
-          "special_element": 2
+          "special_element": 1
         },
         "copper": 4000
       },
@@ -170,8 +176,9 @@
       "desc": "临时提升 mp +260（持续 100 层）",
       "cost": {
         "materials": {
+          "boss_ember": 1,
           "special_relic": 2,
-          "herb_dragonblood": 2
+          "herb_dragonblood": 1
         },
         "copper": 12000
       },
@@ -206,8 +213,9 @@
       "desc": "临时提升 intelligence +53（持续 100 层）",
       "cost": {
         "materials": {
+          "boss_magma": 1,
           "herb_moonmushroom": 2,
-          "herb_wakeflower": 3
+          "herb_wakeflower": 2
         },
         "copper": 400
       },
@@ -243,8 +251,9 @@
       "desc": "临时提升 intelligence +213（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_dragonblood": 3,
-          "herb_moonmushroom": 2
+          "boss_frost": 1,
+          "herb_dragonblood": 2,
+          "herb_moonmushroom": 1
         },
         "copper": 4000
       },
@@ -261,8 +270,8 @@
       "desc": "临时提升 intelligence +347（持续 100 层）",
       "cost": {
         "materials": {
+          "boss_ember": 1,
           "special_relic": 2,
-          "herb_dragonblood": 1,
           "herb_moonmushroom": 1
         },
         "copper": 12000
@@ -298,7 +307,8 @@
       "desc": "临时提升 agility +53（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_wakeflower": 5,
+          "boss_magma": 1,
+          "herb_wakeflower": 4,
           "herb_moonmushroom": 1
         },
         "copper": 400
@@ -316,8 +326,9 @@
       "desc": "临时提升 agility +120（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_moonmushroom": 4,
-          "herb_bloodgrass": 2
+          "boss_bone": 1,
+          "herb_moonmushroom": 3,
+          "herb_bloodgrass": 1
         },
         "copper": 1200
       },
@@ -334,8 +345,9 @@
       "desc": "临时提升 agility +213（持续 100 层）",
       "cost": {
         "materials": {
+          "boss_frost": 1,
           "herb_dragonblood": 2,
-          "herb_moonmushroom": 2,
+          "herb_moonmushroom": 1,
           "herb_bloodgrass": 1
         },
         "copper": 4000
@@ -409,8 +421,10 @@
       "desc": "临时提升 defense +110（持续 100 层）",
       "cost": {
         "materials": {
-          "special_element": 2,
-          "herb_moonmushroom": 3
+          "boss_bone": 1,
+          "herb_moonmushroom": 1,
+          "herb_wakeflower": 1,
+          "special_element": 1
         },
         "copper": 1200
       },
@@ -427,7 +441,8 @@
       "desc": "临时提升 defense +190（持续 100 层）",
       "cost": {
         "materials": {
-          "special_element": 3,
+          "boss_frost": 1,
+          "special_element": 2,
           "herb_dragonblood": 1
         },
         "copper": 4000
@@ -445,7 +460,8 @@
       "desc": "临时提升 defense +300（持续 100 层）",
       "cost": {
         "materials": {
-          "special_relic": 2,
+          "boss_ember": 1,
+          "special_relic": 1,
           "herb_moonmushroom": 2
         },
         "copper": 12000
@@ -500,7 +516,8 @@
       "desc": "临时提升 hp +130（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_moonmushroom": 4,
+          "boss_bone": 1,
+          "herb_moonmushroom": 3,
           "special_element": 1
         },
         "copper": 1200
@@ -518,7 +535,8 @@
       "desc": "临时提升 hp +220（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_dragonblood": 4,
+          "boss_frost": 1,
+          "herb_dragonblood": 3,
           "special_element": 1
         },
         "copper": 4000
@@ -536,7 +554,8 @@
       "desc": "临时提升 hp +350（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_dragonblood": 4,
+          "boss_ember": 1,
+          "herb_dragonblood": 3,
           "special_relic": 1
         },
         "copper": 12000
