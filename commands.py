@@ -889,6 +889,12 @@ DUNGEON_ALLOWED = {"签到", "checkin", "qiandao",
                    "挑战", "challenge", "tiaozhan"}
 
 
+# 会展示“地下城 Boss 战报”的命令 handler：仅自身状态/结算类查看命令
+# （/地下城、/签到、/余额、/背包）。娱乐/对他人命令（/踢、/撅、/佬、/挑战、/帮助 等）
+# 不夹带战报——掉落照常入账，战报保留至下次状态类命令一并展示。
+_BOSS_REPORT_COMMANDS = {cmd_dungeon, cmd_checkin, cmd_balance, cmd_bag}
+
+
 def _prepend_boss_report(user, reply):
     """若本次结算有 Boss 通关掉落，把播报拼到回复开头。"""
     lines = take_boss_report(user.user_id)
@@ -947,7 +953,11 @@ def dispatch_command(text, user, group_id, at_qqs=None):
 
     try:
         reply = handler(user, group_id, args, at_qqs)
-        return _prepend_boss_report(user, reply)
+        # Boss 掉落战报仅在自身状态/结算类命令（地下城/签到/余额/背包）时展示；
+        # /踢 /撅 /佬 /挑战 等娱乐命令不再夹带（掉落照常入账，战报保留待下次状态命令带出）。
+        if handler in _BOSS_REPORT_COMMANDS:
+            return _prepend_boss_report(user, reply)
+        return reply
     except Exception as exc:
         db.session.rollback()
         return f"指令执行出错：{exc}"
