@@ -3,7 +3,7 @@
 
 依据 docs/tier-forge-title-rework-request.md（用户 2026-09-08 确认）：
 - 锻造强度 Lv1 = 商店 T4.5（每部位以 商店该部位 T4 顶配与 T5 顶配的收益分中点为准）；
-- Lv2/Lv3/Lv4 按等比 ~1.30 平滑递增（整体覆盖 商店T4.5 ~ T7 级毕业带）；
+- Lv2/Lv3/Lv4 按等比 ~1.30 平滑递增（单件收益分口径；四件套合成战力等比 ~1.52；整体覆盖 商店T4.5 ~ T7 级毕业带）；
 - 修复原 Lv3↔Lv4 数值倒挂；价格随强度联动下调（避免“贵却弱”）。
 
 用法：
@@ -21,7 +21,7 @@ FG_FILE = os.path.join(BASE, "forge.json")
 sys.path.insert(0, os.path.join(BASE, "docs"))
 from fill_rare_pool import fit_phys, fit_magic, fit_armor  # noqa: E402
 
-RATIO = 1.30          # 每级强度等比系数（Lv1=商店T4.5 起步）
+RATIO = 1.30          # 每级强度等比系数（单件收益分口径，Lv1=商店T4.5 起步；四件套合成战力等比 ~1.52）
 # 价格联动（每 Lv 统一价，随强度下调；Lv1 介于商店 T4/T5 之间，Lv4 约 20万+）
 PRICE_BY_LV = {1: 32000, 2: 60000, 3: 120000, 4: 260000}
 # 锻造装备 tier（语义/展示档；实际穿戴以铁匠铺 Lv 解锁层为准，见 dungeon.effective_stats）
