@@ -80,8 +80,8 @@
       "desc": "临时提升 attack +260（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_dragonblood": 3,
-          "special_relic": 1
+          "boss_ember": 1,
+          "herb_dragonblood": 3
         },
         "copper": 12000
       },
@@ -134,8 +134,8 @@
       "desc": "临时提升 mp +90（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_moonmushroom": 3,
-          "special_element": 1
+          "boss_bone": 1,
+          "herb_moonmushroom": 3
         },
         "copper": 1200
       },
@@ -224,8 +224,9 @@
       "desc": "临时提升 intelligence +120（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_moonmushroom": 3,
-          "special_beastsoul": 2
+          "boss_bone": 1,
+          "herb_moonmushroom": 2,
+          "special_beastsoul": 1
         },
         "copper": 1200
       },
@@ -352,9 +353,9 @@
       "desc": "临时提升 agility +347（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_dragonblood": 3,
-          "special_element": 1,
-          "herb_moonmushroom": 1
+          "boss_ember": 1,
+          "herb_dragonblood": 2,
+          "special_element": 1
         },
         "copper": 12000
       },
@@ -389,7 +390,8 @@
       "desc": "临时提升 defense +50（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_moonmushroom": 3,
+          "boss_magma": 1,
+          "herb_moonmushroom": 2,
           "special_beastsoul": 1
         },
         "copper": 400
@@ -479,9 +481,9 @@
       "desc": "临时提升 hp +60（持续 100 层）",
       "cost": {
         "materials": {
+          "boss_magma": 1,
           "herb_moonmushroom": 2,
-          "herb_bloodgrass": 1,
-          "special_beastsoul": 1
+          "herb_bloodgrass": 1
         },
         "copper": 400
       },
@@ -848,7 +850,8 @@
       "desc": "全部材料掉落 ×2.0（持续 4 小时）",
       "cost": {
         "materials": {
-          "boss_myriad": 3
+          "boss_myriad": 3,
+          "boss_wangua": 1
         },
         "copper": 50000
       },

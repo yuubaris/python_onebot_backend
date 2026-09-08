@@ -41,9 +41,10 @@ TOOLS = [
     ("tool_myriad",  "万宝符", "material",   "all",      {1: 1.6, 2: 1.8, 3: 2.0}),   # 究极: 万宝源晶(大Boss专属), 万象符上位
 ]
 
-# ---------------- 药水配方消耗（Lv × 属性；「草药+特殊」多样化） ----------------
+# ---------------- 药水配方消耗（Lv × 属性；「草药+特殊+Boss材料」多样化） ----------------
 # 药水不消耗矿石（锻造装备与药水抢矿，战士综合缺矿；草药反而闲置）；
-# 全部配方 = 草药 + 特殊材料，每级六种药水用不同草药组合，四种草药都有用武之地，逐级稀有度递增
+# 配方 = 草药 + 特殊材料 + 对应层级 Boss 材料（磐岩心核→生存线/尸皇骨匣→魔法线/烬鳞龙鳞→物理线），
+# 每级六种药水用不同材料组合，四种草药 + 全部 Boss 材料都有用武之地，逐级稀有度递增
 POTION_COST = {
     1: {  # 100铜 · common（止血草/醒神花/兽魂结晶）
         "atk": {"materials": {"herb_bloodgrass": 4, "herb_wakeflower": 1},   "copper": 100},
@@ -53,19 +54,19 @@ POTION_COST = {
         "def": {"materials": {"herb_bloodgrass": 3, "special_beastsoul": 1}, "copper": 100},
         "hp":  {"materials": {"herb_wakeflower": 3, "special_beastsoul": 1}, "copper": 100},
     },
-    2: {  # 400铜 · common→rare（月光菇登场）
+    2: {  # 400铜 · common→rare（月光菇登场；磐岩心核进生存线）
         "atk": {"materials": {"herb_bloodgrass": 5, "herb_moonmushroom": 1},                     "copper": 400},
         "agi": {"materials": {"herb_wakeflower": 5, "herb_moonmushroom": 1},                     "copper": 400},
         "mp":  {"materials": {"herb_moonmushroom": 2, "herb_bloodgrass": 3},                     "copper": 400},
         "int": {"materials": {"herb_moonmushroom": 2, "herb_wakeflower": 3},                     "copper": 400},
-        "def": {"materials": {"herb_moonmushroom": 3, "special_beastsoul": 1},                   "copper": 400},
-        "hp":  {"materials": {"herb_moonmushroom": 2, "herb_bloodgrass": 1, "special_beastsoul": 1}, "copper": 400},
+        "def": {"materials": {"boss_magma": 1, "herb_moonmushroom": 2, "special_beastsoul": 1},  "copper": 400},
+        "hp":  {"materials": {"boss_magma": 1, "herb_moonmushroom": 2, "herb_bloodgrass": 1},    "copper": 400},
     },
-    3: {  # 1200铜 · rare（元素之心登场）
+    3: {  # 1200铜 · rare（元素之心登场；尸皇骨匣进魔法线）
         "atk": {"materials": {"herb_moonmushroom": 4, "herb_wakeflower": 2}, "copper": 1200},
         "agi": {"materials": {"herb_moonmushroom": 4, "herb_bloodgrass": 2}, "copper": 1200},
-        "mp":  {"materials": {"herb_moonmushroom": 3, "special_element": 1}, "copper": 1200},
-        "int": {"materials": {"herb_moonmushroom": 3, "special_beastsoul": 2}, "copper": 1200},
+        "mp":  {"materials": {"boss_bone": 1, "herb_moonmushroom": 3},       "copper": 1200},
+        "int": {"materials": {"boss_bone": 1, "herb_moonmushroom": 2, "special_beastsoul": 1}, "copper": 1200},
         "def": {"materials": {"special_element": 2, "herb_moonmushroom": 3}, "copper": 1200},
         "hp":  {"materials": {"herb_moonmushroom": 4, "special_element": 1}, "copper": 1200},
     },
@@ -77,9 +78,9 @@ POTION_COST = {
         "def": {"materials": {"special_element": 3, "herb_dragonblood": 1},                    "copper": 4000},
         "hp":  {"materials": {"herb_dragonblood": 4, "special_element": 1},                    "copper": 4000},
     },
-    5: {  # 12000铜 · legendary（古神残片登场）
-        "atk": {"materials": {"herb_dragonblood": 3, "special_relic": 1},                 "copper": 12000},
-        "agi": {"materials": {"herb_dragonblood": 3, "special_element": 1, "herb_moonmushroom": 1}, "copper": 12000},
+    5: {  # 12000铜 · legendary（古神残片登场；烬鳞龙鳞进物理线）
+        "atk": {"materials": {"boss_ember": 1, "herb_dragonblood": 3},                      "copper": 12000},
+        "agi": {"materials": {"boss_ember": 1, "herb_dragonblood": 2, "special_element": 1}, "copper": 12000},
         "mp":  {"materials": {"special_relic": 2, "herb_dragonblood": 2},                  "copper": 12000},
         "int": {"materials": {"special_relic": 2, "herb_dragonblood": 1, "herb_moonmushroom": 1}, "copper": 12000},
         "def": {"materials": {"special_relic": 2, "herb_moonmushroom": 2},                 "copper": 12000},
@@ -115,10 +116,10 @@ TOOL_COST = {
     "all": {
         3: {"materials": {"special_relic": 2, "boss_frost": 1, "herb_dragonblood": 2}, "copper": 8000},
     },
-    "myriad": {  # 万宝符：究极大 Boss 专属材料「万宝源晶」主料
+    "myriad": {  # 万宝符：究极大 Boss 专属材料「万宝源晶」主料；Lv3 叠最终 Boss「万瓜圣辉」
         1: {"materials": {"boss_myriad": 1}, "copper": 4000},
         2: {"materials": {"boss_myriad": 2}, "copper": 15000},
-        3: {"materials": {"boss_myriad": 3}, "copper": 50000},
+        3: {"materials": {"boss_myriad": 3, "boss_wangua": 1}, "copper": 50000},
     },
 }
 
