@@ -180,7 +180,7 @@ W_H(命) = 0.7   每点生命收益分
 
 | 项 | 说明 |
 |---|---|
-| `dungeon.dungeon_speed` | 改线性可加（Boss 成功率 x=S/B0 一并随 S 联动，需在 apply 时复核曲线） |
+| `dungeon.dungeon_speed` | 改线性可加（Boss 成功率 x=S/B0 一并随 S 联动，需在 apply 时复核曲线；⚠️ v2.11.16 起命名 Boss 的 B0 已改为锚定装备档 `named_boss_b0`，曲线复核以新口径为准） |
 | `dungeon.item_formula_score` | 同一线性公式（去掉纯生存保底 hack；同类型取最优逻辑不变） |
 | `equipment.json`(68) | 全量按「档位+部位锚定分」重算（id/name/price/tier/line 保留） |
 | `forge.json`(28) | 锻造线按线性分重标 Lv1~Lv4 强度带（目标 = 商店 T4.5 起步 × 1.30^lv） |
