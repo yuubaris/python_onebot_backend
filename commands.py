@@ -722,7 +722,7 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/地下城 进入/状态/退出 - 地下城冒险（10/50/100 层 Boss 掉落；最高 3600 层）\n"
             "/铁匠铺 - 查看锻造配方（400 层解锁，超越武器库顶级）\n"
             "/锻造 装备名 - 消耗铜币+矿石制作装备（需职业/阶级符合）\n"
-            "/boss 列表 / boss 挑战 Boss名 - 守关 Boss 挑战（普通每日共 3 次 / 1000·2000·3600 每日共 1 次，首通必出 Boss 材料）\n"
+            "/boss 列表 / boss 挑战 Boss名 - 守关 Boss 挑战（普通每日共 3 次 / 1000·2000·3600 每日各 1 次，首通必出 Boss 材料）\n"
             "/炼金 [配方名] - 查看/制作药水·道具（消耗材料+矿石）\n"
             "/使用 物品名 - 使用药水/道具生效\n"
             "/挑战 @对方 - 发起对战（随机胜负，每天 3 次）\n"
@@ -927,7 +927,7 @@ def cmd_lao(user, group_id, args, at_qqs=None):
 # ---------- Boss 挑战（/boss 列表 / 挑战 <名>） ----------
 
 def cmd_boss(user, group_id, args, at_qqs=None):
-    """/boss：列表查看 / 挑战指定守关 Boss（普通每日共 3 次 / 1000·2000·3600 每日共 1 次，成功率按装备强度）。"""
+    """/boss：列表查看 / 挑战指定守关 Boss（普通每日共 3 次 / 1000·2000·3600 每日各 1 次，成功率按装备强度）。"""
     arg = (args or "").strip()
     low = arg.lower()
     if low.startswith("挑战") or low.startswith("fight") or low.startswith("challenge"):
