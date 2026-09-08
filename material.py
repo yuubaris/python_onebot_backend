@@ -54,16 +54,16 @@ def load_materials(force=False):
 
 
 def herb_legend_probability(layer):
-    """传说草药概率 = 2% × √(层/150)，上限 20%。"""
-    if layer <= HERB_MIN_LAYER:
+    """传说草药概率 = 2% × √(层/150)，上限 20%（150 层起即有基础 2%，与资格边界一致）。"""
+    if layer < HERB_MIN_LAYER:
         return 0.0
     p = HERB_LEGEND_BASE * ((layer / HERB_MIN_LAYER) ** 0.5)
     return min(p, HERB_LEGEND_CAP)
 
 
 def herb_myth_probability(layer):
-    """神话草药概率 = 0.1% × √(层/150)，上限 1%。"""
-    if layer <= HERB_MIN_LAYER:
+    """神话草药概率 = 0.1% × √(层/150)，上限 1%（150 层起即有基础 0.1%，与资格边界一致）。"""
+    if layer < HERB_MIN_LAYER:
         return 0.0
     p = HERB_MYTH_BASE * ((layer / HERB_MIN_LAYER) ** 0.5)
     return min(p, HERB_MYTH_CAP)
