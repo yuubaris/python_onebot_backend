@@ -224,16 +224,16 @@
 ```jsonc
 {
   "consumables": [
-    {"id": "potion_atk_1", "name": "狂攻药水Ⅰ", "kind": "potion", "level": 1,
+    {"id": "potion_atk_1", "name": "狂攻药水1", "kind": "potion", "level": 1,
      "effect": {"type": "buff_stat", "stats": {"attack": 15},
                  "duration": {"type": "layers", "value": 100}}},
-    {"id": "potion_atk_3", "name": "狂攻药水Ⅲ", "kind": "potion", "level": 3,
+    {"id": "potion_atk_3", "name": "狂攻药水3", "kind": "potion", "level": 3,
      "effect": {"type": "buff_stat", "stats": {"attack": 90},
                  "duration": {"type": "layers", "value": 100}}},
-    {"id": "tool_coin_1", "name": "聚财符Ⅰ", "kind": "tool", "level": 1,
+    {"id": "tool_coin_1", "name": "聚财符1", "kind": "tool", "level": 1,
      "effect": {"type": "drop_bonus", "bonus_type": "coin", "mult": 1.2,
                  "duration": {"type": "time", "value": 14400}}},
-    {"id": "tool_mat_ore_2", "name": "采掘符Ⅱ", "kind": "tool", "level": 2,
+    {"id": "tool_mat_ore_2", "name": "采掘符2", "kind": "tool", "level": 2,
      "effect": {"type": "drop_bonus", "bonus_type": "material", "scope": "ore", "mult": 1.5,
                  "duration": {"type": "time", "value": 14400}}}
   ]
@@ -243,6 +243,8 @@
 - `effect.type`：`buff_stat`（属性药水）/ `drop_bonus`（掉落道具）；
 - `drop_bonus.bonus_type`：`coin` | `equipment` | `material`（material 再按 `scope`：ore / herb / special）；
 - `duration.type`：`layers`（推进 N 层后过期）| `time`（N 秒后过期）；`duration.value` 数值。
+- **命名与输入（v2.11.1）**：等级用阿拉伯数字（「狂攻药水3」）；匹配层 `consumable.normalize_name` 兼容
+  「名 1 / 名1 / 名Ⅰ / 名 I / 名一」等写法（/炼金 与 /使用 通用）。
 
 ### 4.2 生效链路
 

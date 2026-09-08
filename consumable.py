@@ -11,6 +11,7 @@
 """
 import json
 import os
+import re
 import time
 
 from models import db, UserBuff, UserConsumable
@@ -18,6 +19,38 @@ from models import db, UserBuff, UserConsumable
 CONSUMABLES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "consumables.json")
 
 _cache = {"mtime": None, "items": [], "by_id": {}, "by_name": {}}
+
+# 名称等级归一化：罗马/中文数字 → 阿拉伯数字（匹配兼容用）
+# 注: lower() 会把全角罗马符号转小写变体(Ⅰ→ⅰ), 两套都要映射
+_ROMAN_SYM = {"Ⅰ": 1, "Ⅱ": 2, "Ⅲ": 3, "Ⅳ": 4, "Ⅴ": 5, "Ⅵ": 6, "Ⅶ": 7, "Ⅷ": 8, "Ⅸ": 9, "Ⅹ": 10,
+              "ⅰ": 1, "ⅱ": 2, "ⅲ": 3, "ⅳ": 4, "ⅴ": 5, "ⅵ": 6, "ⅶ": 7, "ⅷ": 8, "ⅸ": 9, "ⅹ": 10}
+_ROMAN_ABC = {"i": 1, "ii": 2, "iii": 3, "iv": 4, "v": 5, "vi": 6, "vii": 7, "viii": 8, "ix": 9, "x": 10}
+_CN_NUM = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
+_TAIL_RE = re.compile(r"([0-9]+|[ivxlcdm]+|[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹ]+|[一二三四五六七八九十]+)$")
+
+
+def normalize_name(s):
+    """名称归一化：去全部空白 + 尾部等级（阿拉伯/罗马/中文数字）统一为阿拉伯数字，小写。
+
+    使「聚财符 1」「聚财符1」「聚财符Ⅰ」「聚财符 I」「聚财符一」彼此等价；
+    等级必须位于名称末尾（药水/道具命名均为「前缀+等级」结构）。
+    """
+    s = (s or "").strip().lower()
+    s = re.sub(r"\s+", "", s)
+    m = _TAIL_RE.search(s)
+    if not m:
+        return s
+    tail = m.group(1)
+    if re.match(r"^[ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩⅰⅱⅲⅳⅴⅵⅶⅷⅸⅹ]+$", tail):
+        for r, n in sorted(_ROMAN_SYM.items(), key=lambda kv: -len(kv[0])):
+            tail = tail.replace(r, str(n))
+    elif re.match(r"^[ivxlcdm]+$", tail):
+        for r, n in sorted(_ROMAN_ABC.items(), key=lambda kv: -len(kv[0])):
+            tail = tail.replace(r, str(n))
+    else:
+        for c, n in _CN_NUM.items():
+            tail = tail.replace(c, str(n))
+    return s[: m.start()] + tail
 
 
 def load_consumables(force=False):
@@ -50,6 +83,11 @@ def find_consumable(name_or_id):
     for name, it in _cache["by_name"].items():
         if name.lower() == low:
             return it
+    # 归一化匹配：兼容「名 1 / 名1 / 名Ⅰ / 名 I / 名一」等写法
+    nk = normalize_name(key)
+    for name, it in _cache["by_name"].items():
+        if normalize_name(name) == nk:
+            return it
     return None
 
 
@@ -58,7 +96,9 @@ def suggest_consumables(keyword, limit=5):
     kw = (keyword or "").strip()
     if not kw:
         return []
-    hits = [it for it in _cache["items"] if kw in it["name"] or kw in it["id"]]
+    kw2 = re.sub(r"\s+", "", kw)
+    hits = [it for it in _cache["items"]
+            if kw in it["name"] or kw in it["id"] or kw2 in re.sub(r"\s+", "", it["name"])]
     return hits[:limit]
 
 

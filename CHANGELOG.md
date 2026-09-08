@@ -5,6 +5,22 @@
 
 ---
 
+## 2026-09-08 · v2.11.1 —— 炼金命名精简 + 输入兼容
+
+### 🔤 道具/药水命名与匹配
+
+- **等级描述改为阿拉伯数字**（此前罗马数字 Ⅰ~Ⅴ）：道具「聚财符1/2/3」、药水「狂攻药水1~5」等
+  （`alchemy_recipes.json` / `consumables.json` 的 `name` 与配方 `desc` 同步；id 不变，存量持有不受影响）。
+- **输入兼容**（`consumable.normalize_name` 新增，`find_consumable` / `find_recipe` 统一走归一化匹配）：
+  「聚财符 1」「聚财符1」「聚财符Ⅰ」「聚财符 I」「聚财符一」等写法**等价**，/炼金 与 /使用 通用；
+  旧罗马数字写法（存量输入）仍兼容；带「炼金·」前缀的省略逻辑同步支持空格变体。
+- `suggest_recipes` / `suggest_consumables` 同步兼容「名 1」带空格关键词。
+- 生成器 `docs/seed_consumables.py` 同步 v2.11 数值/时长/消耗与阿拉伯数字命名（可复现当前 JSON）。
+- 影响文件：`consumable.py` · `alchemy.py` · `alchemy_recipes.json` · `consumables.json` ·
+  `docs/seed_consumables.py`；配套文档 `README.md` / `bot_wiki.html` / 设计稿。
+
+---
+
 ## 2026-09-08 · v2.11 —— 炼金配方重构（数值对齐权重 + 时长调整 + 消耗多样化）
 
 ### ⚗️ 炼金配方（`alchemy_recipes.json` / `consumables.json`）

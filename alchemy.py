@@ -9,6 +9,7 @@ ores（矿石）、copper（铜币）；output 产出入 consumables.json 注册
 """
 import json
 import os
+import re
 
 from models import db, UserConsumable
 import material
@@ -60,6 +61,25 @@ def find_recipe(name_or_id):
                 break
         if key in name or name in key or key == short or low == short.lower():
             return r
+    # 归一化匹配：兼容「聚财符 1 / 聚财符1 / 聚财符Ⅰ / 聚财符 I / 聚财符一」等写法
+    nk = consumable.normalize_name(key)
+    # 用户侧可能带「炼金·/炼金 」前缀（去空格后为“炼金聚财符1”或“炼金·聚财符1”），先剥离再比
+    nk_short = nk
+    for pre in ("炼金·", "炼金"):
+        if nk.startswith(pre):
+            nk_short = nk[len(pre):]
+            break
+    for name, r in _cache["by_name"].items():
+        if consumable.normalize_name(name) == nk:
+            return r
+    for name, r in _cache["by_name"].items():
+        short = name
+        for pre in ("炼金·", "炼金"):
+            if name.startswith(pre):
+                short = name[len(pre):]
+                break
+        if consumable.normalize_name(short) == nk or consumable.normalize_name(short) == nk_short:
+            return r
     return None
 
 
@@ -68,7 +88,9 @@ def suggest_recipes(keyword, limit=5):
     kw = (keyword or "").strip()
     if not kw:
         return []
-    hits = [r for r in _cache["recipes"] if kw in r["name"] or kw in r["id"]]
+    kw2 = re.sub(r"\s+", "", kw)
+    hits = [r for r in _cache["recipes"]
+            if kw in r["name"] or kw in r["id"] or kw2 in re.sub(r"\s+", "", r["name"])]
     return hits[:limit]
 
 
