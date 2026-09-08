@@ -304,6 +304,21 @@ def challenge_boss(user, boss):
     user.copper += bonus
     lines.append(f"💰 +{bonus} 铜币（本 Boss 累计成功 {wins} 次）")
 
+    # 矿石（素材掉落 v2.11.63）：Boss 类型掷数量、每颗独立判档判种，按种类合并计数显示
+    _bt = "major" if g == "big" else "minor"
+    _ore_ids = dungeon._roll_boss_ore(int(boss.get("layer", 100)), _bt)
+    if _ore_ids:
+        from ore import grant_ores, ore_meta
+        _cnt = {}
+        for _oid in _ore_ids:
+            _cnt[_oid] = _cnt.get(_oid, 0) + 1
+        grant_ores(user.user_id, _cnt)
+        _parts = []
+        for _oid, _c in sorted(_cnt.items(), key=lambda kv: -kv[1]):
+            _om = ore_meta(_oid)
+            _parts.append(f"{_om['name'] if _om else _oid} ×{_c}")
+        lines.append(f"⛏️ 矿石：{'、'.join(_parts)}")
+
     # Boss 材料：首通必出；重复成功固定 60%（不随次数递减）
     if first_clear or random.random() < REPEAT_DROP_RATE:
         material.grant_materials(user.user_id, {boss["material"]: 1})
