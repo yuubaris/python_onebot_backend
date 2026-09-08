@@ -17,7 +17,7 @@ import time
 from models import db, UserItem
 from equipment import load_equipment
 from classes import class_line, item_line, LINE_PHYSICAL, LINE_MAGIC, LINE_ANY
-from tiers import tier_of_price, tier_of_layer
+from tiers import tier_of_price
 import ore
 import classes as _classes_mod
 import tiers as _tiers_mod
@@ -184,18 +184,6 @@ def historical_best_layer(user):
     if layer <= 0:
         layer = getattr(user, "dungeon_cleared", 0) or 0
     return layer
-
-
-def sync_initial_tier(user):
-    """存量玩家（D13）：若尚未定阶，按历史最高层自动定初始阶级（老玩家不倒退）。
-
-    幂等：仅在 tier == 0 且历史有层数时补一次；调用方负责 commit。
-    """
-    if user is None or (getattr(user, "tier", 0) or 0) > 0:
-        return
-    t = tier_of_layer(historical_best_layer(user))
-    if t > 0:
-        user.tier = t
 
 
 def _all_item_meta():
@@ -383,7 +371,6 @@ def settle_dungeon(user):
     """
     if user.dungeon_layer <= 0 or not user.dungeon_last_update:
         return
-    sync_initial_tier(user)
     now = time.time()
     dt = now - user.dungeon_last_update
     if dt <= 0:

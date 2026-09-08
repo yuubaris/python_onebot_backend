@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""铁匠铺锻造模块（地下城 400 层解锁）。
+"""铁匠铺锻造模块（T5·地下城 800 层解锁全配方）。
 
 铁匠铺制造的装备全部超越武具店顶级（永恒之刃），配方消耗「铜币 + 矿石」。
 配方数据以 JSON 文件（forge.json）保存在项目目录中，方便维护数值；
@@ -9,8 +9,8 @@ import json
 import os
 
 FORGE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "forge.json")
-# 铁匠铺解锁门槛：玩家曾到达地下城 400 层（与矿石资格一致）
-FORGE_MIN_LAYER = 400
+# 铁匠铺解锁门槛：玩家曾到达地下城 800 层（T5 段，全锻造配方在此开放）
+FORGE_MIN_LAYER = 800
 
 _cache = {"mtime": None, "recipes": [], "by_id": {}, "by_name": {}}
 

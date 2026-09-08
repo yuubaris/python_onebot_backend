@@ -17,7 +17,7 @@
         "tin_ore": 40
       },
       "line": "physical",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_iron_armor",
@@ -36,7 +36,7 @@
         "lead_ore": 27
       },
       "line": "any",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_iron_staff",
@@ -55,7 +55,7 @@
         "tin_ore": 57
       },
       "line": "magic",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_silver_sword",
@@ -75,7 +75,7 @@
         "adamantite_ore": 22
       },
       "line": "physical",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_silver_armor",
@@ -95,7 +95,7 @@
         "tin_ore": 18
       },
       "line": "any",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_silver_staff",
@@ -115,7 +115,7 @@
         "copper_ore": 39
       },
       "line": "magic",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_gold_sword",
@@ -136,7 +136,7 @@
         "mithril_ore": 45
       },
       "line": "physical",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_gold_armor",
@@ -157,7 +157,7 @@
         "tin_ore": 15
       },
       "line": "any",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_gold_staff",
@@ -178,7 +178,7 @@
         "tin_ore": 62
       },
       "line": "magic",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_dragon_blade",
@@ -199,7 +199,7 @@
         "mithril_ore": 118
       },
       "line": "physical",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_destroy_staff",
@@ -220,7 +220,7 @@
         "dragon_soul_crystal": 19
       },
       "line": "magic",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_creation_staff",
@@ -241,7 +241,7 @@
         "copper_ore": 70
       },
       "line": "magic",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_robe_1",
@@ -261,7 +261,7 @@
         "copper_ore": 26
       },
       "line": "magic",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_shield_1",
@@ -280,7 +280,7 @@
         "lead_ore": 38
       },
       "line": "physical",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_focus_1",
@@ -299,7 +299,7 @@
         "copper_ore": 56
       },
       "line": "magic",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_accessory_1",
@@ -320,7 +320,7 @@
         "tin_ore": 25
       },
       "line": "any",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_robe_2",
@@ -340,7 +340,7 @@
         "stardust_sand": 69
       },
       "line": "magic",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_shield_2",
@@ -360,7 +360,7 @@
         "mithril_ore": 32
       },
       "line": "physical",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_focus_2",
@@ -380,7 +380,7 @@
         "silver_ore": 63
       },
       "line": "magic",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_accessory_2",
@@ -405,7 +405,7 @@
         "stardust_sand": 11
       },
       "line": "any",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_robe_3",
@@ -426,7 +426,7 @@
         "stardust_sand": 59
       },
       "line": "magic",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_shield_3",
@@ -447,7 +447,7 @@
         "iron_ore": 19
       },
       "line": "physical",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_focus_3",
@@ -468,7 +468,7 @@
         "holy_glowstone": 34
       },
       "line": "magic",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_accessory_3",
@@ -497,7 +497,7 @@
         "holy_glowstone": 7
       },
       "line": "any",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_armor_4",
@@ -518,7 +518,7 @@
         "chaos_core": 9
       },
       "line": "any",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_shield_4",
@@ -539,7 +539,7 @@
         "gold_ore": 33
       },
       "line": "physical",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_focus_4",
@@ -561,7 +561,7 @@
         "iron_ore": 43
       },
       "line": "magic",
-      "tier": 4
+      "tier": 5
     },
     {
       "id": "forge_accessory_4",
@@ -593,7 +593,7 @@
         "star_iron": 2
       },
       "line": "any",
-      "tier": 4
+      "tier": 5
     }
   ]
 }

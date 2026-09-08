@@ -31,12 +31,12 @@ from classes import (
 )
 from tiers import (
     tier_title, tier_of_price, next_promotion, TIER_LAYER, MAX_TIER,
-    tier_of_layer, tier_promotion_cost, tier_price_cap,
+    tier_promotion_cost, tier_price_cap,
 )
 from dungeon import (
     BASE_STATS, LAYER1_TOTAL, layer_total, coin_rate_per_sec, coin_per_5sec,
     effective_stats, dungeon_speed, owned_items, owned_item_rows, settle_dungeon,
-    effective_layer_total, boss_type, sync_initial_tier, historical_best_layer,
+    effective_layer_total, boss_type, historical_best_layer,
     take_boss_report, rare_item_ids,
 )
 from kick import check_cooldown, mark_cooldown, build_kick_image, build_beat_image, build_jue_image, build_dalao_image
@@ -123,7 +123,6 @@ def cmd_checkin(user, group_id, args, at_qqs=None):
 # ---------- 余额 ----------
 
 def cmd_balance(user, group_id, args, at_qqs=None):
-    _ensure_initial_tier(user)
     items = owned_items(user)
     prof = (user.profession or "") or ""
     class_txt = f"{class_name(prof)} · {_user_title(user)}" if prof else "未转职·冒险者"
@@ -143,21 +142,6 @@ def _user_title(user):
     return tier_title(prof, (user.tier or 0))
 
 
-def _ensure_initial_tier(user):
-    """老玩家继承（D13）：未定阶（tier==0）时按历史最高层自动定初始阶级（幂等）。
-
-    在所有会展示称号 / 过滤装备的入口统一调用，保证「转职 / 武器库 / 背包 / 余额 /
-    晋升 / 购买 / 进地下城」各路径行为一致，不再出现“先进地下城白送高阶、先转职却要从头升”
-    的差别。调用方处于应用上下文内；本函数内部负责 commit。
-    """
-    if user is None or (user.tier or 0) > 0:
-        return
-    if historical_best_layer(user) <= 0:
-        return
-    sync_initial_tier(user)
-    db.session.commit()
-
-
 def _item_tier(it):
     t = it.get("tier")
     if t is None:
@@ -167,7 +151,6 @@ def _item_tier(it):
 
 def cmd_bag(user, group_id, args, at_qqs=None):
     """查看当前持有的武具与矿石（/背包）。"""
-    _ensure_initial_tier(user)
     rows = owned_item_rows(user)
     if not rows:
         return ("🎒 你的背包空空如也。\n"
@@ -240,7 +223,6 @@ def cmd_shop(user, group_id, args, at_qqs=None):
     组内从低阶到高阶排列 —— 低于/等于当前阶级的都可直接购买（便于低阶换装，D-issue2），
     高于当前阶级的带 🔒（晋升解锁，仅预览不逐条刷屏）。
     """
-    _ensure_initial_tier(user)
     prof = (user.profession or "") or ""
     if not prof:
         return ("💡 你是冒险者，请先选择职业：\n"
@@ -291,15 +273,13 @@ def cmd_class(user, group_id, args, at_qqs=None):
         hint = "、".join(c["name"] for c in all_classes())
         return f"没有职业「{arg}」。可选：{hint}"
     user.profession = cid
-    _ensure_initial_tier(user)  # 转职成功：老玩家立即按历史最高层继承对应阶级（不倒退、免逐步付费）
-    db.session.commit()  # 确保 profession（及可能的定阶）落库
+    db.session.commit()
     return (f"⚔️ 转职成功！你已成为 {class_name(cid)}（{_user_title(user)}）。\n"
             f"地下城将只计算本职业与通用装备的属性（不混搭）。")
 
 
 def cmd_promote(user, group_id, args, at_qqs=None):
     """晋升阶级（/晋升）：需历史最高层达标 + 消耗货币。"""
-    _ensure_initial_tier(user)
     cur = user.tier or 0
     nxt = next_promotion(cur)
     if nxt is None:
@@ -319,7 +299,7 @@ def cmd_promote(user, group_id, args, at_qqs=None):
     user.copper -= cost
     user.tier = nxt
     db.session.commit()
-    # 装备档位最高到 T5（武具店 45000）/ T4~5（铁匠铺顶级也早已解锁）：
+    # 装备档位最高到 T5（武具店 45000 + 铁匠铺全锻造，T5=800 毕业）：
     # T6 灭世、T7 至尊 为纯称号荣誉阶，不再新增装备解锁。
     if nxt >= 6:
         unlock_note = "（纯称号荣誉阶：武具店/铁匠铺顶级装备早已解锁，无新装备）"
@@ -333,7 +313,7 @@ def cmd_promote(user, group_id, args, at_qqs=None):
 # ---------- 铁匠铺（/铁匠铺、/锻造） ----------
 
 def _forge_unlocked(user):
-    """铁匠铺解锁门槛：玩家曾到达地下城 400 层（与矿石资格一致）。"""
+    """铁匠铺解锁门槛：玩家曾到达地下城 800 层（T5，全配方在此开放）。"""
     return historical_best_layer(user) >= forge.FORGE_MIN_LAYER
 
 
@@ -358,7 +338,6 @@ def cmd_forge_shop(user, group_id, args, at_qqs=None):
 
 def cmd_forge(user, group_id, args, at_qqs=None):
     """锻造装备：消耗铜币 + 矿石（不能赊账），成功后入背包。"""
-    _ensure_initial_tier(user)
     name = (args or "").strip()
     if not name:
         return "用法：/锻造 装备名（/铁匠铺 查看配方）"
@@ -380,7 +359,7 @@ def cmd_forge(user, group_id, args, at_qqs=None):
         if line != class_line(prof):
             other = "战士" if line == "physical" else "魔法师"
             return f"❌ 「{rec['name']}」是{other}的锻造装备，你无法使用。"
-    # 阶级校验（v3）：仅配方显式带 tier 时按阶级限制；旧配方沿用 400 层铁匠铺门槛即可
+    # 阶级校验（v3）：仅配方显式带 tier 时按阶级限制（锻造产物 tier=5，需晋升到 T5 可锻造）
     req_tier = rec.get("tier")
     if req_tier is not None and (user.tier or 0) < int(req_tier):
         return (f"🔒 「{rec['name']}」需要晋升到 {tier_title(prof, int(req_tier)) or req_tier} 才能锻造。\n"
@@ -407,7 +386,6 @@ def cmd_forge(user, group_id, args, at_qqs=None):
 
 def cmd_buy(user, group_id, args, at_qqs=None):
     """购买装备（/购买），职业+阶级双重校验。"""
-    _ensure_initial_tier(user)
     names = [n for n in (args or "").split()]
     if not names:
         return "用法：/购买 商品名 [商品名 ...]（例如 /购买 短剑 圆盾）"
@@ -530,8 +508,6 @@ def _dungeon_enter(user):
     ).scalar()
     if count < 1:
         return "你还没有任何装备，无法进入地下城。先去 /武器库 购买一件装备吧！"
-    sync_initial_tier(user)
-    db.session.commit()
 
     stats = effective_stats(user, owned_items(user))
     speed = dungeon_speed(stats)
