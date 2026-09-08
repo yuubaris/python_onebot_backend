@@ -16,7 +16,7 @@
     {"id": "boss_l1800", "layer": 1800, "name": "天启神官·净世",   "tag": "神官", "material": "boss_ember",  "tier_cap": 5},
     {"id": "boss_l2000", "layer": 2000, "name": "万劫魔帝·归墟",   "tag": "魔帝", "material": "boss_ember",  "tier_cap": 5},
     {"id": "boss_l2500", "layer": 2500, "name": "噬界古神·渊灭",   "tag": "古神", "material": "boss_ember",  "tier_cap": 5},
-    {"id": "boss_l3000", "layer": 3000, "name": "寰宇至尊·裂界",   "tag": "至尊", "material": "boss_ember",  "tier_cap": 5},
+    {"id": "boss_l3000", "layer": 3000, "name": "万渊魔尊·裂界",   "tag": "至尊", "material": "boss_ember",  "tier_cap": 5},
     {"id": "boss_l3600", "layer": 3600, "name": "万瓜之主·夕张",   "tag": "最终", "material": "boss_wangua", "tier_cap": 7}
   ]
 }
