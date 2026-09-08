@@ -173,9 +173,7 @@
       "price": 260000,
       "cost": {
         "chaos_core": 18,
-        "dragon_soul_crystal": 61,
-        "stardust_sand": 61,
-        "tin_ore": 59
+        "dragon_soul_crystal": 24
       },
       "line": "magic",
       "tier": 6
@@ -194,9 +192,7 @@
       "price": 260000,
       "cost": {
         "star_iron": 18,
-        "gold_ore": 79,
-        "dragon_crystal": 59,
-        "mithril_ore": 124
+        "dragon_crystal": 24
       },
       "line": "physical",
       "tier": 6
@@ -235,10 +231,8 @@
       "intelligence": 147,
       "price": 260000,
       "cost": {
-        "silver_ore": 70,
         "oracle_stone": 18,
-        "holy_glowstone": 70,
-        "copper_ore": 70
+        "dragon_crystal": 24
       },
       "line": "magic",
       "tier": 6
@@ -512,11 +506,8 @@
       "intelligence": 0,
       "price": 260000,
       "cost": {
-        "iron_ore": 133,
-        "lead_ore": 35,
-        "adamantite_ore": 29,
         "chaos_core": 18,
-        "gold_ore": 30
+        "dragon_soul_crystal": 24
       },
       "line": "physical",
       "tier": 6
@@ -534,11 +525,8 @@
       "intelligence": 0,
       "price": 260000,
       "cost": {
-        "copper_ore": 87,
-        "tin_ore": 28,
-        "mithril_ore": 55,
-        "gold_ore": 33,
-        "oracle_stone": 12
+        "oracle_stone": 12,
+        "gold_ore": 16
       },
       "line": "physical",
       "tier": 6
@@ -556,12 +544,8 @@
       "intelligence": 60,
       "price": 260000,
       "cost": {
-        "stardust_sand": 43,
-        "silver_ore": 43,
-        "lead_ore": 32,
-        "iron_ore": 32,
-        "dragon_soul_crystal": 20,
-        "star_iron": 12
+        "star_iron": 12,
+        "gold_ore": 16
       },
       "line": "magic",
       "tier": 6
@@ -579,21 +563,10 @@
       "intelligence": 96,
       "price": 260000,
       "cost": {
-        "copper_ore": 23,
-        "iron_ore": 24,
-        "lead_ore": 24,
-        "tin_ore": 24,
-        "adamantite_ore": 12,
-        "mithril_ore": 12,
-        "silver_ore": 12,
-        "stardust_sand": 12,
-        "dragon_crystal": 6,
-        "dragon_soul_crystal": 6,
-        "gold_ore": 6,
-        "holy_glowstone": 6,
         "chaos_core": 3,
         "oracle_stone": 3,
-        "star_iron": 2
+        "star_iron": 2,
+        "holy_glowstone": 10
       },
       "line": "any",
       "tier": 6
