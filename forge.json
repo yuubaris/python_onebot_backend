@@ -70,9 +70,8 @@
       "intelligence": 0,
       "price": 60000,
       "cost": {
-        "iron_ore": 114,
-        "mithril_ore": 39,
-        "adamantite_ore": 22
+        "mithril_ore": 110,
+        "adamantite_ore": 65
       },
       "line": "physical",
       "tier": 5
@@ -90,9 +89,8 @@
       "intelligence": 0,
       "price": 60000,
       "cost": {
-        "iron_ore": 111,
-        "lead_ore": 26,
-        "tin_ore": 18
+        "adamantite_ore": 85,
+        "mithril_ore": 70
       },
       "line": "physical",
       "tier": 5
@@ -110,9 +108,8 @@
       "intelligence": 82,
       "price": 60000,
       "cost": {
-        "silver_ore": 84,
-        "stardust_sand": 52,
-        "copper_ore": 39
+        "silver_ore": 110,
+        "stardust_sand": 65
       },
       "line": "magic",
       "tier": 5
@@ -130,10 +127,9 @@
       "intelligence": 0,
       "price": 120000,
       "cost": {
-        "iron_ore": 126,
-        "adamantite_ore": 23,
-        "gold_ore": 36,
-        "mithril_ore": 45
+        "gold_ore": 90,
+        "mithril_ore": 90,
+        "adamantite_ore": 50
       },
       "line": "physical",
       "tier": 6
@@ -151,10 +147,9 @@
       "intelligence": 0,
       "price": 120000,
       "cost": {
-        "iron_ore": 124,
-        "lead_ore": 19,
-        "mithril_ore": 42,
-        "tin_ore": 15
+        "gold_ore": 80,
+        "adamantite_ore": 70,
+        "mithril_ore": 50
       },
       "line": "physical",
       "tier": 6
@@ -212,10 +207,9 @@
       "intelligence": 105,
       "price": 120000,
       "cost": {
-        "silver_ore": 108,
-        "stardust_sand": 69,
-        "holy_glowstone": 34,
-        "dragon_soul_crystal": 19
+        "holy_glowstone": 90,
+        "silver_ore": 90,
+        "stardust_sand": 50
       },
       "line": "magic",
       "tier": 6
@@ -332,9 +326,8 @@
       "intelligence": 86,
       "price": 60000,
       "cost": {
-        "tin_ore": 43,
-        "lead_ore": 43,
-        "stardust_sand": 69
+        "stardust_sand": 85,
+        "silver_ore": 70
       },
       "line": "magic",
       "tier": 5
@@ -352,9 +345,8 @@
       "intelligence": 0,
       "price": 60000,
       "cost": {
-        "copper_ore": 72,
-        "lead_ore": 36,
-        "mithril_ore": 32
+        "mithril_ore": 90,
+        "adamantite_ore": 50
       },
       "line": "physical",
       "tier": 5
@@ -372,9 +364,8 @@
       "intelligence": 33,
       "price": 60000,
       "cost": {
-        "iron_ore": 42,
-        "copper_ore": 35,
-        "silver_ore": 63
+        "silver_ore": 90,
+        "stardust_sand": 50
       },
       "line": "magic",
       "tier": 5
@@ -392,14 +383,10 @@
       "intelligence": 55,
       "price": 60000,
       "cost": {
-        "copper_ore": 21,
-        "iron_ore": 21,
-        "lead_ore": 21,
-        "tin_ore": 21,
-        "adamantite_ore": 10,
-        "mithril_ore": 10,
-        "silver_ore": 10,
-        "stardust_sand": 11
+        "adamantite_ore": 31,
+        "mithril_ore": 31,
+        "silver_ore": 31,
+        "stardust_sand": 32
       },
       "line": "any",
       "tier": 5
@@ -417,10 +404,9 @@
       "intelligence": 105,
       "price": 120000,
       "cost": {
-        "copper_ore": 44,
-        "tin_ore": 30,
-        "silver_ore": 67,
-        "stardust_sand": 59
+        "holy_glowstone": 80,
+        "stardust_sand": 70,
+        "silver_ore": 50
       },
       "line": "magic",
       "tier": 6
@@ -438,10 +424,9 @@
       "intelligence": 0,
       "price": 120000,
       "cost": {
-        "copper_ore": 88,
-        "lead_ore": 39,
-        "dragon_crystal": 29,
-        "iron_ore": 19
+        "dragon_crystal": 70,
+        "adamantite_ore": 60,
+        "mithril_ore": 45
       },
       "line": "physical",
       "tier": 6
@@ -459,10 +444,9 @@
       "intelligence": 58,
       "price": 120000,
       "cost": {
-        "lead_ore": 40,
-        "iron_ore": 31,
-        "stardust_sand": 70,
-        "holy_glowstone": 34
+        "dragon_soul_crystal": 70,
+        "stardust_sand": 60,
+        "silver_ore": 45
       },
       "line": "magic",
       "tier": 6
@@ -480,18 +464,14 @@
       "intelligence": 77,
       "price": 120000,
       "cost": {
-        "copper_ore": 21,
-        "iron_ore": 21,
-        "lead_ore": 21,
-        "tin_ore": 21,
-        "adamantite_ore": 11,
-        "mithril_ore": 11,
-        "silver_ore": 11,
-        "stardust_sand": 11,
-        "dragon_crystal": 5,
-        "dragon_soul_crystal": 5,
-        "gold_ore": 5,
-        "holy_glowstone": 7
+        "gold_ore": 20,
+        "dragon_crystal": 20,
+        "dragon_soul_crystal": 20,
+        "holy_glowstone": 20,
+        "adamantite_ore": 18,
+        "mithril_ore": 18,
+        "silver_ore": 18,
+        "stardust_sand": 16
       },
       "line": "any",
       "tier": 6
