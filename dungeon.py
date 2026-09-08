@@ -787,15 +787,17 @@ def settle_dungeon(user):
             layer_now = max(user.dungeon_layer, 1)
             gained = {}
             for _ in range(cycles):
-                # 每次采矿先掷数量（v2.11.35）：必不掉空——60% 得 1 颗 / 30% 得 2 颗 / 10% 得 3 颗
-                # 期望 1.3 颗/周期：每次周期至少 1 颗，偶发 2~3 颗
+                # 每次采矿先掷数量（v2.11.36）：基础随层数增加 + 概率加成，必不掉空
+                # 基础颗数 b = 1 + 每满 300 层 +1（封顶 4）；60% 得 b 颗 / 30% 得 b+1 颗 / 10% 得 b+2 颗
+                # 例：100 层 1/2/3 · 300 层 2/3/4 · 600 层 3/4/5 · 900 层及以上 4/5/6
+                _base = 1 + min(layer_now // 300, 3)
                 _r = _random.random()
                 if _r < 0.60:
-                    _n = 1
+                    _n = _base
                 elif _r < 0.90:
-                    _n = 2
+                    _n = _base + 1
                 else:
-                    _n = 3
+                    _n = _base + 2
                 # 每一颗矿石再自行概率判断种类
                 for _ in range(_n):
                     oid = ore.pick_ore(layer_now)
