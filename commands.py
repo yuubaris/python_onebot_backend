@@ -416,8 +416,51 @@ def _forge_status(user):
     return sorted(forge.unlocked_levels(historical_best_layer(user)))
 
 
+def _forge_breakdown(user, name):
+    """分解锻造装备：删除装备，按配方矿石成本返还——普通矿石返一半（向下取整），高级矿石每个单位 50% 概率独立判定。"""
+    if not name:
+        return "用法：/铁匠铺 分解 <装备名>（如 /铁匠铺 分解 锻造·断岳重剑）"
+    rec = forge.find_forge(name)
+    if rec is None:
+        hits = forge.suggest_forges(name)
+        hint = f"，你是不是想分解：{'、'.join(h['name'] for h in hits)}" if hits else ""
+        return f"铁匠铺没有「{name}」这件锻造装备{hint}"
+    row = db.session.execute(
+        db.select(UserItem).where(
+            UserItem.user_id == user.user_id,
+            UserItem.item_id == rec["id"],
+        ).limit(1)
+    ).scalars().first()
+    if row is None:
+        return f"你还没有锻造过「{rec['name']}」，无法分解。"
+    db.session.delete(row)
+    # 按配方矿石成本返还
+    gained = {}
+    for oid, cnt in (rec.get("cost") or {}).items():
+        meta = ore.ore_meta(oid)
+        if meta and meta.get("rarity") == "common":
+            back = cnt // 2  # 普通矿石：返一半，向下取整
+        else:
+            back = sum(1 for _ in range(cnt) if random.random() < 0.5)  # 高级矿石：每单位 50% 独立判定
+        if back:
+            gained[oid] = back
+    ore.grant_ores(user.user_id, gained)
+    db.session.commit()
+    lines = [f"🔧 分解成功！「{rec['name']}」已拆解，返还矿石："]
+    if not gained:
+        lines.append("（运气不佳，什么也没返还……）")
+    else:
+        for oid, cnt in gained.items():
+            meta = ore.ore_meta(oid)
+            lines.append(f"· {meta['name'] if meta else oid} ×{cnt}")
+    return "\n".join(lines)
+
+
 def cmd_forge_shop(user, group_id, args, at_qqs=None):
-    """查看铁匠铺配方：按铁匠铺 Lv 分级展示，标题注明解锁层与所需称号段。"""
+    """铁匠铺：/铁匠铺 查看配方；/铁匠铺 分解 <装备名> 分解锻造装回收矿石。"""
+    parts = (args or "").split(maxsplit=1)
+    if parts and parts[0].lower() in ("分解", "拆解", "fenjie", "breakdown"):
+        return _forge_breakdown(user, parts[1].strip() if len(parts) > 1 else "")
     from tiers import tier_of_layer
     prof = (user.profession or "") or ""
     if not _forge_unlocked(user):
@@ -445,7 +488,7 @@ def cmd_forge_shop(user, group_id, args, at_qqs=None):
         cost = forge.format_cost(r.get("cost", {})) + f" + {format_currency(r.get('price', 0))}"
         lines.append(f"· {r['name']}（{TYPE_NAMES.get(r['type'], r['type'])}）{_item_desc(r)}")
         lines.append(f"   消耗：{cost}")
-    lines.append("—— 提示：铁匠铺装备无法在 /出售 回收；锻造产物可随等级解锁直接穿戴 ——")
+    lines.append("—— 提示：铁匠铺装备无法 /出售 回收；可用 /铁匠铺 分解 回收矿石（普通返半、高级50%概率每单位判定）——")
     return "\n".join(lines)
 
 
@@ -798,7 +841,7 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/转职 战士|魔法师 - 选择职业（切换职业）\n"
             "/晋升 - 按地下城进度+货币提升阶级\n"
             "/地下城 进入/状态/退出 - 地下城冒险（最高 3600 层；命名守关 Boss 需战力判定，失败重置进度收益照常；状态含生效中药水/道具）\n"
-            "/铁匠铺 - 查看锻造配方（400 层解锁，超越武器库顶级）\n"
+            "/铁匠铺 - 查看锻造配方；/铁匠铺 分解 <装备名> 分解锻造装回收矿石（普通返半、高级50%概率）\n"
             "/锻造 装备名 - 消耗铜币+矿石制作装备（需职业/阶级符合）\n"
             "/boss 列表 - 查看守关 Boss（挑战统一走 /挑战 <Boss名|层数|称号>；普通每日共 3 次 / 1000·2000·3000·3600 每日各 1 次，首通必出 Boss 材料）\n"
             "/炼金 [配方名] - 查看/制作药水·道具（消耗材料+矿石）\n"
@@ -1107,6 +1150,8 @@ def cmd_turn(user, group_id, args, at_qqs=None):
             item = find_any_item(name)
         if item is None:
             return f"没有找到「{name}」这件装备。"
+        if forge.is_forged_item(item["id"]):
+            return f"锻造装备无法捐赠，可去 /铁匠铺 分解 回收矿石。"
         row = db.session.execute(
             db.select(UserItem).where(
                 UserItem.user_id == user.user_id,
