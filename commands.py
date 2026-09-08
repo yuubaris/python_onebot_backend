@@ -319,9 +319,15 @@ def cmd_promote(user, group_id, args, at_qqs=None):
     user.copper -= cost
     user.tier = nxt
     db.session.commit()
+    # 装备档位最高到 T5（武具店 45000）/ T4~5（铁匠铺顶级也早已解锁）：
+    # T6 灭世、T7 至尊 为纯称号荣誉阶，不再新增装备解锁。
+    if nxt >= 6:
+        unlock_note = "（纯称号荣誉阶：武具店/铁匠铺顶级装备早已解锁，无新装备）"
+    else:
+        unlock_note = f"武器库已解锁 {tier_title(user.profession, nxt)} 阶级的装备！"
     return (f"🎉 晋升成功！{tier_title(user.profession, cur)} → {tier_title(user.profession, nxt)}\n"
             f"消耗 {format_currency(cost)}，剩余 {format_currency(user.copper)}。\n"
-            f"武器库已解锁 {tier_title(user.profession, nxt)} 阶级的装备！")
+            f"{unlock_note}")
 
 
 # ---------- 铁匠铺（/铁匠铺、/锻造） ----------

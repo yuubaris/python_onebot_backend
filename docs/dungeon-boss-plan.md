@@ -186,7 +186,7 @@ Boss 掉落装备**写入 `user_item` 后背包立即可见**，但**本次结�
    ```
    （由 `docs/equipment_balance_check.py` 校验断言，防超模/防弱于商店货）
 3. **层数对应档位**：通关某 Boss 层 → 按该层对应 tier 掉该 tier 稀有装备：
-   - 用装备重做 §3.6 的层门槛映射 `tier_of_layer(layer)`（如 ≥30→T1，≥80→T2，…，≥800→T6）；
+   - 用装备重做 §3.6 的层门槛映射 `tier_of_layer(layer)`（如 ≥30→T1，≥80→T2，…，≥500→T5；T6 灭世 ≥2000、T7 至尊 ≥5000 为纯称号阶）；
    - 精英/小 Boss 掉 `tier_of_layer`，大 Boss 允许 `tier_of_layer + 1`（惊喜，D-B6）；
    - 同时满足 `掉落tier ≤ 玩家当前阶级(+超前允许)` 才掉，否则降档到可穿为止。
 
