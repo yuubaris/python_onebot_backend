@@ -509,28 +509,43 @@ def _anchor_combo_s(pool, line, tier_max=None, forge_lv=None, title_bonus=1.0):
     return dungeon_speed(stats)
 
 
+# 命名 Boss 战力分档：(档首层, 档末层, 装备池, 档位)   —— 单层档无层内梯度
+_NAMED_BOSS_BANDS = [
+    (100, 100, "shop", 1),
+    (200, 300, "shop", 2),
+    (400, 700, "shop", 3),
+    (800, 1400, "shop", 4),
+    (1600, 2500, "shop", 5),
+    (3000, 3000, "forge", 3),
+    (3600, 3600, "forge", 4),
+]
+# 档内梯度：档首胜率 ≈ 85%（x=1.782），档末 ≈ 70%（x=1.327），B0 在档内线性插值
+_BAND_X_START = 1.782
+_BAND_X_END = 1.327
+
+
 def named_boss_b0(user, layer):
-    """命名 Boss 基准战力 B0：穿满「该层对应装备档」的玩家挑战胜率 ≈ 70%。
+    """命名 Boss 基准战力 B0：穿满「该层对应装备档」的玩家挑战胜率 ≈ 70%（档末）。
 
     装备档：100→商店T1、200~300→T2、400~700→T3、800~1400→T4、1600~2500→T5、
-    3000→锻造Lv3、3600→锻造Lv4（后段对应锻造装备难度）。
+    3000→锻造Lv3、3600→锻造Lv4（后段对应锻造装备难度）；
+    **同档内层间梯度**：档首 Boss 战力适当降低（胜率 ≈ 85%），档末 ≈ 70%，B0 线性插值。
     """
     line = class_line(user.profession)
-    if layer >= 3600:
-        s = _anchor_combo_s(_load_forge_meta(), line, forge_lv=4, title_bonus=_tiers_mod.TIER_ATTR_BONUS[7])
-    elif layer >= 3000:
-        s = _anchor_combo_s(_load_forge_meta(), line, forge_lv=3, title_bonus=_tiers_mod.TIER_ATTR_BONUS[5])
-    elif layer >= 1600:
-        s = _anchor_combo_s(_load_shop_meta(), line, tier_max=5, title_bonus=_tiers_mod.TIER_ATTR_BONUS[5])
-    elif layer >= 800:
-        s = _anchor_combo_s(_load_shop_meta(), line, tier_max=4, title_bonus=_tiers_mod.TIER_ATTR_BONUS[4])
-    elif layer >= 400:
-        s = _anchor_combo_s(_load_shop_meta(), line, tier_max=3, title_bonus=_tiers_mod.TIER_ATTR_BONUS[3])
-    elif layer >= 200:
-        s = _anchor_combo_s(_load_shop_meta(), line, tier_max=2, title_bonus=_tiers_mod.TIER_ATTR_BONUS[2])
-    else:
-        s = _anchor_combo_s(_load_shop_meta(), line, tier_max=1, title_bonus=_tiers_mod.TIER_ATTR_BONUS[1])
-    return max(1.0, s / 1.327)   # x = S/B0 = 1.327 → p = x³/(1+x³) = 70%
+    for start, end, kind, spec in _NAMED_BOSS_BANDS:
+        if not (start <= layer <= end):
+            continue
+        if kind == "forge":
+            bonus = _tiers_mod.TIER_ATTR_BONUS[7 if spec == 4 else 5]
+            s = _anchor_combo_s(_load_forge_meta(), line, forge_lv=spec, title_bonus=bonus)
+        else:
+            s = _anchor_combo_s(_load_shop_meta(), line, tier_max=spec, title_bonus=_tiers_mod.TIER_ATTR_BONUS[spec])
+        if end > start:
+            b0_start = s / _BAND_X_START
+            b0_end = s / _BAND_X_END
+            t = (layer - start) / float(end - start)
+            return max(1.0, b0_start + (b0_end - b0_start) * t)
+        return max(1.0, s / _BAND_X_END)   # 单层档：档末口径 ≈70%
 
 
 def _boss_coin_bonus(layer, btype):
