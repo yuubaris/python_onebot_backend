@@ -524,7 +524,7 @@
     },
     {
       "id": "gear_big_3000_robe",
-      "name": "裂界法袍",
+      "name": "裂界夜幕",
       "type": "robe",
       "line": "magic",
       "tier": 6,
@@ -614,7 +614,7 @@
     },
     {
       "id": "gear_big_2000_focus",
-      "name": "归墟宝珠",
+      "name": "归墟星瞳",
       "type": "focus",
       "line": "magic",
       "tier": 6,
