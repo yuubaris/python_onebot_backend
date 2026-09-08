@@ -27,6 +27,10 @@
   | 小Boss | legendary 20% / rare 50% / common 30% |
   | 大Boss | myth 18% / legendary 55% / rare 22% / common 5% |
 - **稀有装备**：精英 25% / 小Boss 55% / 大Boss 100%。
+- **额外金钱（v7，2026-09-08）**：通关 Boss 层即给铜币 ≈ 当前层产币速率 × 奖励时长
+  （精英 5 分钟 / 小Boss 15 分钟 / 大Boss 40 分钟，即 层数^0.6 × 分钟数），
+  随层数成长、按 Boss 类型分级，即时入账并计入 `dungeon_coins_earned`/`dungeon_run_coins`；
+  实现见 `_boss_coin_bonus` / `_roll_boss_drop`。
 
 **3. 普通层矿石（`ore.py`，与 Boss 掉落并存）**
 - 普通层定时掉落**全池按原概率**（普通 30% / 稀有 8% / 传说随层）；新增 **神话极小档 0.1%×√(层/400)，上限 1%**（普通层极小概率出神话）。

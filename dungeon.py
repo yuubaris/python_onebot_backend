@@ -407,18 +407,43 @@ def _grant_boss_rare(user, layer, btype):
     return picked
 
 
+# 额外金钱奖励：通关 Boss 层即给（与矿石并列、不依赖稀有装备概率）。
+# 金额 ≈ 该层挂机产币速率 × 奖励时长，随层数成长、按 Boss 类型分级：
+#   精英 = 5 分钟产币 / 小Boss = 15 分钟 / 大Boss = 40 分钟（等价 层数^0.6 × 分钟数），
+# 让「打 Boss」有可感的通关收益（大致相当于多送一段挂机时长），且不与产币曲线脱钩、不易通胀。
+BOSS_COIN_MINUTES = {"elite": 5, "minor": 15, "major": 40}
+
+
+def _boss_coin_bonus(layer, btype):
+    """通关某 Boss 层的额外铜币奖励（即时入账，不随挂机 coins 小数累积）。"""
+    rate = coin_rate_per_sec(layer)                    # (1/60) × n^0.6 铜/秒
+    minutes = BOSS_COIN_MINUTES.get(btype, 2)
+    bonus = int(rate * 60.0 * minutes)                 # 秒 → 铜币
+    return max(bonus, 1)
+
+
 def _roll_boss_drop(user, layer, btype):
-    """通关某 Boss 层：掷掉落（矿石 / 稀有装备），写库并返回播报行。"""
+    """通关某 Boss 层：掷掉落（金钱 / 矿石 / 稀有装备），写库并返回播报行。
+
+    通关即给：额外金钱 + 必掉矿石；稀有装备按概率（精英 25% / 小Boss 55% / 大Boss 100%）。
+    """
     import random
     from ore import ore_meta
     lines = []
+    # 额外金钱（Boss 专属通关奖励，即时入账）
+    bonus = _boss_coin_bonus(layer, btype)
+    if bonus > 0:
+        user.copper += bonus
+        user.dungeon_coins_earned += bonus
+        user.dungeon_run_coins += bonus
+        lines.append(f"💰 +{bonus} 铜币")
     ore_id = _roll_boss_ore(layer, btype)
     if ore_id:
         ore.grant_ores(user.user_id, {ore_id: 1})
         meta = ore_meta(ore_id)
         nm = meta["name"] if meta else ore_id
         lines.append(f"💎 矿石 ×1（{nm}）")
-    # 装备概率：精英 25% / 小Boss 55% / 大Boss 100%
+    # 稀有装备概率：精英 25% / 小Boss 55% / 大Boss 100%
     p = {"elite": 0.25, "minor": 0.55, "major": 1.0}.get(btype, 0.25)
     if random.random() < p:
         from classes import TYPE_NAMES as _tn
