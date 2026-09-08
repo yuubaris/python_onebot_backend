@@ -827,6 +827,68 @@ def _dungeon_exit(user):
             f"当前资产：{format_currency(user.copper)}")
 
 
+def _dungeon_rank(user):
+    """/地下城 排名：全服战力 TOP10 + 自己的战力/进度层/专属装备拥有情况。
+
+    战力 = dungeon_speed(effective_stats(当前装备))（同仓库权威口径）；
+    进度层 = historical_best_layer(在线/保存层取高)；专属 = boss_gear.json 已拥有件数。
+    """
+    from collections import Counter
+    from dungeon import _all_item_meta
+
+    meta = _all_item_meta()
+    rows = db.session.execute(db.select(UserItem)).scalars().all()
+    by_user = {}
+    for r in rows:
+        it = meta.get(r.item_id)
+        if it is None:
+            continue
+        by_user.setdefault(r.user_id, []).append(it)
+    all_users = db.session.execute(db.select(User)).scalars().all()
+
+    ranked = []
+    for u in all_users:
+        owned = by_user.get(u.user_id, [])
+        s = dungeon_speed(effective_stats(u, owned))
+        layer = historical_best_layer(u)
+        gears = [it for it in owned if boss_gear.is_gear(it.get("id"))]
+        ranked.append((u, s, layer, gears))
+    ranked.sort(key=lambda r: (-r[1], r[0].user_id))
+    top = ranked[:10]
+
+    def disp(u):
+        n = (u.nickname or "").strip()
+        return n if n else str(u.user_id)
+
+    def pad(name, w=8):
+        ww = sum(2 if ord(c) > 127 else 1 for c in name)
+        return name + " " * max(1, w - ww)
+
+    lines = ["🏆 全服地下城战力 TOP10（战力｜进度层｜专属）"]
+    for i, (u, s, layer, gears) in enumerate(top, 1):
+        mark = "（我）" if u.user_id == user.user_id else ""
+        lines.append(
+            f"{i:>2}. {pad(disp(u))} 战力 {int(s):>6} ｜ 到 {layer} 层 ｜ 👑专属 ×{len(gears)}{mark}")
+    me = next((r for r in ranked if r[0].user_id == user.user_id), None)
+    if me is not None:
+        u, s, layer, gears = me
+        in_top = any(r[0].user_id == user.user_id for r in top)
+        if not in_top:
+            lines.append("── 我的排名 ──")
+            lines.append(
+                f"第 {ranked.index(me) + 1} 名 {pad(disp(u))} 战力 {int(s):>6} ｜ 到 {layer} 层 ｜ 👑专属 ×{len(gears)}（我）")
+        if gears:
+            cnt = Counter(g["id"] for g in gears)
+            seen = {g["id"]: g for g in gears}
+            names = "、".join(f"{seen[i]['name']}×{cnt[i]}" for i in seen)
+            lines.append(f"我的专属装备：{names}")
+        else:
+            lines.append("我的专属装备：暂无")
+    else:
+        lines.append("（未找到你的档案，先 /签到 建立角色后再查看排名）")
+    return "\n".join(lines)
+
+
 def cmd_dungeon(user, group_id, args, at_qqs=None):
     sub = (args or "").strip().lower()
     if sub in ("进入", "enter"):
@@ -835,12 +897,15 @@ def cmd_dungeon(user, group_id, args, at_qqs=None):
         return _dungeon_exit(user)
     if sub in ("状态", "status"):
         return _dungeon_status(user)
+    if sub in ("排名", "rank", "top", "排行榜"):
+        return _dungeon_rank(user)
     if not sub and (user.dungeon_layer > 0
                     or (user.saved_dungeon_layer and user.saved_dungeon_layer > 0)):
         return _dungeon_status(user)
     return ("地下城指令：\n"
             "/地下城 进入 - 进入/继续地下城（退出后保留进度，可直达上次位置）\n"
             "/地下城 状态 - 查看当前层数/进度/金币/生效中药水·道具(剩余层数/时间)\n"
+            "/地下城 排名 - 全服战力 TOP10 + 自己的战力/进度层/专属装备拥有情况\n"
             "/地下城 退出 - 离开地下城（保存当前进度）\n"
             "—— Boss 关：命名守关 Boss 打满进度后按战力判定胜负，失败重置本关进度但收益照常；"
             "精英/小Boss/无名字整百层进度跑完即通关 ——")
@@ -858,7 +923,7 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/出售 商品名 [商品名...] - 批量出售装备（购买价 60%）\n"
             "/转职 战士|魔法师 - 选择职业（切换职业）\n"
             "/晋升 - 按地下城进度+货币提升阶级\n"
-            "/地下城 进入/状态/退出 - 地下城冒险（最高 3600 层；命名守关 Boss 需战力判定，失败重置进度收益照常；状态含生效中药水/道具）\n"
+            "/地下城 进入/状态/排名/退出 - 地下城冒险（最高 3600 层；命名守关 Boss 需战力判定，失败重置进度收益照常；状态含生效中药水/道具；排名看全服战力 TOP10 与专属拥有）\n"
             "/铁匠铺 - 查看锻造配方；/铁匠铺 分解 <装备名> 分解锻造装回收矿石（普通返半、稀有返六成、传说/神话按50%概率）\n"
             "/锻造 装备名 - 消耗铜币+矿石制作装备（需职业/阶级符合）\n"
             "/boss 列表 - 查看守关 Boss（挑战统一走 /挑战 <Boss名|层数|称号>；普通每日共 3 次 / 1000·2000·3000·3600 每日各 1 次，首通必出 Boss 材料）\n"
