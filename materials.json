@@ -12,6 +12,7 @@
     {"id": "boss_bone", "name": "尸皇骨匣", "category": "boss", "rarity": "legendary"},
     {"id": "boss_frost", "name": "霜语结晶", "category": "boss", "rarity": "legendary"},
     {"id": "boss_ember", "name": "烬鳞龙鳞", "category": "boss", "rarity": "legendary"},
-    {"id": "boss_wangua", "name": "万瓜圣辉", "category": "boss", "rarity": "myth"}
+    {"id": "boss_wangua", "name": "万瓜圣辉", "category": "boss", "rarity": "myth"},
+    {"id": "souvenir_wangua", "name": "万瓜圣契", "category": "souvenir", "rarity": "myth"}
   ]
 }

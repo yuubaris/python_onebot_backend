@@ -8,10 +8,12 @@ Boss 数据在 bosses.json（18 个命名守关 Boss：1000 前每100 / 1000 后
 - 解锁：历史最高层 ≥ boss.layer；
 - 成功率：玩家强度 S = dungeon_speed(effective_stats(...))；Boss 基准 B0 =
   effective_layer_total(layer)/3600；p = clamp(0.03, 0.97, x^3/(1+x^3))，x=S/B0；
-- 每日 3 次 / Boss（按日期重置，胜败均扣）；
+- 每日挑战按「组」共享额度（2026-09-08）：普通守关(除 1000/2000/3600 外的命名 Boss)
+  每日共 3 次；大 Boss(1000/2000/3600) 每日共 1 次（按日期重置，胜败均扣）；
 - 掉落：Boss 材料 首通必出、重复成功固定 60%（不随次数递减）；
   铜币 = 基准×max(0.2, 0.8^n)；稀有掉率 = 基础×max(0.1, 0.8^n)（n=累计成功次数，
   永久递减跨日不清零）；稀有 tier ≤ min(玩家阶级, boss.tier_cap)（低级 Boss 只掉低级装）；
+- 3600 最终 Boss 挑战成功额外掉 1 个特殊道具（用途暂空，占位收藏）；
 - 自动推进首通：settle_dungeon 经过命名 Boss 层且首次击破 → 给 Boss 材料一次（dungeon 调用）。
 """
 import json
@@ -26,7 +28,16 @@ import dungeon
 
 BOSSES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bosses.json")
 
-BOSS_DAILY_LIMIT = 3          # 每 Boss 每日挑战次数
+# —— Boss 挑战每日「组共享额度」（2026-09-08）——
+# 普通守关 = 除 1000/2000/3600 外的全部命名 Boss（“100 倍数”档）；每日组内总计 3 次。
+# 大 Boss   = 1000 / 2000 / 3600；每日组内总计 1 次。
+# 说明：同组多个 Boss 的当日 fight_count 求和作为“组已用次数”（跨 Boss 共享）。
+BIG_BOSS_LAYERS = (1000, 2000, 3600)
+GROUP_DAILY_LIMIT = {"normal": 3, "big": 1}
+GROUP_LABEL = {"normal": "守关 Boss", "big": "大 Boss（1000/2000/3600）"}
+# 3600 最终 Boss 挑战成功额外掉落的特殊道具（用途暂空，占位收藏；独立 category=souvenir）
+FINAL_BOSS_RELIC = "souvenir_wangua"
+
 REPEAT_DROP_RATE = 0.60       # 重复挑战成功时 Boss 材料随机掉率（不随次数递减）
 COIN_DECAY_BASE = 0.8         # 铜币永久衰减速率
 COIN_DECAY_FLOOR = 0.2        # 铜币衰减下限
@@ -115,6 +126,28 @@ def _get_state(user, boss):
     return row
 
 
+def boss_group(boss):
+    """Boss 分组：layer ∈ {1000,2000,3600} → 'big'；其余（100 倍数普通守关）→ 'normal'。"""
+    return "big" if int(boss.get("layer", 0) or 0) in BIG_BOSS_LAYERS else "normal"
+
+
+def group_used_today(user, boss):
+    """该 Boss 所在组今日已挑战总次数（跨 Boss 共享，按 fight_date==today 聚合）。"""
+    g = boss_group(boss)
+    member_ids = [b["id"] for b in all_bosses() if boss_group(b) == g]
+    today = _today()
+    if not member_ids:
+        return 0
+    rows = db.session.execute(
+        db.select(UserBoss).where(
+            UserBoss.user_id == user.user_id,
+            UserBoss.boss_id.in_(member_ids),
+            UserBoss.fight_date == today,
+        )
+    ).scalars().all()
+    return sum(r.fight_count for r in rows)
+
+
 def _success_rate(user, boss):
     """按当前装备强度计算挑战成功率（0.03 ~ 0.97）。"""
     S = dungeon.dungeon_speed(dungeon.effective_stats(user, dungeon.owned_items(user)))
@@ -193,25 +226,30 @@ def on_auto_first_clear(user, layer):
 def challenge_boss(user, boss):
     """挑战指定 Boss：判定 → 结算。返回 (文本, 是否挑战成功)。
 
-    每日 3 次；胜/败都扣次数；掉落按 §1.7 规则。
+    每日按「组」共享额度（2026-09-08）：普通守关(100 倍数) 共 3 次、
+    大 Boss(1000/2000/3600) 共 1 次；胜/败都扣次数；掉落按 §1.7 规则。
     """
     today = _today()
+    if dungeon.historical_best_layer(user) < int(boss.get("layer", 100)):
+        return f"🔒 挑战「{boss['name']}」需地下城历史最高层 ≥ {boss['layer']} 层（当前 {dungeon.historical_best_layer(user)}）。", False
+    g = boss_group(boss)
+    limit = GROUP_DAILY_LIMIT[g]
+    used = group_used_today(user, boss)
+    if used >= limit:
+        return f"今日「{GROUP_LABEL[g]}」挑战次数已用完（{used}/{limit}），明天再来吧！", False
+    # 该 Boss 当日计数（胜败均扣；计入组内共享额度）
     row = _get_state(user, boss)
     if row.fight_date != today:
         row.fight_date = today
         row.fight_count = 0
-    if row.fight_count >= BOSS_DAILY_LIMIT:
-        return f"「{boss['name']}」今日挑战次数已用完（{BOSS_DAILY_LIMIT}/{BOSS_DAILY_LIMIT}），明天再来吧！", False
-    if dungeon.historical_best_layer(user) < int(boss.get("layer", 100)):
-        return f"🔒 挑战「{boss['name']}」需地下城历史最高层 ≥ {boss['layer']} 层（当前 {dungeon.historical_best_layer(user)}）。", False
+    row.fight_count += 1
 
     p = _success_rate(user, boss)
-    row.fight_count += 1
     win = random.random() < p
     if not win:
         db.session.commit()
         return (f"⚔️ 挑战 {boss['name']}…胜率 {p * 100:.0f}%\n"
-                f"💀 惜败！今日剩余挑战次数 {BOSS_DAILY_LIMIT - row.fight_count}/{BOSS_DAILY_LIMIT}。"), False
+                f"💀 惜败！今日「{GROUP_LABEL[g]}」剩余挑战次数 {max(0, limit - used - 1)}/{limit}。"), False
 
     # —— 胜利结算 ——
     lines = [f"⚔️ 挑战 {boss['name']}…胜率 {p * 100:.0f}%", "🎉 击败！"]
@@ -242,13 +280,19 @@ def challenge_boss(user, boss):
         db.session.add(UserItem(user_id=user.user_id, item_id=rare["id"], is_new=1))
         lines.append(f"✦ {rare['name']}({tn}·稀有) new！")
 
-    lines.append(f"今日剩余挑战次数 {BOSS_DAILY_LIMIT - row.fight_count}/{BOSS_DAILY_LIMIT}。")
+    # 3600 最终 Boss 额外掉落特殊道具（用途暂空，占位收藏）
+    if int(boss.get("layer", 0) or 0) == 3600:
+        material.grant_materials(user.user_id, {FINAL_BOSS_RELIC: 1})
+        rmeta = material.material_meta(FINAL_BOSS_RELIC)
+        lines.append(f"🌟 额外获得特殊道具：{rmeta['name'] if rmeta else FINAL_BOSS_RELIC} ×1")
+
+    lines.append(f"今日「{GROUP_LABEL[g]}」剩余挑战次数 {max(0, limit - used - 1)}/{limit}。")
     db.session.commit()
     return "\n".join(lines), True
 
 
 def boss_list_text(user):
-    """/boss 列表：按 T 档/层展示全部命名 Boss（未解锁标锁）。"""
+    """/boss 列表：按分组（普通守关 / 大 Boss）展示命名 Boss（未解锁标锁）。"""
     today = _today()
     best = dungeon.historical_best_layer(user)
     rows = {}
@@ -258,19 +302,29 @@ def boss_list_text(user):
                                       UserBoss.boss_id == b["id"])
         ).scalars().first()
         rows[b["id"]] = st
-    out = ["🎯 Boss 挑战（每日各 3 次 · 首通必出材料 · 铜币/稀有永久递减）"]
+    groups = {}
     for b in all_bosses():
-        st = rows[b["id"]]
-        unlocked = best >= int(b.get("layer", 100))
-        mm = material.material_meta(b["material"])
-        mname = mm["name"] if mm else b["material"]
-        first = "已首通" if (st and st.first_clear_date) else "未首通"
-        if not unlocked:
-            out.append(f"🔒 {b['layer']}层 {b['name']}（{b.get('tag','')}）需历史最高层 ≥ {b['layer']}")
-        else:
-            remain = BOSS_DAILY_LIMIT
-            if st and st.fight_date == today:
-                remain = max(0, BOSS_DAILY_LIMIT - st.fight_count)
-            out.append(f"· {b['layer']}层 {b['name']}（{b.get('tag','')}）[{first}] 剩 {remain}/{BOSS_DAILY_LIMIT} · 材料：{mname}")
+        groups.setdefault(boss_group(b), []).append(b)
+    out = ["🎯 Boss 挑战（守关 Boss 每日共 3 次 · 大 Boss 1000/2000/3600 每日共 1 次）",
+           "   首通必出 Boss 材料 · 铜币/稀有永久递减 · 胜败均扣次数"]
+    for g in ("normal", "big"):
+        members = groups.get(g, [])
+        if not members:
+            continue
+        limit = GROUP_DAILY_LIMIT[g]
+        used = group_used_today(user, members[0])
+        remain = max(0, limit - used)
+        head = GROUP_LABEL[g] if g == "normal" else "大 Boss（1000/2000/3600）"
+        out.append(f"—— {head}（今日剩 {remain}/{limit}）——")
+        for b in members:
+            st = rows[b["id"]]
+            unlocked = best >= int(b.get("layer", 100))
+            mm = material.material_meta(b["material"])
+            mname = mm["name"] if mm else b["material"]
+            first = "已首通" if (st and st.first_clear_date) else "未首通"
+            if not unlocked:
+                out.append(f"🔒 {b['layer']}层 {b['name']}（{b.get('tag','')}）需历史最高层 ≥ {b['layer']}")
+            else:
+                out.append(f"· {b['layer']}层 {b['name']}（{b.get('tag','')}）[{first}] · 材料：{mname}")
     out.append("—— 用法：/boss 挑战 <Boss名>（如 /boss 挑战 裂风狼王·灰鬃）；/boss 列表 查看 ——")
     return "\n".join(out)
