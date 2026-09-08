@@ -568,6 +568,8 @@ def _roll_boss_drop(user, layer, btype):
     named = []
     coin_bonus = 0
     ore_count = 0
+    special_count = 0
+    rare_count = 0
     # 额外金钱（Boss 专属通关奖励，即时入账）→ 归入结算汇总计数
     bonus = _boss_coin_bonus(layer, btype)
     if bonus > 0:
@@ -591,6 +593,7 @@ def _roll_boss_drop(user, layer, btype):
         except Exception:
             pass
         material.grant_materials(user.user_id, {special_id: scnt})
+        special_count = scnt
         smeta = material.material_meta(special_id)
         snm = smeta["name"] if smeta else special_id
         named.append(f"✨ 特殊物品 ×{scnt}（{snm}）")
@@ -602,7 +605,8 @@ def _roll_boss_drop(user, layer, btype):
         if it:
             tn = _tn.get(it.get("type", "other"), it.get("type", ""))
             named.append(f"✦ {it['name']}({tn}·稀有) new！")
-    return named, coin_bonus, ore_count
+            rare_count = 1
+    return named, coin_bonus, ore_count, special_count, rare_count
 
 
 def _auto_named_boss_first(user, layer):
@@ -644,9 +648,10 @@ def settle_dungeon(user):
     cleared = 0
     guard = 0
     report = []
-    agg_coin = 0        # 本结算周期 Boss 通关金钱合计（合并计数播报）
-    agg_ore = 0         # 本结算周期 Boss 通关矿石合计（合并计数播报）
-    named_fought = False  # 本周期是否有命名 Boss 通关（仅命名 Boss 播报通关记录）
+    agg_coin = 0       # 本结算周期 Boss 通关金钱合计（合并计数播报）
+    agg_ore = 0        # 本结算周期 Boss 通关矿石合计
+    agg_special = 0    # 非命名 Boss 的特殊物品计数（命名 Boss 的已单独行）
+    agg_rare = 0       # 非命名 Boss 的稀有装备计数
     # 掉落增益倍率（道具 drop_bonus）：金钱/矿石/草药/特殊（无 buff 则 1.0）
     try:
         import consumable as _consumable
@@ -694,14 +699,19 @@ def settle_dungeon(user):
                     user.dungeon_capped = 1
                     cleared += 1
                     if bt:
-                        named_d, coin_d, ore_n = _roll_boss_drop(user, cleared_layer, bt)
-                        # 通关记录只显示命名 Boss：精英/小Boss 掉落入账但不播报、不计入汇总
-                        if named_d and named is not None:
-                            named_fought = True
+                        named_d, coin_d, ore_n, sp_n, rare_n = _roll_boss_drop(user, cleared_layer, bt)
+                        # 通关记录只显示命名 Boss：精英/小Boss 无通关行，但掉落合并计数显示
+                        if named is not None:
                             agg_coin += coin_d
                             agg_ore += ore_n
-                            report.append(f"🎉 通关 第{cleared_layer}层 {named['name']}（封顶）！")
-                            report.extend(named_d)
+                            if named_d:
+                                report.append(f"🎉 通关 第{cleared_layer}层 {named['name']}（封顶）！")
+                                report.extend(named_d)
+                        else:
+                            agg_coin += coin_d
+                            agg_ore += ore_n
+                            agg_special += sp_n
+                            agg_rare += rare_n
                 # 命名 Boss 自动推进首通（100/200/…/3600 守关层）→ boss 材料（未首通才给）
                 _auto_lines = _auto_named_boss_first(user, cleared_layer)
                 if _auto_lines:
@@ -714,26 +724,35 @@ def settle_dungeon(user):
                 cleared += 1
                 if bt:
                     # 通关 Boss 层：掉落（通关瞬间结算）——只播报命名 Boss，精英/小Boss 不提示
-                    named_d, coin_d, ore_n = _roll_boss_drop(user, cleared_layer, bt)
-                    # 精英/小Boss 掉落入账但不播报、不计入汇总
-                    if named_d and named is not None:
-                        named_fought = True
+                    named_d, coin_d, ore_n, sp_n, rare_n = _roll_boss_drop(user, cleared_layer, bt)
+                    # 命名 Boss：通关行+有名字的单独行；精英/小Boss：无通关行，掉落合并计数
+                    if named is not None:
                         agg_coin += coin_d
                         agg_ore += ore_n
-                        report.append(f"🎉 通关 第{cleared_layer}层 {named['name']}！")
-                        report.extend(named_d)
+                        if named_d:
+                            report.append(f"🎉 通关 第{cleared_layer}层 {named['name']}！")
+                            report.extend(named_d)
+                    else:
+                        agg_coin += coin_d
+                        agg_ore += ore_n
+                        agg_special += sp_n
+                        agg_rare += rare_n
                 # 命名 Boss 自动推进首通（100/200/…/3600 守关层）→ boss 材料（未首通才给）
                 _auto_lines = _auto_named_boss_first(user, cleared_layer)
                 if _auto_lines:
                     report.append("；".join(_auto_lines))
 
-    # 多条矿石/金钱合并计数（本周期所有命名 Boss 通关汇总一行；无命名 Boss 不播报）
-    if named_fought and (agg_coin or agg_ore):
-        agg_parts = []
-        if agg_coin:
-            agg_parts.append(f"💰 +{agg_coin} 铜币")
-        if agg_ore:
-            agg_parts.append(f"💎 矿石 ×{agg_ore}")
+    # 多条矿石/材料/装备合并计数（本周期所有 Boss 掉落汇总一行）
+    agg_parts = []
+    if agg_coin:
+        agg_parts.append(f"💰 +{agg_coin} 铜币")
+    if agg_ore:
+        agg_parts.append(f"💎 矿石 ×{agg_ore}")
+    if agg_special:
+        agg_parts.append(f"✨ 特殊物品 ×{agg_special}")
+    if agg_rare:
+        agg_parts.append(f"✦ 稀有装备 ×{agg_rare}")
+    if agg_parts:
         report.append(" · ".join(agg_parts))
 
     coins *= mult_coin                       # 金钱掉落增益
