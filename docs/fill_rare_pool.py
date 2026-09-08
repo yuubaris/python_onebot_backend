@@ -4,7 +4,7 @@
 依据 docs/dungeon-boss-plan.md §4.3 铁律：
 - 稀有装备：商店（/武器库 /铁匠铺）买不到，仅 Boss 关掉落；
 - 强度钳制：同tier普通顶配 < 稀有(tier) ≤ tier+1普通顶配（同部位对比）；
-- 覆盖**全部位**：战士主手/战士盾/通用甲、法师主手/法师法器/法师袍、通用饰品，
+- 覆盖**全部位**：战士主手/战士盾/战士防具、法师主手/法师法器/法师袍、通用饰品，
   每 tier 齐全（armor 顶配逼近锻造 Lv1，故 T5 不另设稀有甲）；
   转职后可掉本职业 line+any，未转职可掉 any（保证各阶段 Boss 都有副手/防具稀有望）。
 - 独立专属命名，不与 武器库/铁匠铺/称号前缀 撞车；展示端加 ✦ 与 (稀有)。
@@ -118,35 +118,35 @@ PLAN = {
         ("staff", "magic", "尘封法杖"),
         ("shield", "physical", "尘封坚盾"),
         ("focus", "magic", "尘封法器"),
-        ("armor", "any", "尘封轻甲"),
+        ("armor", "physical", "尘封轻甲"),
         ("robe", "magic", "尘封纱袍"),
         ("accessory", "any", "尘封护符")],
     1: [("weapon", "physical", "踏风战刃"),
         ("staff", "magic", "踏风秘杖"),
         ("shield", "physical", "踏风坚盾"),
         ("focus", "magic", "踏风法器"),
-        ("armor", "any", "踏风轻甲"),
+        ("armor", "physical", "踏风轻甲"),
         ("robe", "magic", "踏风纱袍"),
         ("accessory", "any", "踏风护符")],
     2: [("weapon", "physical", "熔岩斩刃"),
         ("staff", "magic", "熔岩法杖"),
         ("shield", "physical", "熔岩坚盾"),
         ("focus", "magic", "熔岩法器"),
-        ("armor", "any", "熔岩战甲"),
+        ("armor", "physical", "熔岩战甲"),
         ("robe", "magic", "熔岩纱袍"),
         ("accessory", "any", "熔岩护印")],
     3: [("weapon", "physical", "月蚀巨刃"),
         ("staff", "magic", "月蚀权杖"),
         ("shield", "physical", "月蚀坚盾"),
         ("focus", "magic", "月蚀法器"),
-        ("armor", "any", "月蚀重甲"),
+        ("armor", "physical", "月蚀重甲"),
         ("robe", "magic", "月蚀纱袍"),
         ("accessory", "any", "月蚀吊坠")],
     4: [("weapon", "physical", "星穹圣刃"),
         ("staff", "magic", "星穹权杖"),
         ("shield", "physical", "星穹坚盾"),
         ("focus", "magic", "星穹法器"),
-        ("armor", "any", "星穹战铠"),
+        ("armor", "physical", "星穹战铠"),
         ("robe", "magic", "星穹纱袍"),
         ("accessory", "any", "星穹法印")],
     5: [("weapon", "physical", "神陨之刃"),
@@ -212,7 +212,7 @@ def main():
                 a, g = 0, 0
                 extra = {"attack": 0, "agility": 0, "intelligence": i, "mp": m}
             elif typ == "armor":
-                # 通用防具（any 纯生存）：保底分 def*2+hp*1.2
+                # 战士专属防具（physical 纯生存）：保底分 def*2+hp*1.2
                 d, h = fit_armor(target, max(d, 12), max(h, 15))
                 a, g, i, m = 0, 0, 0, 0
                 extra = {"attack": 0, "agility": 0, "intelligence": 0, "mp": 0}

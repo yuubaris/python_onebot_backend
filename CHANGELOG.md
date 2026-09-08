@@ -5,6 +5,15 @@
 
 ---
 
+## 2026-09-08 · v2.5 —— 部位对称修复：防具归战士专属（fix）
+
+- **修复**：魔法师此前能同时吃到 `防具(armor)` + `法袍(robe)` 两个防装部位（armor 被误标为通用 any）。
+- 现 `armor`（防具/战甲）归**战士专属 physical**；法师生存装仅 `法袍 robe`。
+- 部位对称：战士=武器/防具/盾，法师=法杖/法袍/法器（+通用饰品 accessory，any 仅饰品）。
+- 同步数据：`equipment.json` / `forge.json` / `rare_drops.json` 的 armor `line any→physical`；
+  `classes.py` 兜底、`docs/fill_rare_pool.py` 生成器、README/bot_wiki/计划文档一致更新。
+- 影响：未转职 Boss 稀有掉落仅剩通用饰品（转职引导更明确）。
+
 ## 2026-09-08 · v2.4 —— Boss 额外金钱掉落（新增）
 
 - 通关 **精英 / 小 Boss / 大 Boss** 即得**额外金钱**：≈ 当前层产币速率 × 奖励时长

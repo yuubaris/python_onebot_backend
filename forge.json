@@ -35,7 +35,7 @@
         "iron_ore": 83,
         "lead_ore": 27
       },
-      "line": "any",
+      "line": "physical",
       "tier": 5
     },
     {
@@ -94,7 +94,7 @@
         "lead_ore": 26,
         "tin_ore": 18
       },
-      "line": "any",
+      "line": "physical",
       "tier": 5
     },
     {
@@ -156,7 +156,7 @@
         "mithril_ore": 42,
         "tin_ore": 15
       },
-      "line": "any",
+      "line": "physical",
       "tier": 6
     },
     {
@@ -517,7 +517,7 @@
         "adamantite_ore": 29,
         "chaos_core": 9
       },
-      "line": "any",
+      "line": "physical",
       "tier": 6
     },
     {

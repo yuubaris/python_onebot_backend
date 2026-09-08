@@ -67,7 +67,7 @@
       "agility": 0,
       "intelligence": 0,
       "price": 0,
-      "line": "any",
+      "line": "physical",
       "tier": 0
     },
     {
@@ -165,7 +165,7 @@
       "agility": 0,
       "intelligence": 0,
       "price": 0,
-      "line": "any",
+      "line": "physical",
       "tier": 1
     },
     {
@@ -263,7 +263,7 @@
       "agility": 0,
       "intelligence": 0,
       "price": 0,
-      "line": "any",
+      "line": "physical",
       "tier": 2
     },
     {
@@ -361,7 +361,7 @@
       "agility": 0,
       "intelligence": 0,
       "price": 0,
-      "line": "any",
+      "line": "physical",
       "tier": 3
     },
     {
@@ -459,7 +459,7 @@
       "agility": 0,
       "intelligence": 0,
       "price": 0,
-      "line": "any",
+      "line": "physical",
       "tier": 4
     },
     {

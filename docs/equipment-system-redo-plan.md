@@ -15,8 +15,11 @@
 > 本节汇总「按本计划实施」后**最终落地的关键数值与结构**（与仓库当前代码/数据一致）。
 > 新增代码：`classes.py`、`tiers.py`；`models.User` 增 `profession`/`tier`，`UserItem` 增 `is_new`。
 
-**1. 职业与部位（已落地，`classes.py`）**
-- 战士(physical)：可用 `weapon / armor / shield`；魔法师(magic)：可用 `staff / robe / focus`；`accessory` 与纯生存甲为 `any`（两职业通用）。
+**1. 职业与部位（已落地，`classes.py`；2026-09-08 修正部位对称）**
+- 战士(physical)：可用 `weapon / armor / shield`；魔法师(magic)：可用 `staff / robe / focus`；
+  `accessory`(饰品) 为 `any` 两职业通用。
+- ⚠️ **部位修正（2026-09-08）**：`armor`（防具/战甲）归**战士专属 physical**（法师生存装仅 `robe` 法袍），
+  修复「法师同时吃 防具+法袍 两个防装部位」的 bug；`armor` 不再标 `any`。
 - 类型命名含 `staff(法杖)/focus(法器)`；旧数据 `robe 法杖 → staff` 自动重映射（D6）。
 
 **2. 晋升/阶级（已落地，`tiers.py`；2026-09-08 终版：T1/T2/T3 收紧 + 称号加成）**
@@ -52,7 +55,7 @@
 - Boss 关掉率概率上调（见 `dungeon-boss-plan.md` §4.2 落地记录）；Boss 矿石按 Boss 类型给高稀有占比，大 Boss 掉神话。
 
 **7. 稀有装备（`rare_drops.json`，18 → 41 件已填充）**
-- 覆盖 T0~T5 **全部位**：每阶 战士主手(weapon)/战士盾(shield)/通用甲(armor any)、法师主手(staff)/法师法器(focus)/法师袍(robe)、通用饰品(accessory)，
+- 覆盖 T0~T5 **全部位**：每阶 战士主手(weapon)/战士盾(shield)/战士防具(armor physical)、法师主手(staff)/法师法器(focus)/法师袍(robe)、通用饰品(accessory any)，
   系列沿用 尘封/踏风/熔岩/月蚀/星穹/神陨，独立专属命名。
 - 强度钳制：`同tier普通 < 稀有 ≤ 下一档普通`（`equipment_balance_check.py` 断言 0 问题）。
 - 掉落经 Boss 关（`dungeon-boss-plan.md`）；进包立即可见带 `✦` 与 `new！`，退出重进后生效。

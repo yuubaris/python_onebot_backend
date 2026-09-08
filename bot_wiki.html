@@ -206,10 +206,11 @@
   <h3>职业与可用部位</h3>
   <table>
     <tr><th>职业</th><th>可用类型</th><th>通用(any)</th></tr>
-    <tr><td>战士（physical）</td><td>武器 weapon / 防具 armor / 盾牌 shield</td><td>饰品、纯生存轻甲</td></tr>
-    <tr><td>魔法师（magic）</td><td>法杖 staff / 法袍 robe / 法器 focus</td><td>同上</td></tr>
+    <tr><td>战士（physical）</td><td>武器 weapon / 防具 armor / 盾牌 shield</td><td>饰品（两职业共用）</td></tr>
+    <tr><td>魔法师（magic）</td><td>法杖 staff / 法袍 robe / 法器 focus</td><td>饰品（两职业共用）</td></tr>
   </table>
-  <p>选择职业：<code class="inline">/转职 战士 | 魔法师</code>（可随时切换；另一职业装备保留但不生效，可出售）。未转职先引导转职，地下城自动择优（物理/魔法取高）。</p>
+  <p>部位对称：战士=武器/防具/盾，法师=法杖/法袍/法器（+通用饰品），互不混穿、数量对等。
+  选择职业：<code class="inline">/转职 战士 | 魔法师</code>（可随时切换；另一职业装备保留但不生效，可出售）。未转职先引导转职，地下城自动择优（物理/魔法取高）。</p>
 
   <h3>晋升 / 阶级（决定能用多好）</h3>
   <table>
@@ -236,7 +237,7 @@
 
   <h3>稀有装备（Boss 掉落专属，商店买不到）</h3>
   <ul>
-    <li>独立 <code class="inline">rare_drops.json</code>（41 件，覆盖 T0~T5 全部位）：战士主手/盾、法师主手/法器/袍、通用甲 + 通用饰品。</li>
+    <li>独立 <code class="inline">rare_drops.json</code>（41 件，覆盖 T0~T5 全部位）：战士主手/盾/防具、法师主手/法器/袍、通用饰品。</li>
     <li>强度：优于同阶普通、不超过下一阶普通（钳制）；命名独立专属（不与商店/锻造重名）。</li>
     <li>掉落偏向：<b>越高级 Boss 越易掉玩家当前阶级档的稀有</b>（大Boss最贴当前档，低档留保底），避免高阶玩家常抽到低阶。</li>
     <li>展示：背包/播报带 <b>✦ 名称(稀有)</b> 与新掉落 <b>new！</b>；进包立即可见，<b>退出地下城后下次进入才计入推进速度</b>。</li>

@@ -32,14 +32,15 @@ CLASSES = {
 }
 
 # 部位 → 归属 line（用于旧数据/兜底推断）
+# armor(防具) 属战士专属 physical；法师对应生存位为 robe(magic)；accessory(饰品) 两职业通用。
 TYPE_LINE_FALLBACK = {
     "weapon": LINE_PHYSICAL,
-    "armor": LINE_ANY,        # 纯生存轻甲 → any（通用）
+    "armor": LINE_PHYSICAL,   # 防具/战甲 → 战士专属
     "shield": LINE_PHYSICAL,
     "staff": LINE_MAGIC,
     "robe": LINE_MAGIC,
     "focus": LINE_MAGIC,
-    "accessory": LINE_ANY,
+    "accessory": LINE_ANY,    # 饰品 → 通用
 }
 
 # type 显示名（与 commands.TYPE_NAMES 保持一致；避免循环 import，这里放兜底映射）
