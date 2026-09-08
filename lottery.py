@@ -82,19 +82,21 @@ def roll(user, tier_no, rnd=None):
 
     if tier_no == 1:
         kind = _pick([
-            (60, "money"), (25, "equip"), (10, "material"), (5, "consumable"),
+            (15, "thanks"), (58, "money"), (20, "equip"), (5, "material"), (2, "consumable"),
         ])
     elif tier_no == 2:
         kind = _pick([
-            (40, "money"), (30, "equip"), (20, "material"), (10, "consumable"),
+            (12, "thanks"), (42, "money"), (28, "equip"), (12, "material"), (6, "consumable"),
         ])
     else:
         kind = _pick([
-            (20, "money"), (35, "equip"), (30, "material"), (15, "consumable"),
+            (8, "thanks"), (28, "money"), (32, "equip"), (20, "material"), (12, "consumable"),
         ])
 
     jackpot = False
-    if kind == "money":
+    if kind == "thanks":
+        text = "🙏 谢谢惠顾，再接再厉！"
+    elif kind == "money":
         if tier_no == 1:
             amt = random.randint(2, 9)
         elif tier_no == 2:
@@ -112,7 +114,7 @@ def roll(user, tier_no, rnd=None):
             it = _rand_item(shop)
         else:
             shop, rares = _equip_pool(4, 5, include_rare=True)
-            if rares and random.random() < 0.15:
+            if rares and random.random() < 0.10:
                 it = _rand_item(rares)
                 jackpot = True
             else:
@@ -161,10 +163,10 @@ def rule_text():
     for no in (1, 2, 3):
         t = TIERS[no]
         if no == 1:
-            desc = "中奖率低：60% 小额铜币返还 · 25% 低级装备(tier0~1) · 10% 草药/稀有材料 · 5% 低阶药水道具"
+            desc = "15% 谢谢惠顾 · 58% 小额铜币(2~9) · 20% 低级装备(tier0~1) · 5% 草药/稀有材料 · 2% 低阶药水道具"
         elif no == 2:
-            desc = "中奖率中：40% 金钱(100~800) · 30% 装备(tier2~3) · 20% 稀有~传说材料 · 10% 中阶药水道具"
+            desc = "12% 谢谢惠顾 · 42% 金钱(100~800) · 28% 装备(tier2~3) · 12% 稀有~传说材料 · 6% 中阶药水道具"
         else:
-            desc = "中奖率高：20% 金钱(8千~9万) · 35% 装备(tier4~5,15% 稀有掉落) · 30% 传说~神话材料 · 15% 高阶药水道具"
+            desc = "8% 谢谢惠顾 · 28% 金钱(8千~9万) · 32% 装备(tier4~5,10% 稀有掉落) · 20% 传说~神话材料 · 12% 高阶药水道具"
         lines.append(f"· {t['name']}：{t['cost_txt']}/次 —— {desc}")
     return "\n".join(lines)
