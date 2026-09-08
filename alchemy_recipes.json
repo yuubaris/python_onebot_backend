@@ -27,8 +27,9 @@
       "cost": {
         "materials": {
           "boss_magma": 1,
-          "herb_bloodgrass": 4,
-          "herb_moonmushroom": 1
+          "herb_bloodgrass": 2,
+          "herb_moonmushroom": 1,
+          "special_beastsoul": 1
         },
         "copper": 400
       },
@@ -46,8 +47,9 @@
       "cost": {
         "materials": {
           "boss_bone": 1,
-          "herb_moonmushroom": 3,
-          "herb_wakeflower": 1
+          "herb_moonmushroom": 2,
+          "herb_wakeflower": 1,
+          "special_element": 1
         },
         "copper": 1200
       },
@@ -66,7 +68,7 @@
         "materials": {
           "boss_frost": 1,
           "herb_dragonblood": 2,
-          "herb_moonmushroom": 2
+          "special_element": 1
         },
         "copper": 4000
       },
@@ -84,7 +86,8 @@
       "cost": {
         "materials": {
           "boss_ember": 1,
-          "herb_dragonblood": 3
+          "herb_dragonblood": 2,
+          "special_relic": 1
         },
         "copper": 12000
       },
@@ -121,7 +124,8 @@
         "materials": {
           "boss_magma": 1,
           "herb_moonmushroom": 2,
-          "herb_bloodgrass": 2
+          "herb_bloodgrass": 1,
+          "special_beastsoul": 1
         },
         "copper": 400
       },
@@ -159,7 +163,7 @@
         "materials": {
           "boss_frost": 1,
           "herb_dragonblood": 2,
-          "special_element": 1
+          "special_relic": 1
         },
         "copper": 4000
       },
@@ -177,8 +181,8 @@
       "cost": {
         "materials": {
           "boss_ember": 1,
-          "special_relic": 2,
-          "herb_dragonblood": 1
+          "herb_dragonblood": 1,
+          "special_relic": 2
         },
         "copper": 12000
       },
@@ -215,7 +219,8 @@
         "materials": {
           "boss_magma": 1,
           "herb_moonmushroom": 2,
-          "herb_wakeflower": 2
+          "herb_wakeflower": 1,
+          "special_beastsoul": 1
         },
         "copper": 400
       },
@@ -252,8 +257,9 @@
       "cost": {
         "materials": {
           "boss_frost": 1,
-          "herb_dragonblood": 2,
-          "herb_moonmushroom": 1
+          "herb_dragonblood": 1,
+          "herb_moonmushroom": 1,
+          "special_relic": 1
         },
         "copper": 4000
       },
@@ -271,8 +277,8 @@
       "cost": {
         "materials": {
           "boss_ember": 1,
-          "special_relic": 2,
-          "herb_moonmushroom": 1
+          "herb_moonmushroom": 1,
+          "special_relic": 2
         },
         "copper": 12000
       },
@@ -308,8 +314,9 @@
       "cost": {
         "materials": {
           "boss_magma": 1,
-          "herb_wakeflower": 4,
-          "herb_moonmushroom": 1
+          "herb_wakeflower": 2,
+          "herb_moonmushroom": 1,
+          "special_beastsoul": 1
         },
         "copper": 400
       },
@@ -327,8 +334,9 @@
       "cost": {
         "materials": {
           "boss_bone": 1,
-          "herb_moonmushroom": 3,
-          "herb_bloodgrass": 1
+          "herb_moonmushroom": 2,
+          "herb_bloodgrass": 1,
+          "special_element": 1
         },
         "copper": 1200
       },
@@ -346,9 +354,9 @@
       "cost": {
         "materials": {
           "boss_frost": 1,
-          "herb_dragonblood": 2,
-          "herb_moonmushroom": 1,
-          "herb_bloodgrass": 1
+          "herb_dragonblood": 1,
+          "herb_moonmushroom": 2,
+          "special_element": 1
         },
         "copper": 4000
       },
@@ -442,8 +450,8 @@
       "cost": {
         "materials": {
           "boss_frost": 1,
-          "special_element": 2,
-          "herb_dragonblood": 1
+          "herb_dragonblood": 1,
+          "special_element": 2
         },
         "copper": 4000
       },
@@ -461,8 +469,8 @@
       "cost": {
         "materials": {
           "boss_ember": 1,
-          "special_relic": 1,
-          "herb_moonmushroom": 2
+          "herb_moonmushroom": 2,
+          "special_relic": 1
         },
         "copper": 12000
       },
@@ -498,8 +506,8 @@
       "cost": {
         "materials": {
           "boss_magma": 1,
-          "herb_moonmushroom": 2,
-          "herb_bloodgrass": 1
+          "herb_moonmushroom": 3,
+          "special_beastsoul": 1
         },
         "copper": 400
       },

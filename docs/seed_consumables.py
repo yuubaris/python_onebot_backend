@@ -45,7 +45,8 @@ TOOLS = [
 # 药水不消耗矿石（锻造装备与药水抢矿，战士综合缺矿；草药反而闲置）；
 # 配方 = 草药 + 特殊材料 + Boss 材料。等效药水（攻=魔、敏=智、防=命）同级用同一种 Boss 材料，
 # 物理/魔法/生存来源等级一致：Lv2=磐岩心核(200层)/Lv3=尸皇骨匣(400层)/Lv4=霜语结晶(800层)/Lv5=烬鳞龙鳞(1600层)，
-# 均 ≤ 药水解锁层；Lv1 入门不加。草药+特殊组合保持每级 6/6 不同
+# 均 ≤ 药水解锁层；同级六种均含特殊材料（草药+特殊构成均衡，不出现纯草药配方），草药+特殊组合每级 6/6 不同；
+# Lv1 入门不加 Boss 材料，特殊材料逐级引入
 POTION_COST = {
     1: {  # 100铜 · common（止血草/醒神花/兽魂结晶；入门无 Boss 材料）
         "atk": {"materials": {"herb_bloodgrass": 4, "herb_wakeflower": 1},   "copper": 100},
@@ -55,37 +56,37 @@ POTION_COST = {
         "def": {"materials": {"herb_bloodgrass": 3, "special_beastsoul": 1}, "copper": 100},
         "hp":  {"materials": {"herb_wakeflower": 3, "special_beastsoul": 1}, "copper": 100},
     },
-    2: {  # 400铜 · 统一 Boss 材料=磐岩心核(200/300层)
-        "atk": {"materials": {"boss_magma": 1, "herb_bloodgrass": 4, "herb_moonmushroom": 1},   "copper": 400},
-        "agi": {"materials": {"boss_magma": 1, "herb_wakeflower": 4, "herb_moonmushroom": 1},   "copper": 400},
-        "mp":  {"materials": {"boss_magma": 1, "herb_moonmushroom": 2, "herb_bloodgrass": 2},   "copper": 400},
-        "int": {"materials": {"boss_magma": 1, "herb_moonmushroom": 2, "herb_wakeflower": 2},   "copper": 400},
+    2: {  # 400铜 · 统一 Boss 材料=磐岩心核(200/300层)；六种均含兽魂结晶
+        "atk": {"materials": {"boss_magma": 1, "herb_bloodgrass": 2, "herb_moonmushroom": 1, "special_beastsoul": 1}, "copper": 400},
+        "agi": {"materials": {"boss_magma": 1, "herb_wakeflower": 2, "herb_moonmushroom": 1, "special_beastsoul": 1}, "copper": 400},
+        "mp":  {"materials": {"boss_magma": 1, "herb_moonmushroom": 2, "herb_bloodgrass": 1, "special_beastsoul": 1}, "copper": 400},
+        "int": {"materials": {"boss_magma": 1, "herb_moonmushroom": 2, "herb_wakeflower": 1, "special_beastsoul": 1}, "copper": 400},
         "def": {"materials": {"boss_magma": 1, "herb_moonmushroom": 2, "special_beastsoul": 1}, "copper": 400},
-        "hp":  {"materials": {"boss_magma": 1, "herb_moonmushroom": 2, "herb_bloodgrass": 1},   "copper": 400},
+        "hp":  {"materials": {"boss_magma": 1, "herb_moonmushroom": 3, "special_beastsoul": 1}, "copper": 400},
     },
-    3: {  # 1200铜 · 统一 Boss 材料=尸皇骨匣(400~700层)
-        "atk": {"materials": {"boss_bone": 1, "herb_moonmushroom": 3, "herb_wakeflower": 1}, "copper": 1200},
-        "agi": {"materials": {"boss_bone": 1, "herb_moonmushroom": 3, "herb_bloodgrass": 1}, "copper": 1200},
+    3: {  # 1200铜 · 统一 Boss 材料=尸皇骨匣(400~700层)；六种均含特殊材料
+        "atk": {"materials": {"boss_bone": 1, "herb_moonmushroom": 2, "herb_wakeflower": 1, "special_element": 1}, "copper": 1200},
+        "agi": {"materials": {"boss_bone": 1, "herb_moonmushroom": 2, "herb_bloodgrass": 1, "special_element": 1}, "copper": 1200},
         "mp":  {"materials": {"boss_bone": 1, "herb_moonmushroom": 2, "special_element": 1}, "copper": 1200},
         "int": {"materials": {"boss_bone": 1, "herb_moonmushroom": 2, "special_beastsoul": 1}, "copper": 1200},
         "def": {"materials": {"boss_bone": 1, "herb_moonmushroom": 1, "herb_wakeflower": 1, "special_element": 1}, "copper": 1200},
         "hp":  {"materials": {"boss_bone": 1, "herb_moonmushroom": 3, "special_element": 1}, "copper": 1200},
     },
-    4: {  # 4000铜 · 统一 Boss 材料=霜语结晶(800~1400层)
-        "atk": {"materials": {"boss_frost": 1, "herb_dragonblood": 2, "herb_moonmushroom": 2}, "copper": 4000},
-        "agi": {"materials": {"boss_frost": 1, "herb_dragonblood": 2, "herb_moonmushroom": 1, "herb_bloodgrass": 1}, "copper": 4000},
-        "mp":  {"materials": {"boss_frost": 1, "herb_dragonblood": 2, "special_element": 1},   "copper": 4000},
-        "int": {"materials": {"boss_frost": 1, "herb_dragonblood": 2, "herb_moonmushroom": 1}, "copper": 4000},
-        "def": {"materials": {"boss_frost": 1, "special_element": 2, "herb_dragonblood": 1},   "copper": 4000},
-        "hp":  {"materials": {"boss_frost": 1, "herb_dragonblood": 3, "special_element": 1},   "copper": 4000},
+    4: {  # 4000铜 · 统一 Boss 材料=霜语结晶(800~1400层)；六种均含特殊材料
+        "atk": {"materials": {"boss_frost": 1, "herb_dragonblood": 2, "special_element": 1}, "copper": 4000},
+        "agi": {"materials": {"boss_frost": 1, "herb_dragonblood": 1, "herb_moonmushroom": 2, "special_element": 1}, "copper": 4000},
+        "mp":  {"materials": {"boss_frost": 1, "herb_dragonblood": 2, "special_relic": 1}, "copper": 4000},
+        "int": {"materials": {"boss_frost": 1, "herb_dragonblood": 1, "herb_moonmushroom": 1, "special_relic": 1}, "copper": 4000},
+        "def": {"materials": {"boss_frost": 1, "herb_dragonblood": 1, "special_element": 2}, "copper": 4000},
+        "hp":  {"materials": {"boss_frost": 1, "herb_dragonblood": 3, "special_element": 1}, "copper": 4000},
     },
-    5: {  # 12000铜 · 统一 Boss 材料=烬鳞龙鳞(1600~3000层)
-        "atk": {"materials": {"boss_ember": 1, "herb_dragonblood": 3},                          "copper": 12000},
-        "agi": {"materials": {"boss_ember": 1, "herb_dragonblood": 2, "special_element": 1},     "copper": 12000},
-        "mp":  {"materials": {"boss_ember": 1, "special_relic": 2, "herb_dragonblood": 1},       "copper": 12000},
-        "int": {"materials": {"boss_ember": 1, "special_relic": 2, "herb_moonmushroom": 1},      "copper": 12000},
-        "def": {"materials": {"boss_ember": 1, "special_relic": 1, "herb_moonmushroom": 2},      "copper": 12000},
-        "hp":  {"materials": {"boss_ember": 1, "herb_dragonblood": 3, "special_relic": 1},       "copper": 12000},
+    5: {  # 12000铜 · 统一 Boss 材料=烬鳞龙鳞(1600~3000层)；六种均含特殊材料
+        "atk": {"materials": {"boss_ember": 1, "herb_dragonblood": 2, "special_relic": 1}, "copper": 12000},
+        "agi": {"materials": {"boss_ember": 1, "herb_dragonblood": 2, "special_element": 1}, "copper": 12000},
+        "mp":  {"materials": {"boss_ember": 1, "herb_dragonblood": 1, "special_relic": 2}, "copper": 12000},
+        "int": {"materials": {"boss_ember": 1, "herb_moonmushroom": 1, "special_relic": 2}, "copper": 12000},
+        "def": {"materials": {"boss_ember": 1, "herb_moonmushroom": 2, "special_relic": 1}, "copper": 12000},
+        "hp":  {"materials": {"boss_ember": 1, "herb_dragonblood": 3, "special_relic": 1}, "copper": 12000},
     },
 }
 
