@@ -557,8 +557,9 @@ def settle_dungeon(user):
         mult_ore = _consumable.drop_bonus(uid, "material", scope="ore")
         mult_herb = _consumable.drop_bonus(uid, "material", scope="herb")
         mult_special = _consumable.drop_bonus(uid, "material", scope="special")
+        mult_myriad = _consumable.drop_bonus(uid, "material", scope="all")
     except Exception:
-        mult_coin = mult_ore = mult_herb = mult_special = 1.0
+        mult_coin = mult_ore = mult_herb = mult_special = mult_myriad = 1.0
     while remaining > 1e-9 and guard < _MAX_SETTLE_LAYERS:
         guard += 1
         total = effective_layer_total(user.dungeon_layer)
@@ -644,23 +645,29 @@ def settle_dungeon(user):
         herb_cycles = int(dt_herb // material.HERB_CYCLE_SECONDS)
         if herb_cycles > 0:
             layer_now = max(user.dungeon_layer, 1)
-            h_gained, s_gained = {}, {}
+            h_gained, s_gained, m_gained = {}, {}, {}
             for _ in range(herb_cycles):
                 mid = material.roll_material(layer_now)
                 if not mid:
                     continue
                 meta = material.material_meta(mid)
-                if meta and meta.get("category") == "special":
+                cat = meta.get("category") if meta else ""
+                if cat == "special":
                     s_gained[mid] = s_gained.get(mid, 0) + 1
+                elif cat == "boss":
+                    m_gained[mid] = m_gained.get(mid, 0) + 1   # 万宝源晶(神话档)
                 else:
                     h_gained[mid] = h_gained.get(mid, 0) + 1
-            # 掉率增益：草药乘采药符(scope=herb)、特殊乘祈灵符(scope=special)
+            # 掉率增益：草药乘采药符(scope=herb)、特殊乘祈灵符(scope=special)、
+            # 万宝源晶只乘全材料增益(万宝符 scope=all，不吃采药/祈灵符)
             if mult_herb > 1.0 and h_gained:
                 h_gained = {mid: max(1, int(cnt * mult_herb)) for mid, cnt in h_gained.items()}
             if mult_special > 1.0 and s_gained:
                 s_gained = {mid: max(1, int(cnt * mult_special)) for mid, cnt in s_gained.items()}
+            if mult_myriad > 1.0 and m_gained:
+                m_gained = {mid: max(1, int(cnt * mult_myriad)) for mid, cnt in m_gained.items()}
             user.dungeon_herb_last = now
-            gained = {**h_gained, **s_gained}
+            gained = {**h_gained, **s_gained, **m_gained}
             if gained:
                 material.grant_materials(user.user_id, gained)
                 names = []

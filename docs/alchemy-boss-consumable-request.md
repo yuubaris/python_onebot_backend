@@ -26,6 +26,9 @@
 > （`roll_herb`→`roll_material`，普通 35%/稀有 8%/传说≤20%/神话≤1%，Boss 关额外 roll 保留；
 > 采药符乘草药、祈灵符乘特殊）；药水配方按**材料点数对齐**（common1/rare2/legendary3），
 > **同级六种点数一致**（Lv1~5=5/6/7/8/9）→ 同级期望成本相同，6/6 组合仍不同、无矿石、Boss 对称不变。
+> **✅ 落地补充（v2.11.9）**：周期掉落**神话档落「万宝源晶」**（用户指出神话级应有对应掉落；
+> 原神话档无 myth 材料、降级全池）——`roll_material` 神话档直接掉 `boss_myriad`（150 层 0.1%/周期 →
+> 3600 层 0.49%，与大 Boss 挑战必掉双来源）；万宝源晶周期结算走独立桶只乘万宝符(all)、不吃采药/祈灵符。
 > 范围：`python_onebot_backend`（QQ 群签到/地下城/装备机器人）
 > 关联：`docs/equipment-system-redo-plan.md`、`docs/dungeon-boss-plan.md`、`docs/tier-forge-title-rework-request.md`。
 > 涉及新增命令：**`/boss`、`/炼金`、`/使用`**。

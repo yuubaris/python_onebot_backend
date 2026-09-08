@@ -8,6 +8,7 @@
 - 草药 herb + 特殊物品 special：普通层周期结算（入口层 ≥150，15 分钟一周期）——
   两者**同池同概率**（普通 35% / 稀有 8% / 传说 2%×√(层/150)≤20% / 神话 0.1%×√(层/150)≤1%），
   命中档位后再在该档的草药+特殊材料中随机，保证同级配方成本期望一致；
+  **神话档掉落「万宝源晶」**（神话级通用材料，与大 Boss 挑战必掉共享来源，非 3600 专属材料）；
 - 特殊物品另有 Boss 关结算额外 roll（精英 25% / 小Boss 45% / 大Boss 80%，大 Boss 高稀有占比）；
 - boss 材料 boss：由 /boss 挑战 + 自动推进首通产出（见 boss.py）。
 """
@@ -24,6 +25,9 @@ HERB_LEGEND_BASE = 0.02       # 传说基础 2%
 HERB_LEGEND_CAP = 0.20        # 传说上限 20%
 HERB_MYTH_BASE = 0.001        # 神话基础 0.1%
 HERB_MYTH_CAP = 0.01          # 神话上限 1%
+
+# 神话档掉落：万宝源晶（神话级通用材料；大Boss挑战必掉 + 周期神话档稀有掉落）
+MYTH_DROP_ID = "boss_myriad"
 
 # Boss 关特殊物品掉落概率
 SPECIAL_BOSS_PCT = {"elite": 0.25, "minor": 0.45, "major": 0.80}
@@ -78,7 +82,7 @@ def roll_material(layer, rand=None):
         return None
     r = rand()
     if r < herb_myth_probability(layer):
-        return _pick_rarity_material("myth") or random.choice(pool)
+        return MYTH_DROP_ID if _cache["by_id"].get(MYTH_DROP_ID) else (random.choice(pool) if pool else None)
     if r < herb_myth_probability(layer) + herb_legend_probability(layer):
         return _pick_rarity_material("legendary") or random.choice(pool)
     if r < herb_myth_probability(layer) + herb_legend_probability(layer) + HERB_RARE_PCT:
