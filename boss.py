@@ -73,7 +73,7 @@ def all_bosses():
 def find_boss(name_or_id):
     """统一 Boss 匹配（供 /挑战 <Boss名|层数|称号> 与 /boss 挑战 使用）。
 
-    兼容写法：完整名 / id / 层数（"1000"、"1000 层"）/ 称号 tag（"究极"）/ 部分名唯一命中；
+    兼容写法：完整名 / id / 层数（"1000"、"1000层"）/ 称号 tag（"究极"）/ 部分名唯一命中；
     部分名多命中返回 None（由调用方列建议）。
     """
     load_bosses()
@@ -92,7 +92,7 @@ def find_boss(name_or_id):
     for name, b in _cache["by_name"].items():
         if name.lower() == low:
             return b
-    # 2) 层数（"1000"、"1000 层"、"1000层"）
+    # 2) 层数（"1000"、"1000层"）
     num = key.replace("层", "").strip()
     if num.isdigit():
         return _cache["by_layer"].get(int(num))
