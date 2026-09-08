@@ -70,8 +70,9 @@
       "intelligence": 0,
       "price": 60000,
       "cost": {
-        "mithril_ore": 110,
-        "adamantite_ore": 65
+        "iron_ore": 90,
+        "mithril_ore": 50,
+        "adamantite_ore": 35
       },
       "line": "physical",
       "tier": 5
@@ -89,8 +90,9 @@
       "intelligence": 0,
       "price": 60000,
       "cost": {
-        "adamantite_ore": 85,
-        "mithril_ore": 70
+        "iron_ore": 80,
+        "adamantite_ore": 45,
+        "mithril_ore": 30
       },
       "line": "physical",
       "tier": 5
@@ -108,8 +110,9 @@
       "intelligence": 82,
       "price": 60000,
       "cost": {
-        "silver_ore": 110,
-        "stardust_sand": 65
+        "copper_ore": 90,
+        "silver_ore": 50,
+        "stardust_sand": 35
       },
       "line": "magic",
       "tier": 5
@@ -326,8 +329,9 @@
       "intelligence": 86,
       "price": 60000,
       "cost": {
-        "stardust_sand": 85,
-        "silver_ore": 70
+        "copper_ore": 80,
+        "stardust_sand": 45,
+        "silver_ore": 30
       },
       "line": "magic",
       "tier": 5
@@ -345,8 +349,9 @@
       "intelligence": 0,
       "price": 60000,
       "cost": {
-        "mithril_ore": 90,
-        "adamantite_ore": 50
+        "iron_ore": 70,
+        "mithril_ore": 40,
+        "adamantite_ore": 30
       },
       "line": "physical",
       "tier": 5
@@ -364,8 +369,9 @@
       "intelligence": 33,
       "price": 60000,
       "cost": {
-        "silver_ore": 90,
-        "stardust_sand": 50
+        "copper_ore": 70,
+        "silver_ore": 40,
+        "stardust_sand": 30
       },
       "line": "magic",
       "tier": 5
@@ -383,10 +389,14 @@
       "intelligence": 55,
       "price": 60000,
       "cost": {
-        "adamantite_ore": 31,
-        "mithril_ore": 31,
-        "silver_ore": 31,
-        "stardust_sand": 32
+        "copper_ore": 18,
+        "iron_ore": 18,
+        "lead_ore": 18,
+        "tin_ore": 18,
+        "adamantite_ore": 13,
+        "mithril_ore": 13,
+        "silver_ore": 13,
+        "stardust_sand": 14
       },
       "line": "any",
       "tier": 5
