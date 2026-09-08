@@ -4,9 +4,9 @@
 药水 = 属性强化（6 系 × Lv1~5，按推进公式权重 攻=魔=2 / 敏=智=1.5 折算收益等价）；
 道具 = 掉落增益（6 类，部分高阶才提供）。
 
-v2.11 口径：药水持续 100 层；道具持续 4 小时；消耗参考锻造多样化（同 Lv 六种药水各不相同）；
-配方带 level（分级解锁 Lv1@100 → Lv5@1700）；命名等级用阿拉伯数字（「聚财符1」，
-匹配层兼容 空格/罗马/中文数字 写法——见 consumable.normalize_name）。
+v2.11 口径：药水持续 100 层；道具持续 4 小时；配方带 level（分级解锁 Lv1@100 → Lv5@1700）；
+v2.11.2：药水消耗 = 「草药+特殊」、不耗矿石（不同配方不同草药，四种草药全利用）；
+命名等级用阿拉伯数字（「聚财符1」），匹配层兼容 空格/罗马/中文数字 写法——见 consumable.normalize_name。
 
 用法： python docs/seed_consumables.py   → 在项目根目录生成/覆写两个 JSON。
 """
@@ -40,48 +40,49 @@ TOOLS = [
     ("tool_all",     "万象符", "material",   "all",      {3: 1.5}),                  # 稀有 仅 Lv3
 ]
 
-# ---------------- 药水配方消耗（Lv × 属性；参考锻造「线+级」多样化） ----------------
-# 物理线(攻/敏)=金属矿石+草药；魔法线(魔/智)=草药+特殊；生存线(防/命)=特殊+草药；逐级稀有度递增
+# ---------------- 药水配方消耗（Lv × 属性；「草药+特殊」多样化） ----------------
+# 药水不消耗矿石（锻造装备与药水抢矿，战士综合缺矿；草药反而闲置）；
+# 全部配方 = 草药 + 特殊材料，每级六种药水用不同草药组合，四种草药都有用武之地，逐级稀有度递增
 POTION_COST = {
-    1: {
-        "atk": {"materials": {"herb_bloodgrass": 3},            "ores": {"copper_ore": 1}, "copper": 100},
-        "agi": {"materials": {"herb_bloodgrass": 3},            "ores": {"tin_ore": 1},    "copper": 100},
-        "mp":  {"materials": {"herb_bloodgrass": 3, "herb_wakeflower": 1},                "copper": 100},
-        "int": {"materials": {"herb_wakeflower": 3, "herb_bloodgrass": 1},                "copper": 100},
-        "def": {"materials": {"special_beastsoul": 2, "herb_bloodgrass": 1},             "copper": 100},
-        "hp":  {"materials": {"herb_bloodgrass": 4, "special_beastsoul": 1},             "copper": 100},
+    1: {  # 100铜 · common（止血草/醒神花/兽魂结晶）
+        "atk": {"materials": {"herb_bloodgrass": 4, "herb_wakeflower": 1},   "copper": 100},
+        "agi": {"materials": {"herb_bloodgrass": 3, "herb_wakeflower": 2},   "copper": 100},
+        "mp":  {"materials": {"herb_wakeflower": 4, "herb_bloodgrass": 1},   "copper": 100},
+        "int": {"materials": {"herb_wakeflower": 3, "herb_bloodgrass": 2},   "copper": 100},
+        "def": {"materials": {"herb_bloodgrass": 3, "special_beastsoul": 1}, "copper": 100},
+        "hp":  {"materials": {"herb_wakeflower": 3, "special_beastsoul": 1}, "copper": 100},
     },
-    2: {
-        "atk": {"materials": {"herb_wakeflower": 3},            "ores": {"iron_ore": 1},   "copper": 400},
-        "agi": {"materials": {"herb_wakeflower": 3},            "ores": {"lead_ore": 1},   "copper": 400},
-        "mp":  {"materials": {"herb_wakeflower": 3, "special_beastsoul": 1},              "copper": 400},
-        "int": {"materials": {"herb_moonmushroom": 2, "herb_wakeflower": 2},              "copper": 400},
-        "def": {"materials": {"special_beastsoul": 3, "herb_wakeflower": 1},              "copper": 400},
-        "hp":  {"materials": {"herb_wakeflower": 4, "herb_moonmushroom": 1},              "copper": 400},
+    2: {  # 400铜 · common→rare（月光菇登场）
+        "atk": {"materials": {"herb_bloodgrass": 5, "herb_moonmushroom": 1},                     "copper": 400},
+        "agi": {"materials": {"herb_wakeflower": 5, "herb_moonmushroom": 1},                     "copper": 400},
+        "mp":  {"materials": {"herb_moonmushroom": 2, "herb_bloodgrass": 3},                     "copper": 400},
+        "int": {"materials": {"herb_moonmushroom": 2, "herb_wakeflower": 3},                     "copper": 400},
+        "def": {"materials": {"herb_moonmushroom": 3, "special_beastsoul": 1},                   "copper": 400},
+        "hp":  {"materials": {"herb_moonmushroom": 2, "herb_bloodgrass": 1, "special_beastsoul": 1}, "copper": 400},
     },
-    3: {
-        "atk": {"materials": {"herb_moonmushroom": 3},          "ores": {"silver_ore": 1},  "copper": 1200},
-        "agi": {"materials": {"herb_moonmushroom": 3},          "ores": {"mithril_ore": 1}, "copper": 1200},
-        "mp":  {"materials": {"herb_moonmushroom": 3, "special_element": 1},               "copper": 1200},
-        "int": {"materials": {"herb_moonmushroom": 4, "special_beastsoul": 1},             "copper": 1200},
-        "def": {"materials": {"special_element": 2, "herb_moonmushroom": 2},               "copper": 1200},
-        "hp":  {"materials": {"herb_moonmushroom": 4, "special_element": 1},               "copper": 1200},
+    3: {  # 1200铜 · rare（元素之心登场）
+        "atk": {"materials": {"herb_moonmushroom": 4, "herb_wakeflower": 2}, "copper": 1200},
+        "agi": {"materials": {"herb_moonmushroom": 4, "herb_bloodgrass": 2}, "copper": 1200},
+        "mp":  {"materials": {"herb_moonmushroom": 3, "special_element": 1}, "copper": 1200},
+        "int": {"materials": {"herb_moonmushroom": 3, "special_beastsoul": 2}, "copper": 1200},
+        "def": {"materials": {"special_element": 2, "herb_moonmushroom": 3}, "copper": 1200},
+        "hp":  {"materials": {"herb_moonmushroom": 4, "special_element": 1}, "copper": 1200},
     },
-    4: {
-        "atk": {"materials": {"herb_dragonblood": 2},           "ores": {"adamantite_ore": 2}, "copper": 4000},
-        "agi": {"materials": {"herb_dragonblood": 2},           "ores": {"stardust_sand": 2},  "copper": 4000},
+    4: {  # 4000铜 · rare→legendary（龙血草登场）
+        "atk": {"materials": {"herb_dragonblood": 2, "herb_moonmushroom": 3},                  "copper": 4000},
+        "agi": {"materials": {"herb_dragonblood": 2, "herb_moonmushroom": 2, "herb_bloodgrass": 1}, "copper": 4000},
         "mp":  {"materials": {"herb_dragonblood": 2, "special_element": 2},                    "copper": 4000},
         "int": {"materials": {"herb_dragonblood": 3, "herb_moonmushroom": 2},                  "copper": 4000},
         "def": {"materials": {"special_element": 3, "herb_dragonblood": 1},                    "copper": 4000},
         "hp":  {"materials": {"herb_dragonblood": 4, "special_element": 1},                    "copper": 4000},
     },
-    5: {
-        "atk": {"materials": {"special_relic": 1},              "ores": {"star_iron": 1},      "copper": 12000},
-        "agi": {"materials": {"special_relic": 1},              "ores": {"oracle_stone": 1},   "copper": 12000},
-        "mp":  {"materials": {"special_relic": 2, "herb_dragonblood": 2},                      "copper": 12000},
-        "int": {"materials": {"special_relic": 2, "special_element": 1},                       "copper": 12000},
-        "def": {"materials": {"special_relic": 2},              "ores": {"star_iron": 1},      "copper": 12000},
-        "hp":  {"materials": {"herb_dragonblood": 4, "special_relic": 1},                      "copper": 12000},
+    5: {  # 12000铜 · legendary（古神残片登场）
+        "atk": {"materials": {"herb_dragonblood": 3, "special_relic": 1},                 "copper": 12000},
+        "agi": {"materials": {"herb_dragonblood": 3, "special_element": 1, "herb_moonmushroom": 1}, "copper": 12000},
+        "mp":  {"materials": {"special_relic": 2, "herb_dragonblood": 2},                  "copper": 12000},
+        "int": {"materials": {"special_relic": 2, "herb_dragonblood": 1, "herb_moonmushroom": 1}, "copper": 12000},
+        "def": {"materials": {"special_relic": 2, "herb_moonmushroom": 2},                 "copper": 12000},
+        "hp":  {"materials": {"herb_dragonblood": 4, "special_relic": 1},                  "copper": 12000},
     },
 }
 

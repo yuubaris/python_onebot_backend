@@ -8,10 +8,8 @@
       "desc": "临时提升 attack +15（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_bloodgrass": 3
-        },
-        "ores": {
-          "copper_ore": 1
+          "herb_bloodgrass": 4,
+          "herb_wakeflower": 1
         },
         "copper": 100
       },
@@ -28,10 +26,8 @@
       "desc": "临时提升 attack +40（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_wakeflower": 3
-        },
-        "ores": {
-          "iron_ore": 1
+          "herb_bloodgrass": 5,
+          "herb_moonmushroom": 1
         },
         "copper": 400
       },
@@ -48,10 +44,8 @@
       "desc": "临时提升 attack +90（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_moonmushroom": 3
-        },
-        "ores": {
-          "silver_ore": 1
+          "herb_moonmushroom": 4,
+          "herb_wakeflower": 2
         },
         "copper": 1200
       },
@@ -68,10 +62,8 @@
       "desc": "临时提升 attack +160（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_dragonblood": 2
-        },
-        "ores": {
-          "adamantite_ore": 2
+          "herb_dragonblood": 2,
+          "herb_moonmushroom": 3
         },
         "copper": 4000
       },
@@ -88,10 +80,8 @@
       "desc": "临时提升 attack +260（持续 100 层）",
       "cost": {
         "materials": {
+          "herb_dragonblood": 3,
           "special_relic": 1
-        },
-        "ores": {
-          "star_iron": 1
         },
         "copper": 12000
       },
@@ -108,8 +98,8 @@
       "desc": "临时提升 mp +15（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_bloodgrass": 3,
-          "herb_wakeflower": 1
+          "herb_wakeflower": 4,
+          "herb_bloodgrass": 1
         },
         "copper": 100
       },
@@ -126,8 +116,8 @@
       "desc": "临时提升 mp +40（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_wakeflower": 3,
-          "special_beastsoul": 1
+          "herb_moonmushroom": 2,
+          "herb_bloodgrass": 3
         },
         "copper": 400
       },
@@ -199,7 +189,7 @@
       "cost": {
         "materials": {
           "herb_wakeflower": 3,
-          "herb_bloodgrass": 1
+          "herb_bloodgrass": 2
         },
         "copper": 100
       },
@@ -217,7 +207,7 @@
       "cost": {
         "materials": {
           "herb_moonmushroom": 2,
-          "herb_wakeflower": 2
+          "herb_wakeflower": 3
         },
         "copper": 400
       },
@@ -234,8 +224,8 @@
       "desc": "临时提升 intelligence +120（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_moonmushroom": 4,
-          "special_beastsoul": 1
+          "herb_moonmushroom": 3,
+          "special_beastsoul": 2
         },
         "copper": 1200
       },
@@ -271,7 +261,8 @@
       "cost": {
         "materials": {
           "special_relic": 2,
-          "special_element": 1
+          "herb_dragonblood": 1,
+          "herb_moonmushroom": 1
         },
         "copper": 12000
       },
@@ -288,10 +279,8 @@
       "desc": "临时提升 agility +20（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_bloodgrass": 3
-        },
-        "ores": {
-          "tin_ore": 1
+          "herb_bloodgrass": 3,
+          "herb_wakeflower": 2
         },
         "copper": 100
       },
@@ -308,10 +297,8 @@
       "desc": "临时提升 agility +53（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_wakeflower": 3
-        },
-        "ores": {
-          "lead_ore": 1
+          "herb_wakeflower": 5,
+          "herb_moonmushroom": 1
         },
         "copper": 400
       },
@@ -328,10 +315,8 @@
       "desc": "临时提升 agility +120（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_moonmushroom": 3
-        },
-        "ores": {
-          "mithril_ore": 1
+          "herb_moonmushroom": 4,
+          "herb_bloodgrass": 2
         },
         "copper": 1200
       },
@@ -348,10 +333,9 @@
       "desc": "临时提升 agility +213（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_dragonblood": 2
-        },
-        "ores": {
-          "stardust_sand": 2
+          "herb_dragonblood": 2,
+          "herb_moonmushroom": 2,
+          "herb_bloodgrass": 1
         },
         "copper": 4000
       },
@@ -368,10 +352,9 @@
       "desc": "临时提升 agility +347（持续 100 层）",
       "cost": {
         "materials": {
-          "special_relic": 1
-        },
-        "ores": {
-          "oracle_stone": 1
+          "herb_dragonblood": 3,
+          "special_element": 1,
+          "herb_moonmushroom": 1
         },
         "copper": 12000
       },
@@ -388,8 +371,8 @@
       "desc": "临时提升 defense +20（持续 100 层）",
       "cost": {
         "materials": {
-          "special_beastsoul": 2,
-          "herb_bloodgrass": 1
+          "herb_bloodgrass": 3,
+          "special_beastsoul": 1
         },
         "copper": 100
       },
@@ -406,8 +389,8 @@
       "desc": "临时提升 defense +50（持续 100 层）",
       "cost": {
         "materials": {
-          "special_beastsoul": 3,
-          "herb_wakeflower": 1
+          "herb_moonmushroom": 3,
+          "special_beastsoul": 1
         },
         "copper": 400
       },
@@ -425,7 +408,7 @@
       "cost": {
         "materials": {
           "special_element": 2,
-          "herb_moonmushroom": 2
+          "herb_moonmushroom": 3
         },
         "copper": 1200
       },
@@ -460,10 +443,8 @@
       "desc": "临时提升 defense +300（持续 100 层）",
       "cost": {
         "materials": {
-          "special_relic": 2
-        },
-        "ores": {
-          "star_iron": 1
+          "special_relic": 2,
+          "herb_moonmushroom": 2
         },
         "copper": 12000
       },
@@ -480,7 +461,7 @@
       "desc": "临时提升 hp +25（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_bloodgrass": 4,
+          "herb_wakeflower": 3,
           "special_beastsoul": 1
         },
         "copper": 100
@@ -498,8 +479,9 @@
       "desc": "临时提升 hp +60（持续 100 层）",
       "cost": {
         "materials": {
-          "herb_wakeflower": 4,
-          "herb_moonmushroom": 1
+          "herb_moonmushroom": 2,
+          "herb_bloodgrass": 1,
+          "special_beastsoul": 1
         },
         "copper": 400
       },
