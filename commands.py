@@ -1000,14 +1000,14 @@ def _player_duel(user, group_id, targets):
     an = user.nickname or str(user.user_id)
     bn = target_user.nickname or str(target)
     wname = winner.nickname or str(winner.user_id)
-    # 娱乐技能交锋（v2.11.61）：双方按各自等级称号出招，仅文字表述、无效果
+    # 娱乐技能交锋（v2.11.62）：双方按各自等级称号出招，仅文字表述、无效果；三段技能名前后呼应
     import skills as _skills
-    askill = _skills.title_skill(user.profession or "", user.tier or 0)
-    bskill = _skills.title_skill(target_user.profession or "", target_user.tier or 0)
-    wskill = _skills.title_skill(winner.profession or "", winner.tier or 0)
-    msg1 = f"{an} 使出【{askill}】，{random.choice(_MOVE_HIT)}{bn}！"
-    msg2 = f"{bn} 使出【{bskill}】，{random.choice(_MOVE_HIT)}{an}！"
-    msg3 = f"{wname} 使出【{wskill}】{random.choice(_FINISH)}，{wname} 获胜！{wname} 获得 {format_currency(pay)}。"
+    askill, aeff = _skills.title_skill(user.profession or "", user.tier or 0)
+    bskill, beff = _skills.title_skill(target_user.profession or "", target_user.tier or 0)
+    wskill, _ = _skills.title_skill(winner.profession or "", winner.tier or 0)
+    msg1 = f"{an} 使出【{askill}】，{aeff}！"
+    msg2 = f"{bn} 使出【{bskill}】，{beff}！"
+    msg3 = f"{wname} 以【{wskill}】技高一筹，{wname} 获胜！{wname} 获得 {format_currency(pay)}。"
     return {
         "type": "challenge_show",
         "group_id": group_id,

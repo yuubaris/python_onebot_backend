@@ -277,19 +277,22 @@ def challenge_boss(user, boss):
 
     p = _success_rate(user, boss)
     win = random.random() < p
-    # 娱乐技能交锋（v2.11.60）：仅文字表述，无任何效果
+    # 娱乐技能交锋（v2.11.62）：仅文字表述，无任何效果；前后段引用技能名保持连贯
     import skills as _skills
-    _my = _skills.title_skill(getattr(user, "profession", "") or "", getattr(user, "tier", 0) or 0)
-    _his = _skills.boss_skill(boss.get("tag", ""))
-    _clash = f"💥 你使出【{_my}】，对手发动【{_his}】，激战正酣！"
+    _my, _my_eff = _skills.title_skill(getattr(user, "profession", "") or "", getattr(user, "tier", 0) or 0)
+    _his, _his_eff = _skills.boss_skill(boss.get("tag", ""))
+    _clash = (f"💥 你使出【{_my}】，{_my_eff}！\n"
+              f"👹 {boss['name']} 发动【{_his}】，{_his_eff}！")
     if not win:
         db.session.commit()
         return (f"⚔️ 挑战 {boss['name']}…胜率 {p * 100:.0f}%\n"
                 f"{_clash}\n"
-                f"💀 惜败！今日「{subject}」剩余挑战次数 {max(0, limit - used - 1)}/{limit}。"), False
+                f"💀 对手的【{_his}】更胜一筹，你的【{_my}】被化解，惜败！\n"
+                f"今日「{subject}」剩余挑战次数 {max(0, limit - used - 1)}/{limit}。"), False
 
     # —— 胜利结算 ——
-    lines = [f"⚔️ 挑战 {boss['name']}…胜率 {p * 100:.0f}%", _clash, "🎉 击败！"]
+    lines = [f"⚔️ 挑战 {boss['name']}…胜率 {p * 100:.0f}%", _clash,
+             f"🎉 你的【{_my}】压倒对手，击败了 {boss['name']}！"]
     first_clear = not row.first_clear_date
     if first_clear:
         row.first_clear_date = today
