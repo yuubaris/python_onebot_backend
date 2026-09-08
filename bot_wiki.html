@@ -95,7 +95,7 @@
 
 <header>
   <h1>⚔️ 群聊冒险机器人 · 玩家 Wiki</h1>
-  <p>签到 · 武具店 · 地下城 · 矿石 · 铁匠铺 · 对战 · 互动图像 · B站监控 —— 全机制与参数手册</p>
+  <p>签到 · 武器库 · 职业/晋升 · 地下城(Boss) · 矿石 · 铁匠铺 · 稀有装备 · 对战 · 互动图像 · B站监控 —— 全机制与参数手册</p>
   <div class="badges">
     <span class="badge">OneBot 11</span>
     <span class="badge">Flask + SQLAlchemy + SQLite</span>
@@ -112,7 +112,7 @@
     <li><a href="#money">货币体系</a></li>
     <li><a href="#cmd">命令总览</a></li>
     <li><a href="#checkin">签到系统</a></li>
-    <li><a href="#shop">武具店</a></li>
+    <li><a href="#shop">装备系统（武器库/职业/晋升/稀有）</a></li>
     <li><a href="#dungeon">地下城</a></li>
     <li><a href="#ore">稀有矿石</a></li>
     <li><a href="#forge">铁匠铺</a></li>
@@ -151,7 +151,8 @@
   <h3>货币消耗途径</h3>
   <table>
     <tr><th>途径</th><th>消耗</th></tr>
-    <tr><td>武具店购买</td><td>按装备标价</td></tr>
+    <tr><td>武具店购买 / 武器库购买</td><td>按装备标价</td></tr>
+    <tr><td>晋升阶级</td><td>消耗铜币（300 → 20 万递增）</td></tr>
     <tr><td>铁匠铺锻造</td><td>铜币 + 矿石</td></tr>
     <tr><td>对战失败</td><td>按赌注基准（不能赊账）</td></tr>
   </table>
@@ -166,11 +167,13 @@
     <tr><td><code class="inline">/签到</code></td><td>每日签到</td><td>每天 1 次，连续签到有记录</td></tr>
     <tr><td><code class="inline">/余额</code></td><td>查看资产</td><td>当前资产 + 持有装备数 + 签到统计</td></tr>
     <tr><td><code class="inline">/背包</code></td><td>查看持有的武具与矿石</td><td>含铁匠铺装备、矿石列表</td></tr>
-    <tr><td><code class="inline">/武具店</code></td><td>查看可购买的装备</td><td>按价格分档展示</td></tr>
+    <tr><td><code class="inline">/武器库</code></td><td>查看可购买的装备</td><td>按职业+阶级过滤展示</td></tr>
+    <tr><td><code class="inline">/转职 战士|魔法师</code></td><td>选择职业</td><td>可随时切换</td></tr>
+    <tr><td><code class="inline">/晋升</code></td><td>提升阶级</td><td>需层数达标+消耗货币</td></tr>
     <tr><td><code class="inline">/购买 名称 [名称...]</code></td><td>购买装备</td><td>支持空格批量购买，不能赊账</td></tr>
     <tr><td><code class="inline">/出售 名称 [名称...]</code></td><td>出售装备</td><td>回收购买价 60%</td></tr>
-    <tr><td><code class="inline">/地下城 进入/状态/退出</code></td><td>地下城冒险</td><td>退出保留进度可续</td></tr>
-    <tr><td><code class="inline">/铁匠铺</code></td><td>查看锻造配方</td><td>400 层解锁，超越武具店</td></tr>
+    <tr><td><code class="inline">/地下城 进入/状态/退出</code></td><td>地下城冒险</td><td>退出保留进度可续；含 Boss 关掉落</td></tr>
+    <tr><td><code class="inline">/铁匠铺</code></td><td>查看锻造配方</td><td>400 层解锁，超越武器库</td></tr>
     <tr><td><code class="inline">/锻造 名称</code></td><td>锻造装备</td><td>消耗铜币 + 矿石，不能赊账</td></tr>
     <tr><td><code class="inline">/挑战 @对方</code></td><td>发起对战</td><td>随机胜负，每天 3 次</td></tr>
     <tr><td><code class="inline">/踢 @对方</code></td><td>生成踢人图</td><td>30 秒冷却</td></tr>
@@ -197,60 +200,45 @@
 
 <!-- ============ 武具店 ============ -->
 <section id="shop">
-  <h2>🏪 武具店</h2>
-  <p>用铜币购买装备（<code class="inline">/购买</code>），价格呈指数阶梯拉开差距。<b>持有任意 1 件装备即可进入地下城</b>。出售回收 <b>购买价 60%</b>（<code class="inline">/出售</code>）。</p>
-  <p>装备属性字段：<span class="tag t-cmd">攻击力 attack</span><span class="tag t-cmd">防御力 defense</span><span class="tag t-cmd">生命值 hp</span><span class="tag t-cmd">魔力值 mp</span><span class="tag t-cmd">敏捷 agility</span><span class="tag t-cmd">智力 intelligence</span></p>
+  <h2>⚙️ 装备系统（武器库 / 职业 / 晋升 / 稀有）</h2>
+  <p>装备分<b>职业线（line）</b>与<b>阶级（tier）</b>两条约束：已转职只穿本职业与通用（any）装备，阶级决定能买到/能穿多好的装备。旧「武具店」已改名 <b><code class="inline">/武器库</code></b>。</p>
 
-  <h3>武器（weapon）</h3>
+  <h3>职业与可用部位</h3>
   <table>
-    <tr><th>装备</th><th>攻</th><th>防</th><th>命</th><th>魔</th><th>敏</th><th>智</th><th>价格</th></tr>
-    <tr><td>短剑</td><td>8</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>50 铜</td></tr>
-    <tr><td>铁剑</td><td>10</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>75 铜</td></tr>
-    <tr><td>长剑</td><td>13</td><td>0</td><td>0</td><td>0</td><td>2</td><td>0</td><td>120 铜</td></tr>
-    <tr><td>精钢剑</td><td>16</td><td>0</td><td>0</td><td>0</td><td>2</td><td>0</td><td>200 铜</td></tr>
-    <tr><td>骑士剑</td><td>20</td><td>3</td><td>0</td><td>0</td><td>3</td><td>0</td><td>350 铜</td></tr>
-    <tr><td>秘银剑</td><td>24</td><td>4</td><td>0</td><td>0</td><td>4</td><td>0</td><td>600 铜</td></tr>
-    <tr><td>屠龙剑</td><td>30</td><td>5</td><td>10</td><td>0</td><td>5</td><td>0</td><td>1000 铜</td></tr>
-    <tr><td>圣剑·王者</td><td>38</td><td>6</td><td>15</td><td>0</td><td>6</td><td>2</td><td>1700 铜</td></tr>
-    <tr><td>苍穹之刃</td><td>48</td><td>8</td><td>20</td><td>0</td><td>7</td><td>3</td><td>3000 铜</td></tr>
-    <tr><td>屠神之剑</td><td>60</td><td>10</td><td>25</td><td>0</td><td>9</td><td>4</td><td>9000 铜</td></tr>
-    <tr><td>永恒之刃</td><td>75</td><td>12</td><td>30</td><td>0</td><td>11</td><td>5</td><td>4 金 50 银</td></tr>
+    <tr><th>职业</th><th>可用类型</th><th>通用(any)</th></tr>
+    <tr><td>战士（physical）</td><td>武器 weapon / 防具 armor / 盾牌 shield</td><td>饰品、纯生存轻甲</td></tr>
+    <tr><td>魔法师（magic）</td><td>法杖 staff / 法袍 robe / 法器 focus</td><td>同上</td></tr>
   </table>
+  <p>选择职业：<code class="inline">/转职 战士 | 魔法师</code>（可随时切换；另一职业装备保留但不生效，可出售）。未转职先引导转职，地下城自动择优（物理/魔法取高）。</p>
 
-  <h3>盾牌（shield）</h3>
+  <h3>晋升 / 阶级（决定能用多好）</h3>
   <table>
-    <tr><th>装备</th><th>攻</th><th>防</th><th>命</th><th>敏</th><th>价格</th></tr>
-    <tr><td>圆盾</td><td>0</td><td>10</td><td>5</td><td>0</td><td>50 铜</td></tr>
-    <tr><td>铁盾</td><td>0</td><td>16</td><td>8</td><td>0</td><td>120 铜</td></tr>
-    <tr><td>骑士盾</td><td>0</td><td>26</td><td>12</td><td>0</td><td>350 铜</td></tr>
-    <tr><td>龙鳞盾</td><td>0</td><td>42</td><td>25</td><td>3</td><td>1000 铜</td></tr>
-    <tr><td>神盾·壁垒</td><td>0</td><td>52</td><td>40</td><td>3</td><td>1700 铜</td></tr>
-    <tr><td>星辉圣盾</td><td>0</td><td>66</td><td>55</td><td>4</td><td>3000 铜</td></tr>
-    <tr><td>众神之盾</td><td>0</td><td>90</td><td>90</td><td>6</td><td>2 金 60 银</td></tr>
+    <tr><th>阶级</th><th>称号前缀</th><th>层门槛</th><th>解锁装备档（铜币）</th></tr>
+    <tr><td>T0</td><td>见习</td><td>0</td><td>50 ~ 120</td></tr>
+    <tr><td>T1</td><td>疾风</td><td>30</td><td>~600</td></tr>
+    <tr><td>T2</td><td>烈焰</td><td>80</td><td>~3000</td></tr>
+    <tr><td>T3</td><td>银辉</td><td>200</td><td>~9000</td></tr>
+    <tr><td>T4</td><td>苍穹</td><td>350</td><td>~26000</td></tr>
+    <tr><td>T5</td><td>神谕</td><td>500</td><td>45000（武器库封顶）</td></tr>
+    <tr><td>T6</td><td>灭世</td><td>800</td><td>铁匠铺（6.4 万+）</td></tr>
   </table>
+  <p><code class="inline">/晋升</code>：历史最高层达标 + 消耗铜币晋升到下一阶；武器库只展示 tier≥当前阶级（当前阶可买、更高阶 🔒 需晋升）。</p>
 
-  <h3>防具 / 法袍（armor / robe）</h3>
-  <table>
-    <tr><th>装备</th><th>类型</th><th>攻</th><th>防</th><th>命</th><th>魔</th><th>智</th><th>价格</th></tr>
-    <tr><td>皮甲</td><td>armor</td><td>0</td><td>12</td><td>15</td><td>0</td><td>0</td><td>75 铜</td></tr>
-    <tr><td>木杖</td><td>robe</td><td>0</td><td>0</td><td>0</td><td>15</td><td>8</td><td>75 铜</td></tr>
-    <tr><td>布袍</td><td>robe</td><td>0</td><td>5</td><td>10</td><td>25</td><td>10</td><td>120 铜</td></tr>
-    <tr><td>锁子甲</td><td>armor</td><td>0</td><td>22</td><td>25</td><td>0</td><td>0</td><td>200 铜</td></tr>
-    <tr><td>学徒法杖</td><td>robe</td><td>0</td><td>0</td><td>0</td><td>40</td><td>16</td><td>200 铜</td></tr>
-    <tr><td>板甲</td><td>armor</td><td>0</td><td>34</td><td>45</td><td>0</td><td>0</td><td>600 铜</td></tr>
-    <tr><td>贤者法杖</td><td>robe</td><td>0</td><td>8</td><td>15</td><td>70</td><td>24</td><td>600 铜</td></tr>
-    <tr><td>大法师袍</td><td>robe</td><td>0</td><td>12</td><td>30</td><td>100</td><td>30</td><td>1000 铜</td></tr>
-    <tr><td>圣袍·守护</td><td>robe</td><td>0</td><td>18</td><td>40</td><td>140</td><td>38</td><td>1700 铜</td></tr>
-    <tr><td>元素法袍</td><td>robe</td><td>0</td><td>25</td><td>55</td><td>200</td><td>48</td><td>5200 铜</td></tr>
-    <tr><td>混沌魔袍</td><td>robe</td><td>0</td><td>35</td><td>80</td><td>300</td><td>60</td><td>1 金 50 银</td></tr>
-  </table>
+  <h3>武器库装备（67 件 / 14 档）</h3>
+  <ul>
+    <li>价格档：50 → 45000 铜币（14 档指数递增），每档<b>战士武器 + 法师法杖对称齐全</b>，并有防具/法袍/盾/法器/饰品。</li>
+    <li>同价格档 物理武器 ≈ 魔法法杖 <b>推进收益对齐</b>（公式收益偏差 &lt;3%，平衡脚本校验）。</li>
+    <li>部位类型：武器 / 法杖 / 防具 / 法袍 / 盾牌 / 法器 / 饰品；法师中后期也有完整装备链。</li>
+    <li>出售回收 <b>购买价 60%</b>；铁匠铺装备不可出售。</li>
+  </ul>
+  <p class="note">完整装备数值请在游戏内 <code class="inline">/武器库</code> 查看（数据源 <code class="inline">equipment.json</code>，mtime 热重载）。</p>
 
-  <h3>饰品（accessory）</h3>
-  <table>
-    <tr><th>装备</th><th>防</th><th>命</th><th>魔</th><th>敏</th><th>智</th><th>价格</th></tr>
-    <tr><td>魔法披风</td><td>8</td><td>20</td><td>30</td><td>8</td><td>8</td><td>350 铜</td></tr>
-  </table>
-  <div class="note">武具店是新手过渡装备来源；中后期毕业装备来自铁匠铺（见下）。</div>
+  <h3>稀有装备（Boss 掉落专属，商店买不到）</h3>
+  <ul>
+    <li>独立 <code class="inline">rare_drops.json</code>（18 件，覆盖 T0~T5）：每阶 战士武器/法师法杖/通用饰品。</li>
+    <li>强度：优于同阶普通、不超过下一阶普通（钳制）；命名独立专属（不与商店/锻造重名）。</li>
+    <li>展示：背包/播报带 <b>✦ 名称(稀有)</b> 与新掉落 <b>new！</b>；进包立即可见，<b>退出地下城后下次进入才计入推进速度</b>。</li>
+  </ul>
 </section>
 
 <!-- ============ 地下城 ============ -->
@@ -274,6 +262,12 @@
   <div class="formula">推进速度 = (攻击×2 + 敏捷×1.5 + 智力×1.25 + 魔力×1.2) × (1 + 防御/400) × (1 + 生命/600)</div>
   <div class="formula">单件装备公式收益分 = (攻×2 + 敏×1.5 + 智×1.25 + 魔×1.2) × (1 + 防/400) × (1 + 命/600)</div>
 
+  <h3>职业 / 阶级过滤</h3>
+  <ul>
+    <li>已转职：只吃本职业 line + 通用(any) 装备；未转职：自动择优（物理组 / 魔法组取高）。</li>
+    <li>阶级：只计入 tier ≤ 当前阶级 的装备（tier &gt; 当前阶级不生效）。</li>
+  </ul>
+
   <h3>难度曲线（防数值膨胀）</h3>
   <p>第 n 层总进度条采用幂函数，远慢于指数增长：</p>
   <div class="formula">第 n 层总进度 = 1000 × n^0.75</div>
@@ -290,6 +284,16 @@
     <tr><td>1000 层</td><td>≈ 90,858</td></tr>
   </table>
   <p>产币增速（n^0.6）低于难度曲线（n^0.75），保证后期数值稳健不膨胀。</p>
+
+  <h3>Boss 关（通关掉落）</h3>
+  <table>
+    <tr><th>类型</th><th>触发层</th><th>血量倍率</th><th>稀有装备概率</th></tr>
+    <tr><td>精英</td><td>每 10 层</td><td>×1.5</td><td>25%</td></tr>
+    <tr><td>小 Boss</td><td>每 50 层</td><td>×3</td><td>55%</td></tr>
+    <tr><td>大 Boss</td><td>每 100 层</td><td>×6</td><td>100%</td></tr>
+  </table>
+  <p>通关 Boss 层<b>必掉矿石</b>（按 Boss 类型给高稀有占比，见「稀有矿石」）+ 概率掉<b>稀有装备</b>。
+  稀有装备：独立池、商店买不到、强度钳制（同阶普通 &lt; 稀有 ≤ 下一阶普通）；进包即标 <b>✦ new！</b>，<b>退出重进后才计入速度</b>。</p>
 </section>
 
 <!-- ============ 稀有矿石 ============ -->
@@ -300,66 +304,55 @@
   <h3>结算周期</h3>
   <p>每 <b>15 分钟（900 秒）</b>为一个结算周期，挂机时自动掷骰一次。<b>懒结算</b>：不足一个周期的时间余数直接丢弃（如挂 32.5 分钟 = 2 个周期）。</p>
 
-  <h3>掉落概率</h3>
+  <h3>矿石种类（共 15 种，ores.json）</h3>
   <table>
-    <tr><th>档位</th><th>基础概率</th><th>矿石</th><th>层数加成</th></tr>
-    <tr><td>普通</td><td>30%（固定）</td><td>铜矿石 / 铁矿石（各 50%）</td><td>无</td></tr>
-    <tr><td>稀有</td><td>8%（固定）</td><td>银矿石 / 秘银矿石（各 50%）</td><td>无</td></tr>
-    <tr><td>传说</td><td>2%（基础）</td><td>金矿石 / 龙晶石（各 50%）</td><td>有（见下）</td></tr>
-    <tr><td>无掉落</td><td>其余</td><td>—</td><td>—</td></tr>
+    <tr><th>档位</th><th>矿石</th></tr>
+    <tr><td>普通</td><td>铜矿石、铁矿石、锡矿石、铅矿石</td></tr>
+    <tr><td>稀有</td><td>银矿石、秘银矿石、精金矿石、星辰砂</td></tr>
+    <tr><td>传说</td><td>金矿石、龙晶石、圣辉石、龙魂晶</td></tr>
+    <tr><td>神话</td><td>星陨铁、混沌核、神谕石</td></tr>
   </table>
-  <div class="formula">传说档概率 = 2% × (层数 / 400)^0.5　（上限 30%，仅传说档受层数加成）</div>
-  <p>例：401 层传说≈2%、667 层≈2.58%、1600 层≈4%、极高楼层封顶 30%。</p>
-  <p><b>日产出参考</b>（96 周期/天，400 层挂机）：普通矿各≈14.4/天、稀有矿各≈3.8/天、传说矿各≈0.96/天。</p>
-  <div class="note">矿石仅用于铁匠铺锻造材料；价值出口（打铁铺）为后续开发项。</div>
+
+  <h3>普通层掉落概率（全池、档内随机）</h3>
+  <table>
+    <tr><th>档位</th><th>基础概率</th><th>层数加成</th></tr>
+    <tr><td>普通</td><td>30%（固定）</td><td>无</td></tr>
+    <tr><td>稀有</td><td>8%（固定）</td><td>无</td></tr>
+    <tr><td>传说</td><td>2%（基础）</td><td>有：× (层/400)^0.5，上限 30%</td></tr>
+    <tr><td>神话</td><td>0.1%（基础，极小概率）</td><td>有：× (层/400)^0.5，上限 1%</td></tr>
+    <tr><td>无掉落</td><td>其余</td><td>—</td></tr>
+  </table>
+  <div class="formula">传说档概率 = 2% × (层数 / 400)^0.5　上限 30%；神话档 = 0.1% × (层数 / 400)^0.5　上限 1%</div>
+  <p>例：401 层传说≈2%、667 层≈2.58%、1600 层≈4%、极高楼层封顶 30%；神话档在普通层为<b>极小惊喜</b>（主要来源仍是大 Boss）。</p>
+  <div class="note">矿石用途：铁匠铺锻造材料（战士线金属矿 / 法师线魔力矿 / 饰品全矿物），Boss 关也会即时掉落矿石。</div>
 </section>
 
 <!-- ============ 铁匠铺 ============ -->
 <section id="forge">
   <h2>🔨 铁匠铺</h2>
-  <p>到达地下城 <b>400 层</b>解锁。铁匠铺制造的装备<b>全部超越武具店顶级</b>（永恒之刃）。锻造消耗<b>铜币 + 矿石</b>，不能赊账；铁匠铺装备<b>不可 /出售</b> 回收。</p>
-  <p>矿石消耗链设计：低级矿石在高级配方中持续消耗，任何档位矿石都不会囤积。</p>
+  <p>到达地下城 <b>400 层</b>解锁。铁匠铺制造的装备<b>全部超越武器库顶级</b>（永恒之刃）。锻造消耗<b>铜币 + 矿石</b>，不能赊账；铁匠铺装备<b>不可 /出售</b> 回收。</p>
 
-  <h3>Lv1 · 基础锻造（≈5 天集矿）</h3>
+  <h3>配方概览（forge.json，28 配方 / Lv1~Lv4 各 7 部位）</h3>
   <table>
-    <tr><th>装备</th><th>类型</th><th>属性</th><th>消耗</th></tr>
-    <tr><td>锻造·精铁重剑</td><td>武器</td><td>攻88 防14 命35 敏13 智5</td><td>铜矿70 铁矿70 + 12000 铜</td></tr>
-    <tr><td>锻造·铁壁重铠</td><td>护甲</td><td>防98 命110</td><td>铜矿70 铁矿70 + 12000 铜</td></tr>
-    <tr><td>锻造·奥术法杖</td><td>法袍</td><td>防36 命85 魔320 智68</td><td>铜矿70 铁矿70 + 12000 铜</td></tr>
+    <tr><th>等级</th><th>价格（铜币）</th><th>部位（战士武器/法师法杖/防具/法袍/盾/法器/饰品）</th></tr>
+    <tr><td>Lv1</td><td>64,000</td><td>断岳重剑 / 奥术秘杖 / 磐岳战铠 / 灵纹轻袍 / 壁垒圆盾 / 秘仪法器 / 旅者徽记</td></tr>
+    <tr><td>Lv2</td><td>125,000</td><td>裂空圣剑 / 贤者权杖 / 镇岳重甲 / 星辉法袍 / 辉光方盾 / 曜晶法器 / 贤者指环</td></tr>
+    <tr><td>Lv3</td><td>40~45 万</td><td>天罚神剑 / 灭世法杖 / 神鳞圣铠 / 圣辉法袍 / 神鳞重盾 / 神火宝珠 / 神纹圣印</td></tr>
+    <tr><td>Lv4</td><td>120 万</td><td>龙神之刃 / 创世法杖 / 神铸神铠 / 创世圣袍 / 神铸圣盾 / 灭世宝珠 / 永恒王冠</td></tr>
   </table>
+  <ul>
+    <li>每级 7 部位对称齐全（战士武器 / 法师法杖 / 防具 / 法袍 / 盾 / 法器 / 饰品），等级越高矿越稀有。</li>
+    <li>锻造装备均去材料化命名（如 精铁重剑→断岳重剑），`id` 不变存量兼容。</li>
+  </ul>
 
-  <h3>Lv2 · 进阶锻造（累计 ≈15 天）</h3>
-  <table>
-    <tr><th>装备</th><th>类型</th><th>属性</th><th>消耗</th></tr>
-    <tr><td>锻造·银辉圣剑</td><td>武器</td><td>攻108 防18 命48 敏16 智8</td><td>铜矿60 铁矿60 银矿38 秘银38 + 25000 铜</td></tr>
-    <tr><td>锻造·秘银重甲</td><td>护甲</td><td>防120 命135</td><td>铜矿60 铁矿60 银矿38 秘银38 + 25000 铜</td></tr>
-    <tr><td>锻造·贤者权杖</td><td>法袍</td><td>防45 命100 魔400 智82</td><td>铜矿60 铁矿60 银矿38 秘银38 + 25000 铜</td></tr>
-  </table>
-
-  <h3>Lv3 · 大师锻造（累计 ≈30 天）</h3>
-  <table>
-    <tr><th>装备</th><th>类型</th><th>属性</th><th>消耗</th></tr>
-    <tr><td>锻造·金龙神剑</td><td>武器</td><td>攻130 防22 命60 敏20 智10</td><td>铜80 铁80 银40 秘银40 金15 龙晶8 + 50000 铜</td></tr>
-    <tr><td>锻造·龙晶圣铠</td><td>护甲</td><td>防145 命160</td><td>铜80 铁80 银40 秘银40 金15 龙晶8 + 50000 铜</td></tr>
-    <tr><td>锻造·创世法袍</td><td>法袍</td><td>防55 命120 魔500 智100</td><td>铜80 铁80 银40 秘银40 金15 龙晶8 + 50000 铜</td></tr>
-  </table>
-
-  <h3>Lv4 · 终极（再 ≈1 个月）</h3>
-  <table>
-    <tr><th>装备</th><th>类型</th><th>属性</th><th>消耗</th></tr>
-    <tr><td>锻造·龙神之刃</td><td>武器</td><td>攻160 防28 命75 敏24 智14</td><td>铜150 铁150 银60 秘银60 金30 龙晶30 + 120000 铜</td></tr>
-  </table>
-
-  <h3>强度对照（地下城公式收益分）</h3>
-  <table>
-    <tr><th>装备</th><th>来源</th><th>收益分</th></tr>
-    <tr><td>永恒之刃</td><td>武具店（45000 铜）</td><td>≈204</td></tr>
-    <tr><td>锻造·精铁重剑</td><td>铁匠铺 Lv1</td><td>≈221</td></tr>
-    <tr><td>锻造·银辉圣剑</td><td>铁匠铺 Lv2</td><td>≈282</td></tr>
-    <tr><td>锻造·金龙神剑</td><td>铁匠铺 Lv3</td><td>≈351</td></tr>
-    <tr><td>锻造·龙神之刃</td><td>铁匠铺 Lv4</td><td>≈450</td></tr>
-  </table>
-  <div class="okbox">铁匠铺最低档都超过武具店顶级，是玩家真正的毕业装备线。</div>
+  <h3>矿石消耗（差异化组合）</h3>
+  <ul>
+    <li><b>不同装备用不同矿石组合</b>：战士线（武器/盾/甲）用金属矿；法师线（法杖/法袍/法器）用魔力矿。</li>
+    <li>每级 <b>物理 / 魔法 所需矿石种类数对等</b>（Lv1~Lv4 = 4/6/8/10 种，累计各 10 种）+ 总矿量对等。</li>
+    <li><b>饰品可用全矿物</b>：Lv1 4 种 → Lv4 覆盖全部 15 种矿石。</li>
+    <li>神话矿（星陨铁 / 混沌核 / 神谕石）只用于 Lv4 顶级配方与饰品，由 Boss（大 Boss）与极小概率普通层产出。</li>
+  </ul>
+  <div class="okbox">铁匠铺最低档都超过武器库顶级，是玩家真正的毕业装备线（锻造也受职业 line / 阶级 tier 约束）。</div>
 </section>
 
 <!-- ============ 对战系统 ============ -->
@@ -496,7 +489,7 @@
     <tr><td>管理页</td><td>Web 前端（群白名单、频率限制、直播/动态监控配置与日志）</td></tr>
     <tr><td>图片合成</td><td>Pillow（圆形裁切 / GIF 多帧 / 坐标贴图）</td></tr>
     <tr><td>监控请求</td><td>CDP（Chrome DevTools Protocol） + curl.exe 降级</td></tr>
-    <tr><td>数据文件</td><td>equipment.json / forge.json / ores.json（改数值即生效，数据库只存 id）</td></tr>
+    <tr><td>数据文件</td><td>equipment.json / forge.json / ores.json / rare_drops.json（改数值即生效；classes.py / tiers.py 定义职业与阶级）</td></tr>
   </table>
   <h3>设计原则</h3>
   <ul>
@@ -507,7 +500,7 @@
   </ul>
 </section>
 
-<footer>群聊冒险机器人 · 玩家 Wiki —— 基于当前生产配置生成（2026-09-07）</footer>
+<footer>群聊冒险机器人 · 玩家 Wiki —— 同步当前生产配置生成（2026-09-08）</footer>
 </div>
 </body>
 </html>

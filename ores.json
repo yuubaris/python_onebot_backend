@@ -1,10 +1,79 @@
 {
   "ores": [
-    {"id": "copper_ore", "name": "铜矿石", "rarity": "common"},
-    {"id": "iron_ore", "name": "铁矿石", "rarity": "common"},
-    {"id": "silver_ore", "name": "银矿石", "rarity": "rare"},
-    {"id": "mithril_ore", "name": "秘银矿石", "rarity": "rare"},
-    {"id": "gold_ore", "name": "金矿石", "rarity": "legendary"},
-    {"id": "dragon_crystal", "name": "龙晶石", "rarity": "legendary"}
+    {
+      "id": "copper_ore",
+      "name": "铜矿石",
+      "rarity": "common"
+    },
+    {
+      "id": "iron_ore",
+      "name": "铁矿石",
+      "rarity": "common"
+    },
+    {
+      "id": "lead_ore",
+      "name": "铅矿石",
+      "rarity": "common"
+    },
+    {
+      "id": "tin_ore",
+      "name": "锡矿石",
+      "rarity": "common"
+    },
+    {
+      "id": "adamantite_ore",
+      "name": "精金矿石",
+      "rarity": "rare"
+    },
+    {
+      "id": "mithril_ore",
+      "name": "秘银矿石",
+      "rarity": "rare"
+    },
+    {
+      "id": "silver_ore",
+      "name": "银矿石",
+      "rarity": "rare"
+    },
+    {
+      "id": "stardust_sand",
+      "name": "星辰砂",
+      "rarity": "rare"
+    },
+    {
+      "id": "dragon_crystal",
+      "name": "龙晶石",
+      "rarity": "legendary"
+    },
+    {
+      "id": "dragon_soul_crystal",
+      "name": "龙魂晶",
+      "rarity": "legendary"
+    },
+    {
+      "id": "gold_ore",
+      "name": "金矿石",
+      "rarity": "legendary"
+    },
+    {
+      "id": "holy_glowstone",
+      "name": "圣辉石",
+      "rarity": "legendary"
+    },
+    {
+      "id": "chaos_core",
+      "name": "混沌核",
+      "rarity": "myth"
+    },
+    {
+      "id": "oracle_stone",
+      "name": "神谕石",
+      "rarity": "myth"
+    },
+    {
+      "id": "star_iron",
+      "name": "星陨铁",
+      "rarity": "myth"
+    }
   ]
 }

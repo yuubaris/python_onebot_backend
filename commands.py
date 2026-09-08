@@ -6,10 +6,13 @@
 命令：
     /签到             每日签到，随机获得铜币/银币
     /余额             查看当前资产
-    /武具店           查看可购买的装备（装备数据见 equipment.json）
-    /购买 商品名       消耗铜币购买装备（不能赊账）
+    /武器库           查看可购买的装备（按职业与阶级过滤展示）
+    /购买 商品名       消耗铜币购买装备（不能赊账；需职业/阶级符合）
     /出售 商品名       出售装备，获得购买价 60% 的铜币
-    /地下城 进入/状态/退出   地下城冒险
+    /转职 战士|魔法师  选择职业（转职）；可随时切换
+    /晋升             按地下城进度达标并消耗货币提升阶级
+    /地下城 进入/状态/退出   地下城冒险（Boss 关掉落）
+    /铁匠铺 /锻造      查看/制作高级装备
     /帮助             显示可用命令
 
 地下城限制：进入地下城后，仅允许 /签到 与 /地下城（退出/状态），其余动作一律拒绝。
@@ -22,9 +25,19 @@ from datetime import datetime, timedelta
 from models import db, User, CheckinRecord, UserItem
 from currency import format_currency
 from equipment import load_equipment, find_item, suggest_items
+from classes import (
+    class_line, item_line, class_name, find_class, all_classes,
+    LINE_ANY, TYPE_NAMES as _CLASSES_TYPE_NAMES,
+)
+from tiers import (
+    tier_title, tier_of_price, next_promotion, TIER_LAYER, MAX_TIER,
+    tier_of_layer, tier_promotion_cost, tier_price_cap,
+)
 from dungeon import (
     BASE_STATS, LAYER1_TOTAL, layer_total, coin_rate_per_sec, coin_per_5sec,
-    effective_stats, dungeon_speed, owned_items, settle_dungeon,
+    effective_stats, dungeon_speed, owned_items, owned_item_rows, settle_dungeon,
+    effective_layer_total, boss_type, sync_initial_tier, take_boss_report,
+    rare_item_ids,
 )
 from kick import check_cooldown, mark_cooldown, build_kick_image, build_beat_image, build_jue_image, build_dalao_image
 import ore
@@ -40,10 +53,8 @@ UNKNOWN_IMAGE = os.path.join(_BASE_DIR, "beat.jpeg")
 #   95% 概率 50~200 铜币；4% 概率 888 铜币；1% 概率 1 铜币
 CHECKIN_BIG_COPPER = 888  # 4% 特殊奖励
 
-TYPE_NAMES = {
-    "weapon": "武器", "shield": "盾牌", "armor": "防具",
-    "robe": "法袍", "accessory": "饰品", "other": "其他",
-}
+TYPE_NAMES = dict(_CLASSES_TYPE_NAMES)  # weapon/shield/armor/robe/accessory/staff/focus...
+TYPE_NAMES["other"] = "其他"
 
 
 def local_today():
@@ -113,44 +124,77 @@ def cmd_checkin(user, group_id, args, at_qqs=None):
 
 def cmd_balance(user, group_id, args, at_qqs=None):
     items = owned_items(user)
+    prof = (user.profession or "") or ""
+    class_txt = f"{class_name(prof)} · {_user_title(user)}" if prof else "未转职"
     return (f"当前资产：{format_currency(user.copper)}\n"
+            f"职业/称号：{class_txt}\n"
             f"持有装备 {len(items)} 件；累计签到 {user.total_checkin} 次，连续签到 {user.checkin_streak} 天。")
 
 
 # ---------- 背包 ----------
 
+
+def _user_title(user):
+    """完整晋级称号（如 见习战士）；未转职返回前缀。"""
+    return tier_title((user.profession or "") or None, (user.tier or 0))
+
+
+def _item_tier(it):
+    t = it.get("tier")
+    if t is None:
+        t = tier_of_price(it.get("price", 0))
+    return int(t)
+
+
 def cmd_bag(user, group_id, args, at_qqs=None):
     """查看当前持有的武具与矿石（/背包）。"""
-    items = owned_items(user)
-    if not items:
+    rows = owned_item_rows(user)
+    if not rows:
         return ("🎒 你的背包空空如也。\n"
-                "前往 /武具店 购买一件装备吧！（持有任意装备即可进入 /地下城）")
+                "前往 /武器库 购买一件装备吧！（持有任意装备即可进入 /地下城）")
+    prof = (user.profession or "") or ""
+    cl_line = class_line(prof) if prof else None
+    rare_ids = rare_item_ids()
+    lines = [f"🎒 我的背包（共 {len(rows)} 件） · {_user_title(user)}"]
     groups = {}
-    for it in items:
-        groups.setdefault(it.get("type", "other"), []).append(it)
-    lines = [f"🎒 我的背包（共 {len(items)} 件）"]
-    for t in sorted(groups, key=lambda x: TYPE_NAMES.get(x, x)):
-        lst = sorted(groups[t], key=lambda x: x["price"])
+    for it, is_new in rows:
+        groups.setdefault(it.get("type", "other"), []).append((it, is_new))
+    for t in sorted(groups, key=lambda x: TYPE_NAMES.get(x, x) or x):
+        lst = sorted(groups[t], key=lambda x: x[0]["price"])
         lines.append(f"—— {TYPE_NAMES.get(t, t)} ——")
+        # 同名合并计数（保留 is_new 只要有一个新即可标 new！）
         seen = {}
-        for it in lst:
-            seen[it["name"]] = seen.get(it["name"], 0) + 1
-        for name, cnt in seen.items():
-            it = next(x for x in lst if x["name"] == name)
-            suffix = f" ×{cnt}" if cnt > 1 else ""
-            lines.append(f"· {name}{suffix}（{_item_desc(it)}）")
+        for it, is_new in lst:
+            if it["name"] not in seen:
+                seen[it["name"]] = {"it": it, "cnt": 1, "new": bool(is_new)}
+            else:
+                seen[it["name"]]["cnt"] += 1
+                seen[it["name"]]["new"] = seen[it["name"]]["new"] or bool(is_new)
+        for name, info in seen.items():
+            it = info["it"]
+            suffix = f" ×{info['cnt']}" if info["cnt"] > 1 else ""
+            mark = " new！" if info["new"] else ""
+            # Boss 稀有装备：✦ 星号 + (稀有) 标注（D-B12）
+            rare = it.get("id") in rare_ids
+            disp = f"✦ {name}" if rare else name
+            rare_tag = "(稀有)" if rare else ""
+            # 转职后另一职业专属装备标注“暂不生效”
+            unusable = ""
+            if cl_line and item_line(it) not in (LINE_ANY, cl_line):
+                unusable = "（另一职业·不生效）"
+            lines.append(f"· {disp}{suffix}{mark}{rare_tag}（{_item_desc(it)}）{unusable}")
     # 矿石展示（稀有度前缀）
     ores = ore.owned_ores(user.user_id)
     if ores:
         lines.append("—— ⛏️ 矿石 ——")
-        _ore_mark = {"legendary": "✦", "rare": "◆", "common": "·"}
+        _ore_mark = {"myth": "★", "legendary": "✦", "rare": "◆", "common": "·"}
         for o in ores:
             lines.append(f"{_ore_mark.get(o['rarity'], '·')} {o['name']} ×{o['count']}")
     lines.append(f"当前资产：{format_currency(user.copper)}")
     return "\n".join(lines)
 
 
-# ---------- 武具店 ----------
+# ---------- 武器库（原武具店） ----------
 
 def _item_desc(it):
     parts = []
@@ -170,17 +214,88 @@ def _item_desc(it):
 
 
 def cmd_shop(user, group_id, args, at_qqs=None):
-    items = sorted(load_equipment(), key=lambda x: x["price"])
-    lines = ["🏪 武具店（/购买 商品名 购买；/出售 商品名 按购买价 60% 回收）"]
-    current_price = None
+    """武器库：按职业+阶级过滤展示（原 /武具店 改名）。
+
+    展示规则：未转职先引导转职；只展示 tier ≥ 当前阶级 且 当前职业可用(line 或 any) 的装备；
+    当前阶级可购，更高阶级带 🔒 锁（晋升解锁），低于当前阶级的旧装备隐藏。
+    """
+    prof = (user.profession or "") or ""
+    if not prof:
+        return ("💡 你是冒险者，请先选择职业：\n"
+                "/转职 战士（物理近战） 或 /转职 魔法师（魔法施法）\n"
+                "选定职业后，/武器库 将展示你可购买的装备。")
+    line = class_line(prof)
+    my_tier = user.tier or 0
+    items = load_equipment()
+    shown = []
     for it in items:
-        if it["price"] != current_price:
-            current_price = it["price"]
-            lines.append(f"—— {format_currency(current_price)} ——")
-        lines.append(f"· {it['name']}（{TYPE_NAMES.get(it['type'], it['type'])}）{_item_desc(it)}")
-    lines.append("—— 提示：持有任意 1 件装备即可前往 /地下城 ——")
+        if item_line(it) not in (line, LINE_ANY):
+            continue
+        if _item_tier(it) < my_tier:
+            continue  # 低阶旧装备不再展示
+        shown.append(it)
+    shown.sort(key=lambda x: (_item_tier(x), x["price"]))
+    lines = [f"⚔️ 武器库（{_user_title(user)} 可购当前阶，更高阶 🔒 需晋升）"]
+    cur = None
+    for it in shown:
+        t = _item_tier(it)
+        if t != cur:
+            cur = t
+            lock = "" if t <= my_tier else "🔒 "
+            lines.append(f"—— {lock}{tier_title(prof, t)}（T{t}）——")
+        if t <= my_tier:
+            lines.append(f"· {it['name']}（{TYPE_NAMES.get(it['type'], it['type'])}）{_item_desc(it)} · {format_currency(it['price'])}")
+        else:
+            lines.append(f"· 🔒 {it['name']}（晋升 {tier_title(prof, t)} 解锁）")
+    lines.append("—— 提示：/转职 切换职业；/晋升 提升阶级解锁更高阶装备 ——")
     return "\n".join(lines)
 
+
+# ---------- 转职 / 晋升（v3） ----------
+
+def cmd_class(user, group_id, args, at_qqs=None):
+    """选择/切换职业（/转职 战士|魔法师）。"""
+    arg = (args or "").strip()
+    if not arg:
+        cur = class_name(user.profession) if (user.profession or "") else "未转职"
+        opts = "、".join(f"/转职 {c['name']}（{c['desc']}）" for c in all_classes())
+        return (f"当前职业：{cur} · {_user_title(user)}\n"
+                f"可选职业：\n{opts}\n"
+                "转职后：新职业的专属装备生效，另一职业专属装备保留但不生效（可出售）。")
+    cid = find_class(arg)
+    if cid is None:
+        hint = "、".join(c["name"] for c in all_classes())
+        return f"没有职业「{arg}」。可选：{hint}"
+    user.profession = cid
+    db.session.commit()
+    return (f"⚔️ 转职成功！你已成为 {class_name(cid)}（{tier_title(cid, user.tier or 0)}）。\n"
+            f"地下城将只计算本职业与通用装备的属性（不混搭）。")
+
+
+def cmd_promote(user, group_id, args, at_qqs=None):
+    """晋升阶级（/晋升）：需历史最高层达标 + 消耗货币。"""
+    cur = user.tier or 0
+    nxt = next_promotion(cur)
+    if nxt is None:
+        return f"你已达最高阶级 {_user_title(user)}！"
+    best = max(user.dungeon_cleared or 0, user.dungeon_layer or 0, user.saved_dungeon_layer or 0)
+    need_layer = TIER_LAYER.get(nxt, 0)
+    cost = tier_promotion_cost(nxt)
+    if best < need_layer:
+        return (f"晋升 {tier_title(user.profession, nxt)} 需要：\n"
+                f"地下城历史最高层 ≥ {need_layer}（当前 {best}）\n"
+                f"货币 ≥ {format_currency(cost)}（当前 {format_currency(user.copper)}）")
+    if user.copper < cost:
+        return (f"货币不足，不能晋升！\n"
+                f"晋升 {tier_title(user.profession, nxt)} 需 {format_currency(cost)}，"
+                f"你只有 {format_currency(user.copper)}。\n"
+                f"（层数已达标：历史最高 {best} ≥ {need_layer}）")
+    user.copper -= cost
+    user.tier = nxt
+    db.session.commit()
+    return (f"🎉 晋升成功！{tier_title(user.profession, cur)} → {tier_title(user.profession, nxt)}\n"
+            f"消耗 {format_currency(cost)}，剩余 {format_currency(user.copper)}。\n"
+            f"武器库已解锁 {tier_title(user.profession, nxt)} 阶级的装备！")
 
 
 # ---------- 铁匠铺（/铁匠铺、/锻造） ----------
@@ -217,12 +332,27 @@ def cmd_forge(user, group_id, args, at_qqs=None):
         return "用法：/锻造 装备名（/铁匠铺 查看配方）"
     if not _forge_unlocked(user):
         return (f"🔨 铁匠铺尚未解锁。到达地下城第 {forge.FORGE_MIN_LAYER} 层后解锁，"
-                f"可锻造超越武具店顶级的装备！")
+                f"可锻造超越武器库顶级的装备！")
     rec = forge.find_forge(name)
     if rec is None:
         hits = forge.suggest_forges(name)
         hint = f"，你是不是想锻造：{'、'.join(h['name'] for h in hits)}" if hits else ""
         return f"铁匠铺没有「{name}」{hint}\n发送 /铁匠铺 查看配方。"
+    # 职业/阶级校验（v3）：锻造产物同购买一样受职业与阶级限制
+    prof = (user.profession or "") or ""
+    line = item_line(rec)
+    if line != LINE_ANY:
+        if not prof:
+            return (f"💡 锻造「{rec['name']}」需要职业。\n"
+                    f"请先 /转职 战士 或 /转职 魔法师。")
+        if line != class_line(prof):
+            other = "战士" if line == "physical" else "魔法师"
+            return f"❌ 「{rec['name']}」是{other}的锻造装备，你无法使用。"
+    # 阶级校验（v3）：仅配方显式带 tier 时按阶级限制；旧配方沿用 400 层铁匠铺门槛即可
+    req_tier = rec.get("tier")
+    if req_tier is not None and (user.tier or 0) < int(req_tier):
+        return (f"🔒 「{rec['name']}」需要晋升到 {tier_title(prof, int(req_tier)) or req_tier} 才能锻造。\n"
+                f"当前阶级 {_user_title(user)}。")
     price = rec.get("price", 0)
     if user.copper < price:
         return (f"铜币不足，不能赊账！锻造「{rec['name']}」需 {format_currency(price)}，"
@@ -244,7 +374,7 @@ def cmd_forge(user, group_id, args, at_qqs=None):
 # ---------- 购买 / 出售 ----------
 
 def cmd_buy(user, group_id, args, at_qqs=None):
-    """购买装备，支持空格分隔批量购买（例：/购买 短剑 圆盾）。"""
+    """购买装备（/购买），职业+阶级双重校验。"""
     names = [n for n in (args or "").split()]
     if not names:
         return "用法：/购买 商品名 [商品名 ...]（例如 /购买 短剑 圆盾）"
@@ -260,8 +390,26 @@ def cmd_buy(user, group_id, args, at_qqs=None):
         for name in missing:
             hits = suggest_items(name)
             hint = f"，你是不是想买：{'、'.join(h['name'] for h in hits)}" if hits else ""
-            hint_lines.append(f"武具店没有「{name}」{hint}")
-        return "\n".join(hint_lines) + "\n发送 /武具店 查看商品列表。"
+            hint_lines.append(f"武器库没有「{name}」{hint}")
+        return "\n".join(hint_lines) + "\n发送 /武器库 查看商品列表。"
+    # 职业/阶级校验
+    prof = (user.profession or "") or ""
+    bad = None
+    for it in items:
+        line = item_line(it)
+        if line != LINE_ANY:
+            if not prof:
+                return (f"💡 购买「{it['name']}」需要职业。\n"
+                        f"请先 /转职 战士（物理）或 /转职 魔法师（魔法）。")
+            if line != class_line(prof):
+                other = "战士" if line == "physical" else "魔法师"
+                return f"❌ 「{it['name']}」是{other}的装备，你无法购买使用。"
+        req_tier = it.get("tier")
+        if req_tier is None:
+            req_tier = tier_of_price(it.get("price", 0))
+        if (user.tier or 0) < int(req_tier):
+            return (f"🔒 「{it['name']}」需要晋升到更高阶级才能购买。\n"
+                    f"当前阶级 {_user_title(user)}；发送 /晋升 查看晋升条件。")
     total = sum(it["price"] for it in items)
     if user.copper < total:
         return (f"铜币不足，不能赊账！购买这 {len(items)} 件装备共需 {format_currency(total)}，"
@@ -348,10 +496,17 @@ def _dungeon_enter(user):
         db.select(db.func.count()).select_from(UserItem).where(UserItem.user_id == user.user_id)
     ).scalar()
     if count < 1:
-        return "你还没有任何装备，无法进入地下城。先去 /武具店 购买一件装备吧！"
+        return "你还没有任何装备，无法进入地下城。先去 /武器库 购买一件装备吧！"
+    sync_initial_tier(user)
+    db.session.commit()
 
     stats = effective_stats(user, owned_items(user))
     speed = dungeon_speed(stats)
+    prof = (user.profession or "") or ""
+    class_note = ""
+    if not prof:
+        class_note = ("\n💡 你尚未选择职业（地下城暂按最优自动生效）。\n"
+                      f"发送 /转职 战士 或 /转职 魔法师 选定职业（影响装备可用）。")
 
     # 优先从保存的进度继续（直达上次的层数与剩余进度）
     if user.saved_dungeon_layer and user.saved_dungeon_layer > 0:
@@ -367,14 +522,16 @@ def _dungeon_enter(user):
         _set_ore_entry_state(user, layer)
         db.session.commit()
         ore_note = _ore_entry_note(layer)
-        return (f"⚔️ 已从上次进度继续冒险！\n"
-                f"你回到地下城第 {layer} 层（剩余进度 {progress:.0f} / 总计 {layer_total(layer):.0f}）\n"
+        bt = boss_type(layer)
+        boss_note = f" · BOSS" if bt else ""
+        return (f"⚔️ 已从上次进度继续冒险！（{_user_title(user)}{boss_note}）\n"
+                f"你回到地下城第 {layer} 层（剩余进度 {progress:.0f} / 总计 {effective_layer_total(layer):.0f}）\n"
                 f"推进速度：{speed:.2f} 进度/秒；金币速度：约 {coin_per_5sec(layer):.4f} 铜币/5秒\n"
-                f"地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。{ore_note}")
+                f"地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。{ore_note}{class_note}")
 
     # 新的地下城冒险（第 1 层）
     user.dungeon_layer = 1
-    user.dungeon_progress = layer_total(1)
+    user.dungeon_progress = effective_layer_total(1)
     user.dungeon_last_update = time.time()
     user.dungeon_coin_acc = 0.0
     user.dungeon_run_coins = 0
@@ -383,24 +540,26 @@ def _dungeon_enter(user):
 
     return (f"⚔️ 你已进入地下城第 1 层！\n"
             f"推进速度：{speed:.2f} 进度/秒\n"
-            f"通关本层进度：{layer_total(1):.0f}；金币速度：约 {coin_per_5sec(1):.4f} 铜币/5秒\n"
-            f"地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。")
+            f"通关本层进度：{effective_layer_total(1):.0f}；金币速度：约 {coin_per_5sec(1):.4f} 铜币/5秒\n"
+            f"地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。{class_note}")
 
 
 def _dungeon_status(user):
     if user.dungeon_layer <= 0:
         if user.saved_dungeon_layer and user.saved_dungeon_layer > 0:
-            total = layer_total(user.saved_dungeon_layer)
+            total = effective_layer_total(user.saved_dungeon_layer)
             remaining = max(user.saved_dungeon_progress or 0.0, 0.0)
             return (f"💾 你保存了地下城进度：第 {user.saved_dungeon_layer} 层"
                     f"（剩余 {remaining:.0f} / 总计 {total:.0f}）。\n"
                     f"发送 /地下城 进入 可继续冒险。")
         return "你当前不在地下城中。使用 /地下城 进入 开始冒险。"
-    total = layer_total(user.dungeon_layer)
+    total = effective_layer_total(user.dungeon_layer)
     remaining = max(user.dungeon_progress, 0.0)
     done = total - remaining
     pct = (done / total * 100) if total else 0
-    return (f"📍 地下城第 {user.dungeon_layer} 层\n"
+    bt = boss_type(user.dungeon_layer)
+    bt_txt = "（BOSS）" if bt else ""
+    return (f"📍 地下城第 {user.dungeon_layer} 层{bt_txt} · {_user_title(user)}\n"
             f"进度：{pct:.1f}%（剩余 {remaining:.0f} / 总计 {total:.0f}）\n"
             f"金币速度：约 {coin_per_5sec(user.dungeon_layer):.4f} 铜币/5秒\n"
             f"本次地下城已获得 {user.dungeon_run_coins} 铜币；累计通关 {user.dungeon_cleared} 层，"
@@ -456,14 +615,16 @@ def cmd_dungeon(user, group_id, args, at_qqs=None):
 def cmd_help(user, group_id, args, at_qqs=None):
     return ("可用命令（消息以 / 开头）：\n"
             "/签到 - 每日签到，随机获得铜币/银币\n"
-            "/余额 - 查看当前资产与装备\n"
-            "/背包 - 查看当前持有的武具\n"
-            "/武具店 - 查看可购买的装备\n"
-            "/购买 商品名 [商品名...] - 批量购买装备（空格分隔，不能赊账）\n"
+            "/余额 - 查看当前资产/职业/称号\n"
+            "/背包 - 查看当前持有的武具与矿石\n"
+            "/武器库 - 查看可购买的装备（按职业与阶级过滤）\n"
+            "/购买 商品名 [商品名...] - 批量购买装备（需职业/阶级符合）\n"
             "/出售 商品名 [商品名...] - 批量出售装备（购买价 60%）\n"
-            "/地下城 进入/状态/退出 - 地下城冒险\n"
-            "/铁匠铺 - 查看锻造配方（400 层解锁，超越武具店顶级）\n"
-            "/锻造 装备名 - 消耗铜币+矿石制作装备（不能赊账）\n"
+            "/转职 战士|魔法师 - 选择职业（切换职业）\n"
+            "/晋升 - 按地下城进度+货币提升阶级\n"
+            "/地下城 进入/状态/退出 - 地下城冒险（10/50/100 层 Boss 掉落）\n"
+            "/铁匠铺 - 查看锻造配方（400 层解锁，超越武器库顶级）\n"
+            "/锻造 装备名 - 消耗铜币+矿石制作装备（需职业/阶级符合）\n"
             "/挑战 @对方 - 发起对战（随机胜负，每天 3 次）\n"
             "/踢 @对方 - 生成踢人图（30 秒冷却）\n"
             "/撅 @对方 - 生成撅人 GIF（30 秒冷却）\n"
@@ -665,9 +826,12 @@ COMMANDS = {
     "签到": cmd_checkin, "checkin": cmd_checkin, "qiandao": cmd_checkin,
     "余额": cmd_balance, "balance": cmd_balance, "yue": cmd_balance,
     "背包": cmd_bag, "bag": cmd_bag, "beibao": cmd_bag,
+    "武器库": cmd_shop, "武器": cmd_shop, "wqp": cmd_shop,
     "武具店": cmd_shop, "shop": cmd_shop, "wujudian": cmd_shop,
     "购买": cmd_buy, "buy": cmd_buy, "goumai": cmd_buy,
     "出售": cmd_sell, "sell": cmd_sell, "chushou": cmd_sell,
+    "转职": cmd_class, "class": cmd_class, "zhuanzhi": cmd_class,
+    "晋升": cmd_promote, "promote": cmd_promote, "jinsheng": cmd_promote,
     "地下城": cmd_dungeon, "dungeon": cmd_dungeon, "dixiacheng": cmd_dungeon,
     "铁匠铺": cmd_forge_shop, "forgeshop": cmd_forge_shop, "tiejiangpu": cmd_forge_shop,
     "锻造": cmd_forge, "forge": cmd_forge, "duanzao": cmd_forge,
@@ -683,11 +847,28 @@ DUNGEON_ALLOWED = {"签到", "checkin", "qiandao",
                    "地下城", "dungeon", "dixiacheng",
                    "余额", "balance", "yue",
                    "背包", "bag", "beibao",
+                   "武器库", "武器", "wqp", "shop", "wujudian",
+                   "转职", "class", "zhuanzhi",
+                   "晋升", "promote", "jinsheng",
                    "帮助", "help", "bangzhu",
                    "踢", "kick", "ti",
                    "撅", "jue",
                    "佬", "lao",
                    "挑战", "challenge", "tiaozhan"}
+
+
+def _prepend_boss_report(user, reply):
+    """若本次结算有 Boss 通关掉落，把播报拼到回复开头。"""
+    lines = take_boss_report(user.user_id)
+    if not lines:
+        return reply
+    head = "🎁 地下城 Boss 战利品：\n" + "\n".join(lines) + "\n"
+    if isinstance(reply, dict) and isinstance(reply.get("text"), str):
+        reply["text"] = head + reply["text"]
+        return reply
+    if isinstance(reply, str):
+        return head + reply
+    return reply
 
 
 def dispatch_command(text, user, group_id, at_qqs=None):
@@ -708,7 +889,7 @@ def dispatch_command(text, user, group_id, at_qqs=None):
     # 地下城状态结算与动作限制
     in_dungeon = user.dungeon_layer and user.dungeon_layer > 0
     if in_dungeon:
-        settle_dungeon(user)  # 先按流逝时间结算，再判断
+        settle_dungeon(user)  # 先按流逝时间结算（可能触发 Boss 掉落），再判断
         if handler is None or name not in DUNGEON_ALLOWED:
             return (f"⚠️ 你正在地下城第 {user.dungeon_layer} 层中。\n"
                     f"地下城内可使用 /签到、/余额、/背包、/帮助、/踢、/撅、/佬、/挑战 或 /地下城 退出。")
@@ -733,7 +914,9 @@ def dispatch_command(text, user, group_id, at_qqs=None):
         return "未知指令，发送 /帮助 查看可用命令。"
 
     try:
-        return handler(user, group_id, args, at_qqs)
+        reply = handler(user, group_id, args, at_qqs)
+        return _prepend_boss_report(user, reply)
     except Exception as exc:
         db.session.rollback()
         return f"指令执行出错：{exc}"
+

@@ -7,12 +7,20 @@
 - 难度曲线（防数值膨胀）：第 n 层总进度 = 1000 × n^0.75（幂函数，远慢于指数）。
 - 产币曲线：每秒铜币 = (1/60) × n^0.6（增速低于难度曲线，更稳健），按 5 秒为单位核算。
 - 同类型装备只取在【公式】中收益最大的一个，其余类型可叠加。
+- 职业（v3）：已转职只吃该职业 line + 通用(any)；未转职自动择优（物理/魔法取高）。
+- 阶级（v3）：只能装备 tier ≤ 当前阶级 的装备。
+- Boss 关（v4）：10 层精英 / 50 层小Boss / 100 层大Boss，Boss 层进度放大，通关随机掉落。
 """
+import threading
 import time
 
 from models import db, UserItem
 from equipment import load_equipment
+from classes import class_line, item_line, LINE_PHYSICAL, LINE_MAGIC, LINE_ANY
+from tiers import tier_of_price, tier_of_layer
 import ore
+import classes as _classes_mod
+import tiers as _tiers_mod
 
 LAYER1_TOTAL = 1000.0
 
@@ -28,6 +36,37 @@ BASE_STATS = {
 
 # 单次结算的最大循环保护（防止异常长时间导致的死循环）
 _MAX_SETTLE_LAYERS = 100000
+
+# Boss 关分布（v4）：10 层精英 / 50 层小Boss / 100 层大Boss
+BOSS_ELITE_EVERY = 10
+BOSS_MINOR_EVERY = 50
+BOSS_MAJOR_EVERY = 100
+# Boss 层总进度倍率（血量提升）
+BOSS_HP_MULT = {"elite": 1.5, "minor": 3.0, "major": 6.0}
+
+# 待播报的 Boss 掉落汇总（user_id -> 文本行列表），由 dispatch 消费
+_boss_report_lock = threading.Lock()
+_boss_report = {}
+
+
+def boss_type(layer):
+    """返回该层是否为 Boss 关：None / 'elite' / 'minor' / 'major'。"""
+    if layer % BOSS_MAJOR_EVERY == 0:
+        return "major"
+    if layer % BOSS_MINOR_EVERY == 0:
+        return "minor"
+    if layer % BOSS_ELITE_EVERY == 0:
+        return "elite"
+    return None
+
+
+def effective_layer_total(layer):
+    """该层实际总进度：Boss 层按类型放大血量；普通层 = layer_total。"""
+    total = layer_total(layer)
+    bt = boss_type(layer)
+    if bt:
+        total = int(total * BOSS_HP_MULT.get(bt, 1.0))
+    return total
 
 
 def layer_total(layer):
@@ -46,27 +85,49 @@ def coin_per_5sec(layer):
 
 
 def item_formula_score(item):
-    """单个装备套入进度公式的收益分（用于同类型取最优）。"""
+    """单个装备套入进度公式的收益分（用于同类型取最优）。
+
+    评分 = (攻击×2 + 敏捷×1.5 + 智力×1.25 + 魔力×1.2) × (1+防御/400) × (1+生命/600)。
+
+    对纯防御向装备（攻击/敏捷/智力/魔力均为 0，如 防具类），分子恒为 0，
+    会导致同类型多件装备评分全部相同而永远选中第一件（最常见误选）——
+    因此分子为 0 时改以防御/生命折算为保底分：defense×2 + hp×1.2，
+    使其在类型内仍能区分强弱（系数与公式乘子权重一致）。
+    """
     atk = item.get("attack", 0)
     agi = item.get("agility", 0)
     inte = item.get("intelligence", 0)
     mp = item.get("mp", 0)
     defense = item.get("defense", 0)
     hp = item.get("hp", 0)
-    return (atk * 2 + agi * 1.5 + inte * 1.25 + mp * 1.2) \
-        * (1 + defense / 400) * (1 + hp / 600)
+    offence = atk * 2 + agi * 1.5 + inte * 1.25 + mp * 1.2
+    if offence <= 0:
+        # 纯防御向：按防御/生命折算保底分，保证同类型内能选出最强
+        return (defense * 2 + hp * 1.2) * 1.0
+    return offence * (1 + defense / 400) * (1 + hp / 600)
 
 
-def effective_stats(user, owned):
-    """用户的有效属性 = 初始属性 + 各类型中公式收益最高的那件装备属性之和。
+def _item_tier(item):
+    """装备 tier：优先取字段；旧数据按价格兜底推断。"""
+    t = item.get("tier")
+    if t is not None:
+        return int(t)
+    return tier_of_price(item.get("price", 0))
 
-    「同类型装备只取在【公式】中收益最大的一个」：
-    对每件装备按其自身属性套用公式计算收益分，每个类型只取收益分最高的一件，
-    再把各类型选中的装备属性与初始属性相加。
+
+def _stats_for_line(owned, line, tier_max):
+    """按「职业 line + 阶级 tier」过滤后计算有效属性。
+
+    可用 = line 为该职业(或 any 通用) 且 tier ≤ 当前阶级 的装备；
+    再按 type 取公式收益最高一件叠加。
     """
     stats = dict(BASE_STATS)
     best = {}
     for it in owned:
+        if _item_tier(it) > tier_max:
+            continue
+        if item_line(it) not in (line, LINE_ANY):
+            continue
         score = item_formula_score(it)
         t = it.get("type", "other")
         if t not in best or score > best[t]["score"]:
@@ -76,6 +137,27 @@ def effective_stats(user, owned):
         for k in ("attack", "defense", "hp", "mp", "agility", "intelligence"):
             stats[k] += it.get(k, 0)
     return stats
+
+
+def effective_stats(user, owned):
+    """用户的有效属性 = 初始属性 + 各类型中公式收益最高的那件装备属性之和。
+
+    - 同类型只取收益最高 1 件，跨类型叠加；
+    - 已转职：只吃该职业 line + 通用(any) 的装备（不能混搭）；
+    - 未转职：自动择优（分别按物理组/魔法组算速度，取高）；
+    - 阶级：只计入 tier ≤ 当前阶级 的装备。
+    """
+    tier_max = 0
+    prof = ""
+    if user is not None:
+        tier_max = getattr(user, "tier", 0) or 0
+        prof = getattr(user, "profession", "") or ""
+    if prof and class_line(prof):
+        return _stats_for_line(owned, class_line(prof), tier_max)
+    # 未转职 → 自动择优（any 通用件两组都能用，按各自专属件收益定胜负）
+    s_phy = _stats_for_line(owned, LINE_PHYSICAL, tier_max)
+    s_mag = _stats_for_line(owned, LINE_MAGIC, tier_max)
+    return s_phy if dungeon_speed(s_phy) >= dungeon_speed(s_mag) else s_mag
 
 
 def dungeon_speed(stats):
@@ -88,13 +170,35 @@ def dungeon_speed(stats):
     ) * (1 + stats["defense"] / 400) * (1 + stats["hp"] / 600)
 
 
+def sync_initial_tier(user):
+    """存量玩家（D13）：若尚未定阶，按历史最高层自动定初始阶级（老玩家不倒退）。
+
+    幂等：仅在 tier == 0 且历史有层数时补一次；调用方负责 commit。
+    """
+    if user is None or (getattr(user, "tier", 0) or 0) > 0:
+        return
+    best = max(getattr(user, "dungeon_layer", 0) or 0,
+               getattr(user, "dungeon_cleared", 0) or 0,
+               getattr(user, "saved_dungeon_layer", 0) or 0)
+    t = tier_of_layer(best)
+    if t > 0:
+        user.tier = t
+
+
 def _all_item_meta():
-    """合并武具店(equipment.json)与铁匠铺(forge.json)的装备定义表（铁匠铺装备优先级更高）。"""
+    """合并 武器库(equipment.json) + 铁匠铺(forge.json) + Boss 稀有池(rare_drops.json)
+    的装备定义表（forge 优先级高于商店；rare 仅用于已掉落件的属性展示/结算）。
+    """
     by_id = {it["id"]: it for it in load_equipment()}
     try:
         from forge import load_forges
         for r in load_forges():
             by_id[r["id"]] = r
+    except Exception:
+        pass
+    try:
+        for r in _load_rare_pool():
+            by_id.setdefault(r["id"], r)  # 稀有 id 不与商店冲突则加入
     except Exception:
         pass
     return by_id
@@ -109,6 +213,156 @@ def owned_items(user):
     return [by_id[r.item_id] for r in rows if r.item_id in by_id]
 
 
+def owned_item_rows(user):
+    """查询用户持有装备的 (meta, is_new) 列表（供背包展示 new! 与来源提示）。"""
+    rows = db.session.execute(
+        db.select(UserItem).where(UserItem.user_id == user.user_id)
+    ).scalars().all()
+    by_id = _all_item_meta()
+    out = []
+    for r in rows:
+        if r.item_id in by_id:
+            out.append((by_id[r.item_id], r.is_new or 0))
+    return out
+
+
+# ---------- Boss 掉落（v4） ----------
+
+_BOSS_NAME = {"elite": "精英 Boss", "minor": "小 Boss", "major": "大 Boss"}
+
+
+def _queue_boss_report(user_id, lines):
+    """把本次 Boss 通关掉落行入队，待 dispatch 播报。"""
+    if not lines:
+        return
+    with _boss_report_lock:
+        _boss_report.setdefault(user_id, []).extend(lines)
+
+
+def take_boss_report(user_id):
+    """取出并清空某用户的待播报 Boss 掉落行。"""
+    with _boss_report_lock:
+        return _boss_report.pop(user_id, [])
+
+
+# 稀有池缓存（mtime 判断，热重载与 equipment/forge 一致）
+_rare_cache = {"mtime": None, "items": []}
+
+
+def _load_rare_pool():
+    """读取稀有装备独立池（rare_drops.json）；文件缺失/损坏返回 []。
+
+    带 mtime 缓存：修改 JSON 后自动生效（与 equipment/forge 加载器一致）。
+    """
+    try:
+        import json as _json
+        import os as _os
+        path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "rare_drops.json")
+        mtime = _os.path.getmtime(path)
+        if _rare_cache["mtime"] == mtime:
+            return _rare_cache["items"]
+        with open(path, "r", encoding="utf-8") as f:
+            data = _json.load(f)
+        items = data.get("items", []) if isinstance(data, dict) else data
+        _rare_cache["mtime"] = mtime
+        _rare_cache["items"] = items
+        return items
+    except Exception:
+        return []
+
+
+def rare_item_ids():
+    """返回稀有池全部装备 id 集合（供背包/播报标注 ✦ 稀有）。"""
+    return {r.get("id") for r in _load_rare_pool() if r.get("id")}
+
+
+def _roll_boss_ore(layer, btype):
+    """Boss 通关掉落矿石：按 Boss 类型给稀有度权重，返回 ore_id。
+
+    相对普通层（ore.roll_ore，档位概率固定）Boss 层掉率概率更高：
+    高稀有档占比随 Boss 类型提升（精英→小Boss→大Boss 递增），且 Boss 必掉。
+    矿石从对应档位全池随机（含扩充后的新矿）；神话档仅大 Boss 掉落。
+    """
+    import random
+    from ore import load_ores
+    ores = load_ores()
+    if not ores:
+        return None
+    by_rar = {}
+    for o in ores:
+        by_rar.setdefault(o.get("rarity", "common"), []).append(o["id"])
+    # 权重和为 1（必掉）；高稀有档占比：精英 < 小Boss < 大Boss
+    if btype == "major":
+        weights = [("myth", 0.18), ("legendary", 0.55), ("rare", 0.22), ("common", 0.05)]
+    elif btype == "minor":
+        weights = [("legendary", 0.20), ("rare", 0.50), ("common", 0.30)]
+    else:
+        weights = [("rare", 0.45), ("common", 0.55)]
+    r = random.random()
+    acc = 0.0
+    for rarity, w in weights:
+        acc += w
+        if r <= acc and by_rar.get(rarity):
+            return random.choice(by_rar[rarity])
+    return None
+
+
+def _grant_boss_rare(user, layer, btype):
+    """按稀有掉落池抽一件「玩家可用」的稀有装备并写入背包（标 new）。
+
+    可用 = 职业 line 匹配（未转职→仅 any）+ tier ≤ 玩家当前阶级。
+    返回稀有装备 meta dict 或 None。
+    """
+    import random
+    pool = _load_rare_pool()
+    if not pool:
+        return None
+    prof = getattr(user, "profession", "") or ""
+    cl = class_line(prof) if prof else None
+    tier_max = getattr(user, "tier", 0) or 0
+    usable = []
+    for it in pool:
+        line = item_line(it)
+        if cl:
+            # 已转职：接受 本职业 line 或 通用(any)
+            if line not in (cl, LINE_ANY):
+                continue
+        else:
+            # 未转职：仅通用(any) 可用（职业专属先引导转职）
+            if line != LINE_ANY:
+                continue
+        if _item_tier(it) > tier_max:
+            continue
+        usable.append(it)
+    if not usable:
+        return None
+    picked = random.choice(usable)
+    db.session.add(UserItem(user_id=user.user_id, item_id=picked["id"], is_new=1))
+    return picked
+
+
+def _roll_boss_drop(user, layer, btype):
+    """通关某 Boss 层：掷掉落（矿石 / 稀有装备），写库并返回播报行。"""
+    import random
+    from ore import ore_meta
+    lines = []
+    ore_id = _roll_boss_ore(layer, btype)
+    if ore_id:
+        ore.grant_ores(user.user_id, {ore_id: 1})
+        meta = ore_meta(ore_id)
+        nm = meta["name"] if meta else ore_id
+        lines.append(f"💎 矿石 ×1（{nm}）")
+    # 装备概率：精英 25% / 小Boss 55% / 大Boss 100%
+    p = {"elite": 0.25, "minor": 0.55, "major": 1.0}.get(btype, 0.25)
+    if random.random() < p:
+        from classes import TYPE_NAMES as _tn
+        it = _grant_boss_rare(user, layer, btype)
+        if it:
+            tn = _tn.get(it.get("type", "other"), it.get("type", ""))
+            lines.append(f"✦ {it['name']}({tn}·稀有) new！")
+    return lines
+
+
 def settle_dungeon(user):
     """结算地下城：按真实流逝时间推进层数进度并累积铜币（每个用户独立核算）。
 
@@ -116,6 +370,7 @@ def settle_dungeon(user):
     """
     if user.dungeon_layer <= 0 or not user.dungeon_last_update:
         return
+    sync_initial_tier(user)
     now = time.time()
     dt = now - user.dungeon_last_update
     if dt <= 0:
@@ -130,9 +385,10 @@ def settle_dungeon(user):
     coins = user.dungeon_coin_acc
     cleared = 0
     guard = 0
+    report = []
     while remaining > 1e-9 and guard < _MAX_SETTLE_LAYERS:
         guard += 1
-        total = layer_total(user.dungeon_layer)
+        total = effective_layer_total(user.dungeon_layer)
         prog = max(user.dungeon_progress, 0.0)
         time_to_clear = prog / speed
         layer_time = min(remaining, time_to_clear)
@@ -140,9 +396,15 @@ def settle_dungeon(user):
         user.dungeon_progress = prog - speed * layer_time
         remaining -= layer_time
         if user.dungeon_progress <= 1e-9 and remaining > 1e-9:
+            bt = boss_type(user.dungeon_layer)  # 刚通关的这层
             user.dungeon_layer += 1
-            user.dungeon_progress = layer_total(user.dungeon_layer)
+            user.dungeon_progress = effective_layer_total(user.dungeon_layer)
             cleared += 1
+            if bt:
+                # 通关 Boss 层：掉落（通关瞬间结算）
+                drops = _roll_boss_drop(user, user.dungeon_layer - 1, bt)
+                if drops:
+                    report.append(f"🎉 通关 第{user.dungeon_layer - 1}层 {_BOSS_NAME.get(bt, bt)}！" + "；".join(drops))
 
     coin_int = int(coins)
     if coin_int > 0:
@@ -169,4 +431,6 @@ def settle_dungeon(user):
             if gained:
                 ore.grant_ores(user.user_id, gained)
 
+    if report:
+        _queue_boss_report(user.user_id, report)
     db.session.commit()

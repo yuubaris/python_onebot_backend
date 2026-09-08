@@ -1,64 +1,599 @@
 {
   "recipes": [
     {
-      "id": "forge_iron_sword", "name": "锻造·精铁重剑", "type": "weapon", "level": 1,
-      "attack": 88, "defense": 14, "hp": 35, "mp": 0, "agility": 13, "intelligence": 5,
+      "id": "forge_iron_sword",
+      "name": "锻造·断岳重剑",
+      "type": "weapon",
+      "level": 1,
+      "attack": 88,
+      "defense": 14,
+      "hp": 35,
+      "mp": 0,
+      "agility": 13,
+      "intelligence": 5,
       "price": 64000,
-      "cost": { "copper_ore": 70, "iron_ore": 70 }
+      "cost": {
+        "iron_ore": 80,
+        "tin_ore": 40
+      },
+      "line": "physical",
+      "tier": 4
     },
     {
-      "id": "forge_iron_armor", "name": "锻造·铁壁重铠", "type": "armor", "level": 1,
-      "attack": 0, "defense": 98, "hp": 110, "mp": 0, "agility": 0, "intelligence": 0,
+      "id": "forge_iron_armor",
+      "name": "锻造·磐岳战铠",
+      "type": "armor",
+      "level": 1,
+      "attack": 0,
+      "defense": 98,
+      "hp": 110,
+      "mp": 0,
+      "agility": 0,
+      "intelligence": 0,
       "price": 64000,
-      "cost": { "copper_ore": 70, "iron_ore": 70 }
+      "cost": {
+        "iron_ore": 83,
+        "lead_ore": 27
+      },
+      "line": "any",
+      "tier": 4
     },
     {
-      "id": "forge_iron_staff", "name": "锻造·奥术法杖", "type": "robe", "level": 1,
-      "attack": 0, "defense": 36, "hp": 85, "mp": 320, "agility": 0, "intelligence": 68,
+      "id": "forge_iron_staff",
+      "name": "锻造·奥术秘杖",
+      "type": "staff",
+      "level": 1,
+      "attack": 0,
+      "defense": 36,
+      "hp": 85,
+      "mp": 121,
+      "agility": 0,
+      "intelligence": 26,
       "price": 64000,
-      "cost": { "copper_ore": 70, "iron_ore": 70 }
+      "cost": {
+        "copper_ore": 63,
+        "tin_ore": 57
+      },
+      "line": "magic",
+      "tier": 4
     },
     {
-      "id": "forge_silver_sword", "name": "锻造·银辉圣剑", "type": "weapon", "level": 2,
-      "attack": 108, "defense": 18, "hp": 48, "mp": 0, "agility": 16, "intelligence": 8,
+      "id": "forge_silver_sword",
+      "name": "锻造·裂空圣剑",
+      "type": "weapon",
+      "level": 2,
+      "attack": 108,
+      "defense": 18,
+      "hp": 48,
+      "mp": 0,
+      "agility": 16,
+      "intelligence": 8,
       "price": 125000,
-      "cost": { "copper_ore": 160, "iron_ore": 160, "silver_ore": 38, "mithril_ore": 38 }
+      "cost": {
+        "iron_ore": 114,
+        "mithril_ore": 39,
+        "adamantite_ore": 22
+      },
+      "line": "physical",
+      "tier": 4
     },
     {
-      "id": "forge_silver_armor", "name": "锻造·秘银重甲", "type": "armor", "level": 2,
-      "attack": 0, "defense": 120, "hp": 135, "mp": 0, "agility": 0, "intelligence": 0,
+      "id": "forge_silver_armor",
+      "name": "锻造·镇岳重甲",
+      "type": "armor",
+      "level": 2,
+      "attack": 0,
+      "defense": 120,
+      "hp": 135,
+      "mp": 0,
+      "agility": 0,
+      "intelligence": 0,
       "price": 125000,
-      "cost": { "copper_ore": 160, "iron_ore": 160, "silver_ore": 38, "mithril_ore": 38 }
+      "cost": {
+        "iron_ore": 111,
+        "lead_ore": 26,
+        "tin_ore": 18
+      },
+      "line": "any",
+      "tier": 4
     },
     {
-      "id": "forge_silver_staff", "name": "锻造·贤者权杖", "type": "robe", "level": 2,
-      "attack": 0, "defense": 45, "hp": 100, "mp": 400, "agility": 0, "intelligence": 82,
+      "id": "forge_silver_staff",
+      "name": "锻造·贤者权杖",
+      "type": "staff",
+      "level": 2,
+      "attack": 0,
+      "defense": 45,
+      "hp": 100,
+      "mp": 149,
+      "agility": 0,
+      "intelligence": 31,
       "price": 125000,
-      "cost": { "copper_ore": 160, "iron_ore": 160, "silver_ore": 38, "mithril_ore": 38 }
+      "cost": {
+        "silver_ore": 84,
+        "stardust_sand": 52,
+        "copper_ore": 39
+      },
+      "line": "magic",
+      "tier": 4
     },
     {
-      "id": "forge_gold_sword", "name": "锻造·金龙神剑", "type": "weapon", "level": 3,
-      "attack": 130, "defense": 22, "hp": 60, "mp": 0, "agility": 20, "intelligence": 10,
+      "id": "forge_gold_sword",
+      "name": "锻造·天罚神剑",
+      "type": "weapon",
+      "level": 3,
+      "attack": 130,
+      "defense": 22,
+      "hp": 60,
+      "mp": 0,
+      "agility": 20,
+      "intelligence": 10,
       "price": 400000,
-      "cost": { "copper_ore": 280, "iron_ore": 280, "silver_ore": 70, "mithril_ore": 70, "gold_ore": 30, "dragon_crystal": 18 }
+      "cost": {
+        "iron_ore": 126,
+        "adamantite_ore": 23,
+        "gold_ore": 36,
+        "mithril_ore": 45
+      },
+      "line": "physical",
+      "tier": 4
     },
     {
-      "id": "forge_gold_armor", "name": "锻造·龙晶圣铠", "type": "armor", "level": 3,
-      "attack": 0, "defense": 145, "hp": 160, "mp": 0, "agility": 0, "intelligence": 0,
+      "id": "forge_gold_armor",
+      "name": "锻造·神鳞圣铠",
+      "type": "armor",
+      "level": 3,
+      "attack": 0,
+      "defense": 145,
+      "hp": 160,
+      "mp": 0,
+      "agility": 0,
+      "intelligence": 0,
       "price": 450000,
-      "cost": { "copper_ore": 280, "iron_ore": 280, "silver_ore": 70, "mithril_ore": 70, "gold_ore": 30, "dragon_crystal": 18 }
+      "cost": {
+        "iron_ore": 124,
+        "lead_ore": 19,
+        "mithril_ore": 42,
+        "tin_ore": 15
+      },
+      "line": "any",
+      "tier": 4
     },
     {
-      "id": "forge_gold_staff", "name": "锻造·创世法袍", "type": "robe", "level": 3,
-      "attack": 0, "defense": 55, "hp": 120, "mp": 500, "agility": 0, "intelligence": 100,
-      "price": 500000,
-      "cost": { "copper_ore": 280, "iron_ore": 280, "silver_ore": 70, "mithril_ore": 70, "gold_ore": 30, "dragon_crystal": 18 }
-    },
-    {
-      "id": "forge_dragon_blade", "name": "锻造·龙神之刃", "type": "weapon", "level": 4,
-      "attack": 160, "defense": 28, "hp": 75, "mp": 0, "agility": 24, "intelligence": 14,
+      "id": "forge_gold_staff",
+      "name": "锻造·创世圣袍",
+      "type": "robe",
+      "level": 4,
+      "attack": 0,
+      "defense": 55,
+      "hp": 120,
+      "mp": 196,
+      "agility": 0,
+      "intelligence": 36,
       "price": 1200000,
-      "cost": { "copper_ore": 360, "iron_ore": 350, "silver_ore": 100, "mithril_ore": 90, "gold_ore": 45, "dragon_crystal": 30 }
+      "cost": {
+        "chaos_core": 61,
+        "dragon_soul_crystal": 61,
+        "stardust_sand": 61,
+        "tin_ore": 62
+      },
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "forge_dragon_blade",
+      "name": "锻造·龙神之刃",
+      "type": "weapon",
+      "level": 4,
+      "attack": 160,
+      "defense": 28,
+      "hp": 75,
+      "mp": 0,
+      "agility": 24,
+      "intelligence": 14,
+      "price": 1200000,
+      "cost": {
+        "star_iron": 24,
+        "gold_ore": 79,
+        "dragon_crystal": 59,
+        "mithril_ore": 118
+      },
+      "line": "physical",
+      "tier": 4
+    },
+    {
+      "id": "forge_destroy_staff",
+      "name": "灭世法杖",
+      "type": "staff",
+      "level": 3,
+      "attack": 0,
+      "defense": 20,
+      "hp": 52,
+      "mp": 198,
+      "agility": 0,
+      "intelligence": 56,
+      "price": 400000,
+      "cost": {
+        "silver_ore": 108,
+        "stardust_sand": 69,
+        "holy_glowstone": 34,
+        "dragon_soul_crystal": 19
+      },
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "forge_creation_staff",
+      "name": "创世法杖",
+      "type": "staff",
+      "level": 4,
+      "attack": 0,
+      "defense": 26,
+      "hp": 62,
+      "mp": 262,
+      "agility": 0,
+      "intelligence": 55,
+      "price": 1200000,
+      "cost": {
+        "silver_ore": 70,
+        "oracle_stone": 70,
+        "holy_glowstone": 70,
+        "copper_ore": 70
+      },
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "forge_robe_1",
+      "name": "灵纹轻袍",
+      "type": "robe",
+      "level": 1,
+      "attack": 0,
+      "defense": 30,
+      "hp": 72,
+      "mp": 105,
+      "agility": 0,
+      "intelligence": 24,
+      "price": 64000,
+      "cost": {
+        "tin_ore": 53,
+        "lead_ore": 31,
+        "copper_ore": 26
+      },
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "forge_shield_1",
+      "name": "壁垒圆盾",
+      "type": "shield",
+      "level": 1,
+      "attack": 38,
+      "defense": 60,
+      "hp": 62,
+      "mp": 0,
+      "agility": 19,
+      "intelligence": 0,
+      "price": 64000,
+      "cost": {
+        "copper_ore": 62,
+        "lead_ore": 38
+      },
+      "line": "physical",
+      "tier": 4
+    },
+    {
+      "id": "forge_focus_1",
+      "name": "秘仪法器",
+      "type": "focus",
+      "level": 1,
+      "attack": 0,
+      "defense": 52,
+      "hp": 52,
+      "mp": 65,
+      "agility": 0,
+      "intelligence": 24,
+      "price": 64000,
+      "cost": {
+        "iron_ore": 44,
+        "copper_ore": 56
+      },
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "forge_accessory_1",
+      "name": "旅者徽记",
+      "type": "accessory",
+      "level": 1,
+      "attack": 17,
+      "defense": 18,
+      "hp": 38,
+      "mp": 24,
+      "agility": 16,
+      "intelligence": 39,
+      "price": 64000,
+      "cost": {
+        "copper_ore": 25,
+        "iron_ore": 25,
+        "lead_ore": 25,
+        "tin_ore": 25
+      },
+      "line": "any",
+      "tier": 4
+    },
+    {
+      "id": "forge_robe_2",
+      "name": "星辉法袍",
+      "type": "robe",
+      "level": 2,
+      "attack": 0,
+      "defense": 42,
+      "hp": 100,
+      "mp": 131,
+      "agility": 0,
+      "intelligence": 23,
+      "price": 125000,
+      "cost": {
+        "tin_ore": 43,
+        "lead_ore": 43,
+        "stardust_sand": 69
+      },
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "forge_shield_2",
+      "name": "辉光方盾",
+      "type": "shield",
+      "level": 2,
+      "attack": 48,
+      "defense": 84,
+      "hp": 90,
+      "mp": 0,
+      "agility": 17,
+      "intelligence": 0,
+      "price": 125000,
+      "cost": {
+        "copper_ore": 72,
+        "lead_ore": 36,
+        "mithril_ore": 32
+      },
+      "line": "physical",
+      "tier": 4
+    },
+    {
+      "id": "forge_focus_2",
+      "name": "曜晶法器",
+      "type": "focus",
+      "level": 2,
+      "attack": 0,
+      "defense": 76,
+      "hp": 76,
+      "mp": 76,
+      "agility": 0,
+      "intelligence": 28,
+      "price": 125000,
+      "cost": {
+        "iron_ore": 42,
+        "copper_ore": 35,
+        "silver_ore": 63
+      },
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "forge_accessory_2",
+      "name": "贤者指环",
+      "type": "accessory",
+      "level": 2,
+      "attack": 22,
+      "defense": 26,
+      "hp": 54,
+      "mp": 30,
+      "agility": 18,
+      "intelligence": 47,
+      "price": 125000,
+      "cost": {
+        "copper_ore": 21,
+        "iron_ore": 21,
+        "lead_ore": 21,
+        "tin_ore": 21,
+        "adamantite_ore": 10,
+        "mithril_ore": 10,
+        "silver_ore": 10,
+        "stardust_sand": 11
+      },
+      "line": "any",
+      "tier": 4
+    },
+    {
+      "id": "forge_robe_3",
+      "name": "圣辉法袍",
+      "type": "robe",
+      "level": 3,
+      "attack": 0,
+      "defense": 48,
+      "hp": 110,
+      "mp": 148,
+      "agility": 0,
+      "intelligence": 38,
+      "price": 400000,
+      "cost": {
+        "copper_ore": 44,
+        "tin_ore": 30,
+        "silver_ore": 67,
+        "stardust_sand": 59
+      },
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "forge_shield_3",
+      "name": "神鳞重盾",
+      "type": "shield",
+      "level": 3,
+      "attack": 52,
+      "defense": 112,
+      "hp": 128,
+      "mp": 0,
+      "agility": 21,
+      "intelligence": 0,
+      "price": 400000,
+      "cost": {
+        "copper_ore": 88,
+        "lead_ore": 39,
+        "dragon_crystal": 29,
+        "iron_ore": 19
+      },
+      "line": "physical",
+      "tier": 4
+    },
+    {
+      "id": "forge_focus_3",
+      "name": "神火宝珠",
+      "type": "focus",
+      "level": 3,
+      "attack": 0,
+      "defense": 104,
+      "hp": 104,
+      "mp": 97,
+      "agility": 0,
+      "intelligence": 21,
+      "price": 400000,
+      "cost": {
+        "lead_ore": 40,
+        "iron_ore": 31,
+        "stardust_sand": 70,
+        "holy_glowstone": 34
+      },
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "forge_accessory_3",
+      "name": "神纹圣印",
+      "type": "accessory",
+      "level": 3,
+      "attack": 27,
+      "defense": 36,
+      "hp": 74,
+      "mp": 39,
+      "agility": 20,
+      "intelligence": 52,
+      "price": 400000,
+      "cost": {
+        "copper_ore": 21,
+        "iron_ore": 21,
+        "lead_ore": 21,
+        "tin_ore": 21,
+        "adamantite_ore": 11,
+        "mithril_ore": 11,
+        "silver_ore": 11,
+        "stardust_sand": 11,
+        "dragon_crystal": 5,
+        "dragon_soul_crystal": 5,
+        "gold_ore": 5,
+        "holy_glowstone": 7
+      },
+      "line": "any",
+      "tier": 4
+    },
+    {
+      "id": "forge_armor_4",
+      "name": "神铸神铠",
+      "type": "armor",
+      "level": 4,
+      "attack": 0,
+      "defense": 168,
+      "hp": 186,
+      "mp": 0,
+      "agility": 0,
+      "intelligence": 0,
+      "price": 1200000,
+      "cost": {
+        "iron_ore": 172,
+        "lead_ore": 35,
+        "adamantite_ore": 29,
+        "chaos_core": 9
+      },
+      "line": "any",
+      "tier": 4
+    },
+    {
+      "id": "forge_shield_4",
+      "name": "神铸圣盾",
+      "type": "shield",
+      "level": 4,
+      "attack": 60,
+      "defense": 150,
+      "hp": 170,
+      "mp": 0,
+      "agility": 22,
+      "intelligence": 0,
+      "price": 1200000,
+      "cost": {
+        "copper_ore": 99,
+        "tin_ore": 28,
+        "mithril_ore": 55,
+        "gold_ore": 33
+      },
+      "line": "physical",
+      "tier": 4
+    },
+    {
+      "id": "forge_focus_4",
+      "name": "灭世宝珠",
+      "type": "focus",
+      "level": 4,
+      "attack": 0,
+      "defense": 140,
+      "hp": 140,
+      "mp": 107,
+      "agility": 0,
+      "intelligence": 27,
+      "price": 1200000,
+      "cost": {
+        "oracle_stone": 43,
+        "stardust_sand": 43,
+        "silver_ore": 43,
+        "lead_ore": 43,
+        "iron_ore": 43
+      },
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "forge_accessory_4",
+      "name": "永恒王冠",
+      "type": "accessory",
+      "level": 4,
+      "attack": 34,
+      "defense": 50,
+      "hp": 104,
+      "mp": 41,
+      "agility": 21,
+      "intelligence": 67,
+      "price": 1200000,
+      "cost": {
+        "copper_ore": 23,
+        "iron_ore": 24,
+        "lead_ore": 24,
+        "tin_ore": 24,
+        "adamantite_ore": 12,
+        "mithril_ore": 12,
+        "silver_ore": 12,
+        "stardust_sand": 12,
+        "dragon_crystal": 6,
+        "dragon_soul_crystal": 6,
+        "gold_ore": 6,
+        "holy_glowstone": 6,
+        "chaos_core": 3,
+        "oracle_stone": 3,
+        "star_iron": 2
+      },
+      "line": "any",
+      "tier": 4
     }
   ]
 }

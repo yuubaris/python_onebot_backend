@@ -90,10 +90,10 @@ def format_cost(cost):
 
 
 def _ore_sort(ore_id):
-    """矿石展示排序：普通 → 稀有 → 传说。"""
+    """矿石展示排序：神话 → 传说 → 稀有 → 普通（与 /背包 前缀一致，神话最高）。"""
     from ore import ore_meta
     meta = ore_meta(ore_id)
-    rank = {"common": 0, "rare": 1, "legendary": 2}
+    rank = {"myth": -1, "legendary": 0, "rare": 1, "common": 2}
     return (rank.get((meta or {}).get("rarity", "common"), 9), ore_id)
 
 

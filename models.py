@@ -53,6 +53,9 @@ class User(db.Model):
     # 地下城稀有矿石（400 层以上）：进入时资格快照 + 上次矿石结算时间戳
     dungeon_ore_eligible = db.Column(db.Integer, default=0, nullable=False)  # 本轮是否有矿石资格
     dungeon_ore_last = db.Column(db.Float, nullable=True)                    # 上次矿石结算时间戳
+    # 职业与阶级（装备系统 v3）：profession=职业标识(空=未转职)；tier=当前阶级(0~6，默认0)
+    profession = db.Column(db.String(32), default="", nullable=False)
+    tier = db.Column(db.Integer, default=0, nullable=False)
     # 对战（/挑战）：每日发起次数限制（3 次/天，按日期重置）
     challenge_date = db.Column(db.String(10), default="", nullable=False)   # YYYY-MM-DD
     challenge_count = db.Column(db.Integer, default=0, nullable=False)      # 当日已发起次数
@@ -69,6 +72,7 @@ class UserItem(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.BigInteger, index=True, nullable=False)
     item_id = db.Column(db.String(64), nullable=False)   # 对应 equipment.json 中的 id
+    is_new = db.Column(db.Integer, default=0, nullable=False)  # Boss 掉落新装备标记(new!)
     acquired_at = db.Column(db.DateTime, default=datetime.now)
 
 

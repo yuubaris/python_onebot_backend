@@ -17,7 +17,7 @@ from commands import ensure_user, dispatch_command
 from bot import OneBotClient, log, get_logs
 from ratelimit import RateLimiter
 from equipment import load_equipment
-from dungeon import layer_total, coin_per_5sec, effective_stats, dungeon_speed, owned_items
+from dungeon import layer_total, effective_layer_total, coin_per_5sec, effective_stats, dungeon_speed, owned_items
 from livemon import LiveMonitorThread, run_once, STATUS_TEXT, log as livemon_log, get_logs as livemon_logs
 from dynamon import (
     DynamicMonitorThread, run_once as dyn_run_once,
@@ -431,9 +431,10 @@ def api_users():
 @app.route("/api/equipment")
 def api_equipment():
     """装备列表（来自 equipment.json，便于直接维护）。"""
-    items = sorted(load_equipment(), key=lambda x: x["price"])
+    items = sorted(load_equipment(), key=lambda x: x.get("price", 0))
     return jsonify([{
         "id": it["id"], "name": it["name"], "type": it.get("type", "other"),
+        "line": it.get("line", "any"), "tier": it.get("tier", 0),
         "attack": it.get("attack", 0), "defense": it.get("defense", 0),
         "hp": it.get("hp", 0), "mp": it.get("mp", 0),
         "agility": it.get("agility", 0), "intelligence": it.get("intelligence", 0),
@@ -457,12 +458,14 @@ def api_dungeon():
         layer = u.dungeon_layer if in_dungeon else u.saved_dungeon_layer
         progress = (max(u.dungeon_progress, 0.0) if in_dungeon
                     else max(u.saved_dungeon_progress or 0.0, 0.0))
-        total = layer_total(layer) if layer and layer > 0 else 0
+        total = effective_layer_total(layer) if layer and layer > 0 else 0
         pct = (total - progress) / total * 100 if total else 0
         result.append({
             "user_id": u.user_id,
             "nickname": u.nickname,
             "in_dungeon": in_dungeon,
+            "profession": u.profession or "",
+            "tier": u.tier or 0,
             "layer": layer,
             "progress_pct": round(pct, 1),
             "saved_layer": u.saved_dungeon_layer,
@@ -701,6 +704,17 @@ def _migrate_schema():
             conn.execute("ALTER TABLE user ADD COLUMN unknown_count INTEGER DEFAULT 0")
         if "dungeon_ore_eligible" not in cols:
             conn.execute("ALTER TABLE user ADD COLUMN dungeon_ore_eligible INTEGER DEFAULT 0")
+        # 装备系统 v3：职业 + 阶级（存量库补列，默认空/0）
+        if "profession" not in cols:
+            conn.execute("ALTER TABLE user ADD COLUMN profession VARCHAR(32) DEFAULT ''")
+        if "tier" not in cols:
+            conn.execute("ALTER TABLE user ADD COLUMN tier INTEGER DEFAULT 0")
+        conn.commit()
+        # user_item 表：Boss 掉落 new 标记
+        it_cols = {r[1] for r in conn.execute("PRAGMA table_info(user_item)")}
+        if "is_new" not in it_cols:
+            conn.execute("ALTER TABLE user_item ADD COLUMN is_new INTEGER DEFAULT 0")
+        conn.commit()
         if "dungeon_ore_last" not in cols:
             conn.execute("ALTER TABLE user ADD COLUMN dungeon_ore_last REAL")
         conn.commit()

@@ -10,7 +10,9 @@
       "mp": 0,
       "agility": 1,
       "intelligence": 0,
-      "price": 50
+      "price": 50,
+      "line": "physical",
+      "tier": 0
     },
     {
       "id": "round_shield",
@@ -22,7 +24,9 @@
       "mp": 0,
       "agility": 1,
       "intelligence": 0,
-      "price": 50
+      "price": 50,
+      "line": "physical",
+      "tier": 0
     },
     {
       "id": "iron_sword",
@@ -34,7 +38,9 @@
       "mp": 0,
       "agility": 1,
       "intelligence": 0,
-      "price": 75
+      "price": 75,
+      "line": "physical",
+      "tier": 0
     },
     {
       "id": "leather_armor",
@@ -46,19 +52,23 @@
       "mp": 0,
       "agility": 0,
       "intelligence": 0,
-      "price": 75
+      "price": 75,
+      "line": "any",
+      "tier": 0
     },
     {
       "id": "wood_staff",
       "name": "木杖",
-      "type": "robe",
+      "type": "staff",
       "attack": 0,
       "defense": 0,
       "hp": 0,
-      "mp": 15,
+      "mp": 12,
       "agility": 0,
-      "intelligence": 8,
-      "price": 75
+      "intelligence": 6,
+      "price": 75,
+      "line": "magic",
+      "tier": 0
     },
     {
       "id": "long_sword",
@@ -70,7 +80,9 @@
       "mp": 0,
       "agility": 2,
       "intelligence": 0,
-      "price": 120
+      "price": 120,
+      "line": "physical",
+      "tier": 0
     },
     {
       "id": "iron_shield",
@@ -82,7 +94,9 @@
       "mp": 0,
       "agility": 2,
       "intelligence": 0,
-      "price": 120
+      "price": 120,
+      "line": "physical",
+      "tier": 0
     },
     {
       "id": "cloth_robe",
@@ -94,7 +108,9 @@
       "mp": 25,
       "agility": 0,
       "intelligence": 10,
-      "price": 120
+      "price": 120,
+      "line": "magic",
+      "tier": 0
     },
     {
       "id": "steel_sword",
@@ -106,7 +122,9 @@
       "mp": 0,
       "agility": 2,
       "intelligence": 0,
-      "price": 200
+      "price": 200,
+      "line": "physical",
+      "tier": 1
     },
     {
       "id": "chain_mail",
@@ -118,19 +136,23 @@
       "mp": 0,
       "agility": 0,
       "intelligence": 0,
-      "price": 200
+      "price": 200,
+      "line": "any",
+      "tier": 1
     },
     {
       "id": "apprentice_staff",
       "name": "学徒法杖",
-      "type": "robe",
+      "type": "staff",
       "attack": 0,
       "defense": 0,
       "hp": 0,
-      "mp": 40,
+      "mp": 21,
       "agility": 0,
-      "intelligence": 16,
-      "price": 200
+      "intelligence": 8,
+      "price": 200,
+      "line": "magic",
+      "tier": 1
     },
     {
       "id": "knight_sword",
@@ -142,7 +164,9 @@
       "mp": 0,
       "agility": 3,
       "intelligence": 0,
-      "price": 350
+      "price": 350,
+      "line": "physical",
+      "tier": 1
     },
     {
       "id": "knight_shield",
@@ -154,7 +178,9 @@
       "mp": 0,
       "agility": 3,
       "intelligence": 1,
-      "price": 350
+      "price": 350,
+      "line": "physical",
+      "tier": 1
     },
     {
       "id": "magic_cloak",
@@ -166,7 +192,9 @@
       "mp": 30,
       "agility": 8,
       "intelligence": 8,
-      "price": 350
+      "price": 350,
+      "line": "any",
+      "tier": 1
     },
     {
       "id": "mithril_sword",
@@ -178,7 +206,9 @@
       "mp": 0,
       "agility": 4,
       "intelligence": 0,
-      "price": 600
+      "price": 600,
+      "line": "physical",
+      "tier": 1
     },
     {
       "id": "plate_armor",
@@ -190,19 +220,23 @@
       "mp": 0,
       "agility": 0,
       "intelligence": 0,
-      "price": 600
+      "price": 600,
+      "line": "any",
+      "tier": 1
     },
     {
       "id": "sage_staff",
       "name": "贤者法杖",
-      "type": "robe",
+      "type": "staff",
       "attack": 0,
       "defense": 8,
       "hp": 15,
-      "mp": 70,
+      "mp": 32,
       "agility": 0,
-      "intelligence": 24,
-      "price": 600
+      "intelligence": 11,
+      "price": 600,
+      "line": "magic",
+      "tier": 1
     },
     {
       "id": "dragon_slayer",
@@ -214,7 +248,9 @@
       "mp": 0,
       "agility": 5,
       "intelligence": 0,
-      "price": 1000
+      "price": 1000,
+      "line": "physical",
+      "tier": 2
     },
     {
       "id": "dragon_scale_shield",
@@ -226,7 +262,9 @@
       "mp": 0,
       "agility": 5,
       "intelligence": 2,
-      "price": 1000
+      "price": 1000,
+      "line": "physical",
+      "tier": 2
     },
     {
       "id": "archmage_robe",
@@ -238,7 +276,9 @@
       "mp": 100,
       "agility": 0,
       "intelligence": 30,
-      "price": 1000
+      "price": 1000,
+      "line": "magic",
+      "tier": 2
     },
     {
       "id": "combat_badge",
@@ -250,7 +290,9 @@
       "mp": 15,
       "agility": 20,
       "intelligence": 15,
-      "price": 1000
+      "price": 1000,
+      "line": "any",
+      "tier": 2
     },
     {
       "id": "holy_sword",
@@ -262,7 +304,9 @@
       "mp": 0,
       "agility": 6,
       "intelligence": 2,
-      "price": 1700
+      "price": 1700,
+      "line": "physical",
+      "tier": 2
     },
     {
       "id": "divine_shield",
@@ -274,7 +318,9 @@
       "mp": 0,
       "agility": 6,
       "intelligence": 2,
-      "price": 1700
+      "price": 1700,
+      "line": "physical",
+      "tier": 2
     },
     {
       "id": "holy_robe",
@@ -286,7 +332,9 @@
       "mp": 140,
       "agility": 0,
       "intelligence": 38,
-      "price": 1700
+      "price": 1700,
+      "line": "magic",
+      "tier": 2
     },
     {
       "id": "serpent_ring",
@@ -298,7 +346,9 @@
       "mp": 15,
       "agility": 28,
       "intelligence": 14,
-      "price": 1700
+      "price": 1700,
+      "line": "any",
+      "tier": 2
     },
     {
       "id": "sky_sword",
@@ -310,7 +360,9 @@
       "mp": 0,
       "agility": 7,
       "intelligence": 3,
-      "price": 3000
+      "price": 3000,
+      "line": "physical",
+      "tier": 2
     },
     {
       "id": "star_shield",
@@ -322,7 +374,9 @@
       "mp": 0,
       "agility": 7,
       "intelligence": 3,
-      "price": 3000
+      "price": 3000,
+      "line": "physical",
+      "tier": 2
     },
     {
       "id": "elemental_talisman",
@@ -334,7 +388,9 @@
       "mp": 27,
       "agility": 24,
       "intelligence": 18,
-      "price": 3000
+      "price": 3000,
+      "line": "any",
+      "tier": 2
     },
     {
       "id": "elemental_robe",
@@ -346,7 +402,9 @@
       "mp": 200,
       "agility": 0,
       "intelligence": 48,
-      "price": 5200
+      "price": 5200,
+      "line": "magic",
+      "tier": 3
     },
     {
       "id": "shadow_pendant",
@@ -358,7 +416,9 @@
       "mp": 21,
       "agility": 38,
       "intelligence": 18,
-      "price": 5200
+      "price": 5200,
+      "line": "any",
+      "tier": 3
     },
     {
       "id": "godslayer_sword",
@@ -370,7 +430,9 @@
       "mp": 0,
       "agility": 9,
       "intelligence": 4,
-      "price": 9000
+      "price": 9000,
+      "line": "physical",
+      "tier": 3
     },
     {
       "id": "sky_seal",
@@ -382,7 +444,9 @@
       "mp": 26,
       "agility": 30,
       "intelligence": 36,
-      "price": 9000
+      "price": 9000,
+      "line": "any",
+      "tier": 3
     },
     {
       "id": "chaos_robe",
@@ -394,7 +458,9 @@
       "mp": 300,
       "agility": 0,
       "intelligence": 60,
-      "price": 15000
+      "price": 15000,
+      "line": "magic",
+      "tier": 4
     },
     {
       "id": "chaos_orb",
@@ -406,7 +472,9 @@
       "mp": 43,
       "agility": 34,
       "intelligence": 29,
-      "price": 15000
+      "price": 15000,
+      "line": "any",
+      "tier": 4
     },
     {
       "id": "gods_shield",
@@ -418,7 +486,9 @@
       "mp": 0,
       "agility": 9,
       "intelligence": 3,
-      "price": 26000
+      "price": 26000,
+      "line": "physical",
+      "tier": 4
     },
     {
       "id": "oracle_crown",
@@ -430,7 +500,9 @@
       "mp": 37,
       "agility": 38,
       "intelligence": 45,
-      "price": 26000
+      "price": 26000,
+      "line": "any",
+      "tier": 4
     },
     {
       "id": "eternal_blade",
@@ -442,7 +514,9 @@
       "mp": 0,
       "agility": 11,
       "intelligence": 5,
-      "price": 45000
+      "price": 45000,
+      "line": "physical",
+      "tier": 5
     },
     {
       "id": "eternal_emblem",
@@ -454,7 +528,415 @@
       "mp": 40,
       "agility": 53,
       "intelligence": 40,
-      "price": 45000
+      "price": 45000,
+      "line": "any",
+      "tier": 5
+    },
+    {
+      "id": "blade_5200",
+      "name": "破阵战刃",
+      "type": "weapon",
+      "attack": 31,
+      "defense": 72,
+      "hp": 169,
+      "mp": 0,
+      "agility": 15,
+      "intelligence": 0,
+      "price": 5200,
+      "line": "physical",
+      "tier": 3
+    },
+    {
+      "id": "blade_15000",
+      "name": "裂穹大剑",
+      "type": "weapon",
+      "attack": 28,
+      "defense": 122,
+      "hp": 320,
+      "mp": 0,
+      "agility": 14,
+      "intelligence": 0,
+      "price": 15000,
+      "line": "physical",
+      "tier": 4
+    },
+    {
+      "id": "blade_26000",
+      "name": "苍穹巨刃",
+      "type": "weapon",
+      "attack": 25,
+      "defense": 161,
+      "hp": 445,
+      "mp": 0,
+      "agility": 12,
+      "intelligence": 0,
+      "price": 26000,
+      "line": "physical",
+      "tier": 4
+    },
+    {
+      "id": "staff_50",
+      "name": "见习法杖",
+      "type": "staff",
+      "attack": 0,
+      "defense": 5,
+      "hp": 10,
+      "mp": 10,
+      "agility": 0,
+      "intelligence": 4,
+      "price": 50,
+      "line": "magic",
+      "tier": 0
+    },
+    {
+      "id": "staff_120",
+      "name": "精木法杖",
+      "type": "staff",
+      "attack": 0,
+      "defense": 8,
+      "hp": 17,
+      "mp": 2,
+      "agility": 0,
+      "intelligence": 20,
+      "price": 120,
+      "line": "magic",
+      "tier": 0
+    },
+    {
+      "id": "staff_350",
+      "name": "风暴法杖",
+      "type": "staff",
+      "attack": 0,
+      "defense": 13,
+      "hp": 33,
+      "mp": 5,
+      "agility": 0,
+      "intelligence": 28,
+      "price": 350,
+      "line": "magic",
+      "tier": 1
+    },
+    {
+      "id": "staff_1000",
+      "name": "秘银法杖",
+      "type": "staff",
+      "attack": 0,
+      "defense": 22,
+      "hp": 63,
+      "mp": 10,
+      "agility": 0,
+      "intelligence": 38,
+      "price": 1000,
+      "line": "magic",
+      "tier": 2
+    },
+    {
+      "id": "staff_1700",
+      "name": "寒霜法杖",
+      "type": "staff",
+      "attack": 0,
+      "defense": 28,
+      "hp": 86,
+      "mp": 14,
+      "agility": 0,
+      "intelligence": 46,
+      "price": 1700,
+      "line": "magic",
+      "tier": 2
+    },
+    {
+      "id": "staff_3000",
+      "name": "星辉法杖",
+      "type": "staff",
+      "attack": 0,
+      "defense": 36,
+      "hp": 121,
+      "mp": 26,
+      "agility": 0,
+      "intelligence": 46,
+      "price": 3000,
+      "line": "magic",
+      "tier": 2
+    },
+    {
+      "id": "staff_5200",
+      "name": "狱炎法杖",
+      "type": "staff",
+      "attack": 0,
+      "defense": 47,
+      "hp": 169,
+      "mp": 18,
+      "agility": 0,
+      "intelligence": 54,
+      "price": 5200,
+      "line": "magic",
+      "tier": 3
+    },
+    {
+      "id": "staff_9000",
+      "name": "天雷法杖",
+      "type": "staff",
+      "attack": 0,
+      "defense": 60,
+      "hp": 235,
+      "mp": 27,
+      "agility": 0,
+      "intelligence": 48,
+      "price": 9000,
+      "line": "magic",
+      "tier": 3
+    },
+    {
+      "id": "staff_15000",
+      "name": "湮灭法杖",
+      "type": "staff",
+      "attack": 0,
+      "defense": 75,
+      "hp": 320,
+      "mp": 29,
+      "agility": 0,
+      "intelligence": 40,
+      "price": 15000,
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "staff_26000",
+      "name": "苍穹权杖",
+      "type": "staff",
+      "attack": 0,
+      "defense": 96,
+      "hp": 445,
+      "mp": 15,
+      "agility": 0,
+      "intelligence": 47,
+      "price": 26000,
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "staff_45000",
+      "name": "神谕圣杖",
+      "type": "staff",
+      "attack": 0,
+      "defense": 124,
+      "hp": 619,
+      "mp": 21,
+      "agility": 0,
+      "intelligence": 36,
+      "price": 45000,
+      "line": "magic",
+      "tier": 5
+    },
+    {
+      "id": "armor_1000",
+      "name": "鳞纹战甲",
+      "type": "armor",
+      "attack": 0,
+      "defense": 38,
+      "hp": 50,
+      "mp": 0,
+      "agility": 0,
+      "intelligence": 0,
+      "price": 1000,
+      "line": "any",
+      "tier": 2
+    },
+    {
+      "id": "armor_9000",
+      "name": "玄铁战甲",
+      "type": "armor",
+      "attack": 0,
+      "defense": 60,
+      "hp": 75,
+      "mp": 0,
+      "agility": 0,
+      "intelligence": 0,
+      "price": 9000,
+      "line": "any",
+      "tier": 3
+    },
+    {
+      "id": "armor_26000",
+      "name": "苍穹战铠",
+      "type": "armor",
+      "attack": 0,
+      "defense": 82,
+      "hp": 100,
+      "mp": 0,
+      "agility": 0,
+      "intelligence": 0,
+      "price": 26000,
+      "line": "any",
+      "tier": 4
+    },
+    {
+      "id": "robe_600",
+      "name": "秘纹法袍",
+      "type": "robe",
+      "attack": 0,
+      "defense": 14,
+      "hp": 34,
+      "mp": 21,
+      "agility": 0,
+      "intelligence": 10,
+      "price": 600,
+      "line": "magic",
+      "tier": 1
+    },
+    {
+      "id": "robe_45000",
+      "name": "神谕圣袍",
+      "type": "robe",
+      "attack": 0,
+      "defense": 70,
+      "hp": 130,
+      "mp": 40,
+      "agility": 0,
+      "intelligence": 40,
+      "price": 45000,
+      "line": "magic",
+      "tier": 5
+    },
+    {
+      "id": "shield_9000",
+      "name": "镇岳重盾",
+      "type": "shield",
+      "attack": 32,
+      "defense": 52,
+      "hp": 60,
+      "mp": 0,
+      "agility": 13,
+      "intelligence": 0,
+      "price": 9000,
+      "line": "physical",
+      "tier": 3
+    },
+    {
+      "id": "shield_45000",
+      "name": "苍穹壁垒",
+      "type": "shield",
+      "attack": 36,
+      "defense": 95,
+      "hp": 105,
+      "mp": 0,
+      "agility": 12,
+      "intelligence": 0,
+      "price": 45000,
+      "line": "physical",
+      "tier": 5
+    },
+    {
+      "id": "focus_50",
+      "name": "见习法器",
+      "type": "focus",
+      "attack": 0,
+      "defense": 2,
+      "hp": 4,
+      "mp": 7,
+      "agility": 0,
+      "intelligence": 1,
+      "price": 50,
+      "line": "magic",
+      "tier": 0
+    },
+    {
+      "id": "focus_200",
+      "name": "元素法器",
+      "type": "focus",
+      "attack": 0,
+      "defense": 6,
+      "hp": 10,
+      "mp": 2,
+      "agility": 0,
+      "intelligence": 13,
+      "price": 200,
+      "line": "magic",
+      "tier": 1
+    },
+    {
+      "id": "focus_1000",
+      "name": "秘术法器",
+      "type": "focus",
+      "attack": 0,
+      "defense": 16,
+      "hp": 22,
+      "mp": 16,
+      "agility": 0,
+      "intelligence": 13,
+      "price": 1000,
+      "line": "magic",
+      "tier": 2
+    },
+    {
+      "id": "focus_5200",
+      "name": "奥术宝珠",
+      "type": "focus",
+      "attack": 0,
+      "defense": 38,
+      "hp": 46,
+      "mp": 30,
+      "agility": 0,
+      "intelligence": 19,
+      "price": 5200,
+      "line": "magic",
+      "tier": 3
+    },
+    {
+      "id": "focus_15000",
+      "name": "苍穹宝珠",
+      "type": "focus",
+      "attack": 0,
+      "defense": 70,
+      "hp": 85,
+      "mp": 31,
+      "agility": 0,
+      "intelligence": 21,
+      "price": 15000,
+      "line": "magic",
+      "tier": 4
+    },
+    {
+      "id": "focus_45000",
+      "name": "神谕法器",
+      "type": "focus",
+      "attack": 0,
+      "defense": 120,
+      "hp": 130,
+      "mp": 26,
+      "agility": 0,
+      "intelligence": 27,
+      "price": 45000,
+      "line": "magic",
+      "tier": 5
+    },
+    {
+      "id": "acc_50",
+      "name": "初心护符",
+      "type": "accessory",
+      "attack": 0,
+      "defense": 2,
+      "hp": 4,
+      "mp": 8,
+      "agility": 0,
+      "intelligence": 1,
+      "price": 50,
+      "line": "any",
+      "tier": 0
+    },
+    {
+      "id": "acc_120",
+      "name": "冒险徽章",
+      "type": "accessory",
+      "attack": 0,
+      "defense": 6,
+      "hp": 10,
+      "mp": 7,
+      "agility": 2,
+      "intelligence": 6,
+      "price": 120,
+      "line": "any",
+      "tier": 0
     }
   ]
 }

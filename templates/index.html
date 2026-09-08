@@ -321,8 +321,8 @@
         价格档（指数递增，封顶 4 金币 50 银币）：50 / 75 / 120 / 200 / 350 / 600 / 1000 / 1700 / 3000 / 5200 / 9000 / 15000 / 26000 / 45000 铜币。出售价 = 购买价 60%。
       </div>
       <table>
-        <thead><tr><th>名称</th><th>ID</th><th>类型</th><th>攻</th><th>防</th><th>命</th><th>魔</th><th>敏</th><th>智</th><th>价格(铜币)</th></tr></thead>
-        <tbody id="equipBody"><tr><td colspan="10" class="empty">加载中…</td></tr></tbody>
+        <thead><tr><th>名称</th><th>ID</th><th>类型</th><th>职业</th><th>阶级</th><th>攻</th><th>防</th><th>命</th><th>魔</th><th>敏</th><th>智</th><th>价格(铜币)</th></tr></thead>
+        <tbody id="equipBody"><tr><td colspan="12" class="empty">加载中…</td></tr></tbody>
       </table>
     </div>
     <div id="panel-dungeon" style="display:none;">
@@ -331,8 +331,8 @@
         金币按 5 秒为单位核算，第 1 层 60 秒 1 铜币。同类型装备只取公式收益最高的一件。层难度与产币均为幂函数曲线（防数值膨胀）：层总进度=1000×n^0.75，每秒产币=(1/60)×n^0.6。
       </div>
       <table>
-        <thead><tr><th>玩家</th><th>层数</th><th>进度</th><th>推进速度</th><th>金币/5秒</th><th>通关层</th><th>本次铜币</th><th>累计铜币</th><th>保存进度</th></tr></thead>
-        <tbody id="dungeonBody"><tr><td colspan="9" class="empty">加载中…</td></tr></tbody>
+        <thead><tr><th>玩家</th><th>职业/称号</th><th>层数</th><th>进度</th><th>推进速度</th><th>金币/5秒</th><th>通关层</th><th>本次铜币</th><th>累计铜币</th><th>保存进度</th></tr></thead>
+        <tbody id="dungeonBody"><tr><td colspan="10" class="empty">加载中…</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -379,7 +379,14 @@
     document.getElementById('panel-equipment').style.display = name === 'equipment' ? '' : 'none';
     document.getElementById('panel-dungeon').style.display = name === 'dungeon' ? '' : 'none';
   }
-  const TYPE_NAMES = { weapon: '武器', shield: '盾牌', armor: '防具', robe: '法袍', accessory: '饰品', other: '其他' };
+  const TYPE_NAMES = { weapon: '武器', shield: '盾牌', armor: '防具', robe: '法袍', accessory: '饰品', staff: '法杖', focus: '法器', other: '其他' };
+  const LINE_NAMES = { physical: '物理', magic: '魔法', any: '通用' };
+  function bossMark(layer) {
+    if (layer % 100 === 0) return '大Boss';
+    if (layer % 50 === 0) return '小Boss';
+    if (layer % 10 === 0) return '精英';
+    return '';
+  }
   // 货币换算：100铜币=1银币，100银币=1金币，100金币=1王国币，100王国币=1圣王国币
   function fmtCur(c) {
     c = Number(c) || 0;
@@ -537,12 +544,14 @@
     try {
       const rows = await api('/api/equipment');
       const tb = document.getElementById('equipBody');
-      if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" class="empty">装备库为空，请编辑 equipment.json</td></tr>'; return; }
+      if (!rows.length) { tb.innerHTML = '<tr><td colspan="12" class="empty">装备库为空，请编辑 equipment.json</td></tr>'; return; }
       tb.innerHTML = rows.map(it => `
         <tr>
           <td style="font-weight:600">${esc(it.name)}</td>
           <td style="color:var(--muted)">${esc(it.id)}</td>
           <td>${TYPE_NAMES[it.type] || esc(it.type)}</td>
+          <td>${LINE_NAMES[it.line] || esc(it.line)}</td>
+          <td>T${it.tier ?? 0}</td>
           <td>${it.attack || 0}</td>
           <td>${it.defense || 0}</td>
           <td>${it.hp || 0}</td>
@@ -557,11 +566,16 @@
     try {
       const rows = await api('/api/dungeon');
       const tb = document.getElementById('dungeonBody');
-      if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">暂无玩家在地下城中</td></tr>'; return; }
-      tb.innerHTML = rows.map(d => `
+      if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" class="empty">暂无玩家在地下城中</td></tr>'; return; }
+      tb.innerHTML = rows.map(d => {
+        const bm = d.layer > 0 ? bossMark(d.layer) : '';
+        const b = bm ? '<span style="color:#e0566b;font-weight:600">[' + bm + ']</span>' : '';
+        const cls = d.profession ? (d.profession === 'warrior' ? '战士' : '魔法师') + ' T' + d.tier : '未转职 T' + d.tier;
+        return `
         <tr>
           <td style="font-weight:600">${esc(d.nickname)} (${esc(d.user_id)})</td>
-          <td style="color:var(--primary);font-weight:600">${d.layer > 0 ? '第 ' + d.layer + ' 层' : '—'}</td>
+          <td>${cls}</td>
+          <td style="color:var(--primary);font-weight:600">${d.layer > 0 ? '第 ' + d.layer + ' 层 ' + b : '—'}</td>
           <td>${d.layer > 0 ? d.progress_pct + '%' : '—'}</td>
           <td>${d.in_dungeon ? d.speed : '—'}</td>
           <td>${d.in_dungeon ? d.coin_per_5s : '—'}</td>
@@ -569,7 +583,7 @@
           <td>${d.in_dungeon ? d.run_coins : '—'}</td>
           <td>${d.total_coins}</td>
           <td>${d.in_dungeon ? '冒险中' : (d.saved_layer > 0 ? `第 ${d.saved_layer} 层（剩 ${d.saved_progress}）` : '—')}</td>
-        </tr>`).join('');
+        </tr>`; }).join('');
     } catch (e) { toast('加载地下城失败: ' + e.message); }
   }
 

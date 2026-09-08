@@ -1,0 +1,12 @@
+# 运行时 / 本地数据
+__pycache__/
+*.py[cod]
+onebot_bot.db
+*.db
+tmp/
+tmp/
+
+# 备份 / 临时
+*.bak
+*.bak*
+docs/_*.py
