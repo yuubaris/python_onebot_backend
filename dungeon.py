@@ -608,7 +608,7 @@ def _roll_boss_drop(user, layer, btype):
         snm = smeta["name"] if smeta else special_id
         named.append(f"✨ 特殊物品 ×{scnt}（{snm}）")
     # 稀有装备概率：精英 25% / 小Boss 55% / 大Boss 100% → 有名字单独列
-    p = {"elite": 0.25, "minor": 0.55, "major": 1.0}.get(btype, 0.25)
+    p = {"elite": 0.06, "minor": 0.15, "major": 0.30}.get(btype, 0.06)
     if random.random() < p:
         from classes import TYPE_NAMES as _tn
         it = _grant_boss_rare(user, layer, btype)

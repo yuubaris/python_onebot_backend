@@ -26,7 +26,7 @@
   | 精英 | rare 45% / common 55% |
   | 小Boss | legendary 20% / rare 50% / common 30% |
   | 大Boss | myth 18% / legendary 55% / rare 22% / common 5% |
-- **稀有装备**：精英 25% / 小Boss 55% / 大Boss 100%。
+- **稀有装备（v2.11.48 调降）**：精英 6% / 小Boss 15% / 大Boss 30%。
 - **额外金钱（v7，2026-09-08）**：通关 Boss 层即给铜币 ≈ 当前层产币速率 × 奖励时长
   （精英 5 分钟 / 小Boss 15 分钟 / 大Boss 40 分钟，即 层数^0.6 × 分钟数），
   随层数成长、按 Boss 类型分级，即时入账并计入 `dungeon_coins_earned`/`dungeon_run_coins`；
