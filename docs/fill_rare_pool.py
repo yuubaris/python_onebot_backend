@@ -4,8 +4,9 @@
 依据 docs/dungeon-boss-plan.md §4.3 铁律：
 - 稀有装备：商店（/武器库 /铁匠铺）买不到，仅 Boss 关掉落；
 - 强度钳制：同tier普通顶配 < 稀有(tier) ≤ tier+1普通顶配（同部位对比）；
-- 每 tier 提供 战士主手(weapon) / 法师主手(staff) / 通用饰品(accessory any)，
-  转职后可掉本职业主手+any，未转职可掉 any（保证各阶段 Boss 都有稀有望）。
+- 覆盖**全部位**：战士主手/战士盾/通用甲、法师主手/法师法器/法师袍、通用饰品，
+  每 tier 齐全（armor 顶配逼近锻造 Lv1，故 T5 不另设稀有甲）；
+  转职后可掉本职业 line+any，未转职可掉 any（保证各阶段 Boss 都有副手/防具稀有望）。
 - 独立专属命名，不与 武器库/铁匠铺/称号前缀 撞车；展示端加 ✦ 与 (稀有)。
 
 用法：
@@ -36,13 +37,13 @@ def item_score(it):
 
 
 def normal_top(eq):
-    """每 (tier,type) 普通顶配收益。"""
+    """每 (tier,type) 普通顶配（返回 (item, score) 供稀有件引用属性骨架）。"""
     top = {}
     for it in eq:
         k = (int(it.get("tier", 0)), it.get("type"))
         s = item_score(it)
         if k not in top or s > top[k][1]:
-            top[k] = (it["name"], s)
+            top[k] = (it, s)
     return top
 
 
@@ -93,26 +94,66 @@ def fit_magic(target, def_, hp, ratio_m=0.5):
     return i, m
 
 
+def fit_armor(target, ref_d, ref_h):
+    """纯生存防具：保底分 def*2+hp*1.2 = target（无输出），保持顶配 def/hp 比例。"""
+    ratio = (ref_h / ref_d) if ref_d else 1.25
+    best = None
+    d0 = int(target / (2 + 1.2 * ratio))
+    for d in range(max(1, d0 - 3), d0 + 4):
+        h = max(1, int(round(d * ratio)))
+        sc = d * 2 + h * 1.2
+        err = abs(sc - target)
+        if best is None or err < best[0]:
+            best = (err, d, h)
+    _, d, h = best
+    return d, h
+
+
 # 每 tier 稀有命名（独立意象，不与商店/锻造/称号前缀撞车）
 # 格式: (type, line, 名称)
+# 覆盖全部位：战士主手/法师主手/战士副手(盾)/法师副手(法器)/通用防具(甲)/法师生存(袍)/通用饰品。
+# armor(T5) 商店顶级甲已逼近锻造 Lv1，不另设 T5 稀有甲（避免超锻造毕业线）。
 PLAN = {
     0: [("weapon", "physical", "尘封战刃"),
         ("staff", "magic", "尘封法杖"),
+        ("shield", "physical", "尘封坚盾"),
+        ("focus", "magic", "尘封法器"),
+        ("armor", "any", "尘封轻甲"),
+        ("robe", "magic", "尘封纱袍"),
         ("accessory", "any", "尘封护符")],
     1: [("weapon", "physical", "踏风战刃"),
         ("staff", "magic", "踏风秘杖"),
+        ("shield", "physical", "踏风坚盾"),
+        ("focus", "magic", "踏风法器"),
+        ("armor", "any", "踏风轻甲"),
+        ("robe", "magic", "踏风纱袍"),
         ("accessory", "any", "踏风护符")],
     2: [("weapon", "physical", "熔岩斩刃"),
         ("staff", "magic", "熔岩法杖"),
+        ("shield", "physical", "熔岩坚盾"),
+        ("focus", "magic", "熔岩法器"),
+        ("armor", "any", "熔岩战甲"),
+        ("robe", "magic", "熔岩纱袍"),
         ("accessory", "any", "熔岩护印")],
     3: [("weapon", "physical", "月蚀巨刃"),
         ("staff", "magic", "月蚀权杖"),
+        ("shield", "physical", "月蚀坚盾"),
+        ("focus", "magic", "月蚀法器"),
+        ("armor", "any", "月蚀重甲"),
+        ("robe", "magic", "月蚀纱袍"),
         ("accessory", "any", "月蚀吊坠")],
     4: [("weapon", "physical", "星穹圣刃"),
         ("staff", "magic", "星穹权杖"),
+        ("shield", "physical", "星穹坚盾"),
+        ("focus", "magic", "星穹法器"),
+        ("armor", "any", "星穹战铠"),
+        ("robe", "magic", "星穹纱袍"),
         ("accessory", "any", "星穹法印")],
     5: [("weapon", "physical", "神陨之刃"),
         ("staff", "magic", "神陨圣杖"),
+        ("shield", "physical", "神陨坚盾"),
+        ("focus", "magic", "神陨法器"),
+        ("robe", "magic", "神陨纱袍"),
         ("accessory", "any", "神陨圣印")],
 }
 
@@ -155,6 +196,29 @@ def main():
                 i, m = 0, 0
                 extra = {"attack": a, "agility": g, "intelligence": 0, "mp": 0}
             elif typ == "staff":
+                i, m = fit_magic(target, d, h)
+                a, g = 0, 0
+                extra = {"attack": 0, "agility": 0, "intelligence": i, "mp": m}
+            elif typ == "shield":
+                # 战士副手：攻敏主 + 中高生存（比同 tier 商店盾顶配高一点生存）
+                d, h = d + 6, h + 8
+                a, g = fit_phys(target, d, h)
+                i, m = 0, 0
+                extra = {"attack": a, "agility": g, "intelligence": 0, "mp": 0}
+            elif typ == "focus":
+                # 法师副手：智魔主 + 中高生存
+                d, h = d + 6, h + 8
+                i, m = fit_magic(target, d, h)
+                a, g = 0, 0
+                extra = {"attack": 0, "agility": 0, "intelligence": i, "mp": m}
+            elif typ == "armor":
+                # 通用防具（any 纯生存）：保底分 def*2+hp*1.2
+                d, h = fit_armor(target, max(d, 12), max(h, 15))
+                a, g, i, m = 0, 0, 0, 0
+                extra = {"attack": 0, "agility": 0, "intelligence": 0, "mp": 0}
+            elif typ == "robe":
+                # 法师生存袍：少量智魔 + 高生存（生存为主）
+                d, h = d + 8, h + 12
                 i, m = fit_magic(target, d, h)
                 a, g = 0, 0
                 extra = {"attack": 0, "agility": 0, "intelligence": i, "mp": m}
