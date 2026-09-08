@@ -29,14 +29,16 @@ def load_gear(force=False):
     items = data.get("items", [])
     _cache["mtime"] = mtime
     _cache["items"] = items
-    _cache["by_layer"] = {int(g.get("boss_layer", 0)): g for g in items}
+    _cache["by_layer"] = {}
+    for g in items:
+        _cache["by_layer"].setdefault(int(g.get("boss_layer", 0)), []).append(g)
     return items
 
 
 def gear_for_layer(layer):
-    """按 Boss 层数返回专属装备定义（无则 None）。"""
+    """按 Boss 层数返回该层专属装备列表（可多件：每 Boss 战/法各 1 件；无则空列表）。"""
     load_gear()
-    return _cache["by_layer"].get(int(layer or 0))
+    return _cache["by_layer"].get(int(layer or 0), [])
 
 
 def gear_ids():
@@ -61,15 +63,15 @@ def produced_count(item_id):
 def roll_gear(user, layer):
     """挑战胜利时判定专属装备掉落：限量内 + 低概率 → 入包。
 
-    返回装备 dict（含已产出/限量用于播报），未掉落返回 None。
+    该层专属可多件（战/法各 1 件）：先随机挑一件「未达限量」的候选，
+    再按该件掉率判定（4 大 0.1% / 其他 3%）；命中返回装备 dict（含已产出/限量播报）。
     """
-    g = gear_for_layer(layer)
-    if not g:
+    cands = [g for g in gear_for_layer(layer)
+             if produced_count(g["id"]) < int(g.get("limit", 5))]
+    if not cands:
         return None
-    produced = produced_count(g["id"])
-    if produced >= int(g.get("limit", 3)):
-        return None
-    if random.random() >= float(g.get("rate", 0.05)):
+    g = random.choice(cands)
+    if random.random() >= float(g.get("rate", 0.03)):
         return None
     db.session.add(UserItem(user_id=user.user_id, item_id=g["id"], is_new=1))
-    return {"gear": g, "produced": produced + 1}
+    return {"gear": g, "produced": produced_count(g["id"]) + 1}
