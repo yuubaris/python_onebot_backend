@@ -277,13 +277,20 @@ def challenge_boss(user, boss):
 
     p = _success_rate(user, boss)
     win = random.random() < p
+    # 娱乐技能交锋（v2.11.59）：仅文字表述，无任何效果
+    import skills as _skills
+    prof = getattr(user, "profession", "") or ""
+    _my = _skills.class_skill(prof)
+    _his = _skills.boss_skill(boss.get("tag", ""))
+    _clash = f"💥 你使出【{_my}】，对手发动【{_his}】，激战正酣！"
     if not win:
         db.session.commit()
         return (f"⚔️ 挑战 {boss['name']}…胜率 {p * 100:.0f}%\n"
+                f"{_clash}\n"
                 f"💀 惜败！今日「{subject}」剩余挑战次数 {max(0, limit - used - 1)}/{limit}。"), False
 
     # —— 胜利结算 ——
-    lines = [f"⚔️ 挑战 {boss['name']}…胜率 {p * 100:.0f}%", "🎉 击败！"]
+    lines = [f"⚔️ 挑战 {boss['name']}…胜率 {p * 100:.0f}%", _clash, "🎉 击败！"]
     first_clear = not row.first_clear_date
     if first_clear:
         row.first_clear_date = today
