@@ -350,6 +350,8 @@ def _grant_boss_rare(user, layer, btype):
     """按稀有掉落池抽一件「玩家可用」的稀有装备并写入背包（标 new）。
 
     可用 = 职业 line 匹配（未转职→仅 any）+ tier ≤ 玩家当前阶级。
+    掉落偏向（v6）：以「玩家当前阶级档」为目标，越接近目标档的稀有越易出，
+    大 Boss（major）比小 Boss / 精英更收窄到当前档；低档稀有保留小概率作为保底。
     返回稀有装备 meta dict 或 None。
     """
     import random
@@ -359,7 +361,7 @@ def _grant_boss_rare(user, layer, btype):
     prof = getattr(user, "profession", "") or ""
     cl = class_line(prof) if prof else None
     tier_max = getattr(user, "tier", 0) or 0
-    usable = []
+    cand = []  # (item, tier)
     for it in pool:
         line = item_line(it)
         if cl:
@@ -370,12 +372,37 @@ def _grant_boss_rare(user, layer, btype):
             # 未转职：仅通用(any) 可用（职业专属先引导转职）
             if line != LINE_ANY:
                 continue
-        if _item_tier(it) > tier_max:
+        t = _item_tier(it)
+        if t > tier_max:
             continue
-        usable.append(it)
-    if not usable:
+        cand.append((it, t))
+    if not cand:
         return None
-    picked = random.choice(usable)
+
+    # 目标档：优先玩家当前阶级档；若该档无可用稀有，逐级下探到最近可用档
+    by_tier = {}
+    for it, t in cand:
+        by_tier.setdefault(t, []).append((it, t))
+    target = tier_max
+    while target > 0 and target not in by_tier:
+        target -= 1
+
+    # 偏向权重：离目标档越远越难出；Boss 越强收窄越狠（大Boss最贴当前档）
+    spread = {"major": 3.0, "minor": 2.0, "elite": 1.5}.get(btype, 1.5)
+    weighted = []
+    for it, t in cand:
+        dist = max(0, target - t)          # 恒 ≥0（t ≤ tier_max）
+        w = 1.0 / (1.0 + dist * spread)    # 目标档权重 1.0，越远越小
+        weighted.append((w, it))
+    total = sum(w for w, _ in weighted)
+    r = random.random() * total
+    acc = 0.0
+    picked = weighted[-1][1]
+    for w, it in weighted:
+        acc += w
+        if r <= acc:
+            picked = it
+            break
     db.session.add(UserItem(user_id=user.user_id, item_id=picked["id"], is_new=1))
     return picked
 
