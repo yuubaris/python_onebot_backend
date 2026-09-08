@@ -44,6 +44,7 @@ import ore
 import material
 import forge
 import boss
+import boss_gear
 import alchemy
 import consumable
 import dungeon
@@ -189,10 +190,11 @@ def cmd_bag(user, group_id, args, at_qqs=None):
             it = info["it"]
             suffix = f" ×{info['cnt']}" if info["cnt"] > 1 else ""
             mark = " new！" if info["new"] else ""
-            # Boss 稀有装备：✦ 星号 + (稀有) 标注（D-B12）
+            # Boss 稀有装备：✦ 星号 + (稀有) 标注（D-B12）；命名 Boss 专属：👑 + (限定)
             rare = it.get("id") in rare_ids
-            disp = f"✦ {name}" if rare else name
-            rare_tag = "(稀有)" if rare else ""
+            gear = boss_gear.is_gear(it.get("id"))
+            disp = f"👑 {name}" if gear else (f"✦ {name}" if rare else name)
+            rare_tag = "(限定)" if gear else ("(稀有)" if rare else "")
             # 转职后另一职业专属装备标注“暂不生效”
             unusable = ""
             if cl_line and item_line(it) not in (LINE_ANY, cl_line):
@@ -625,6 +627,9 @@ def cmd_sell(user, group_id, args, at_qqs=None):
             missing.append(name)
             continue
         if forge.is_forged_item(item["id"]):
+            not_sellable.append(item["name"])
+            continue
+        if boss_gear.is_gear(item["id"]):   # 命名 Boss 专属装备不可出售（全服限量收藏）
             not_sellable.append(item["name"])
             continue
         row = db.session.execute(

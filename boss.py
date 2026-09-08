@@ -323,6 +323,14 @@ def challenge_boss(user, boss):
         mmeta = material.material_meta(MYRIAD_GEM)
         lines.append(f"💎 大 Boss 专属材料：{mmeta['name'] if mmeta else MYRIAD_GEM} ×1")
 
+    # 命名 Boss 专属装备（4 大 Boss 各 1 件：独特命名、全服限量、低掉率 5%、属性略高于同级锻造）
+    from boss_gear import roll_gear
+    hit = roll_gear(user, int(boss.get("layer", 0) or 0))
+    if hit:
+        g = hit["gear"]
+        lines.append(f"👑 全服限定掉落：{g['name']} new！"
+                     f"（已产出 {hit['produced']}/{g['limit']} 件）")
+
     lines.append(f"今日「{subject}」剩余挑战次数 {max(0, limit - used - 1)}/{limit}。")
     db.session.commit()
     return "\n".join(lines), True

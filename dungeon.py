@@ -251,7 +251,8 @@ def historical_best_layer(user):
 
 def _all_item_meta():
     """合并 武器库(equipment.json) + 铁匠铺(forge.json) + Boss 稀有池(rare_drops.json)
-    的装备定义表（forge 优先级高于商店；rare 仅用于已掉落件的属性展示/结算）。
+    + 命名 Boss 专属装备(boss_gear.json) 的装备定义表
+    （forge 优先级高于商店；rare/专属仅用于已掉落件的属性展示/结算）。
     """
     by_id = {it["id"]: it for it in load_equipment()}
     try:
@@ -265,11 +266,18 @@ def _all_item_meta():
             by_id.setdefault(r["id"], r)  # 稀有 id 不与商店冲突则加入
     except Exception:
         pass
+    try:
+        from boss_gear import load_gear
+        for r in load_gear():
+            by_id.setdefault(r["id"], r)  # 专属装备 id 不与商店/稀有冲突则加入
+    except Exception:
+        pass
     return by_id
 
 
 def find_any_item(name_or_id):
-    """从装备全集（商店 equipment.json + 铁匠铺 forge.json + Boss 稀有池 rare_drops.json）
+    """从装备全集（商店 equipment.json + 铁匠铺 forge.json + Boss 稀有池 rare_drops.json
+    + 命名 Boss 专属装备 boss_gear.json）
     按名称或 id 精确查找（大小写不敏感），找不到返回 None。
 
     用途：出售等需要识别「非商店来源」装备（如稀有装备）的场合；
