@@ -20,7 +20,7 @@
     },
     {
       "id": "gear_other_100_staff",
-      "name": "灰鬃灵杖",
+      "name": "灰鬃风语",
       "type": "staff",
       "line": "magic",
       "tier": 2,
@@ -56,7 +56,7 @@
     },
     {
       "id": "gear_other_200_staff",
-      "name": "磐岩秘杖",
+      "name": "磐岩地脉",
       "type": "staff",
       "line": "magic",
       "tier": 3,
@@ -92,7 +92,7 @@
     },
     {
       "id": "gear_other_300_staff",
-      "name": "枯骨冥杖",
+      "name": "枯骨亡语",
       "type": "staff",
       "line": "magic",
       "tier": 3,
@@ -128,7 +128,7 @@
     },
     {
       "id": "gear_other_400_staff",
-      "name": "霜语灵杖",
+      "name": "霜语寒歌",
       "type": "staff",
       "line": "magic",
       "tier": 4,
@@ -164,7 +164,7 @@
     },
     {
       "id": "gear_other_500_staff",
-      "name": "烬鳞炎杖",
+      "name": "烬鳞焚天",
       "type": "staff",
       "line": "magic",
       "tier": 4,
@@ -200,7 +200,7 @@
     },
     {
       "id": "gear_other_600_staff",
-      "name": "冥渊圣杖",
+      "name": "冥渊引渡",
       "type": "staff",
       "line": "magic",
       "tier": 4,
@@ -236,7 +236,7 @@
     },
     {
       "id": "gear_other_700_staff",
-      "name": "噬星法杖",
+      "name": "噬星湮灭",
       "type": "staff",
       "line": "magic",
       "tier": 4,
@@ -272,7 +272,7 @@
     },
     {
       "id": "gear_other_800_staff",
-      "name": "裂渊法杖",
+      "name": "裂渊虚空",
       "type": "staff",
       "line": "magic",
       "tier": 5,
@@ -308,7 +308,7 @@
     },
     {
       "id": "gear_other_900_staff",
-      "name": "混沌魔杖",
+      "name": "混沌星核",
       "type": "staff",
       "line": "magic",
       "tier": 5,
@@ -344,7 +344,7 @@
     },
     {
       "id": "gear_other_1200_staff",
-      "name": "吞海法杖",
+      "name": "吞海渊潮",
       "type": "staff",
       "line": "magic",
       "tier": 5,
@@ -380,7 +380,7 @@
     },
     {
       "id": "gear_other_1400_staff",
-      "name": "裂空圣杖",
+      "name": "裂空星轨",
       "type": "staff",
       "line": "magic",
       "tier": 5,
@@ -416,7 +416,7 @@
     },
     {
       "id": "gear_other_1600_staff",
-      "name": "赤渊炎杖",
+      "name": "赤渊焚世",
       "type": "staff",
       "line": "magic",
       "tier": 5,
@@ -452,7 +452,7 @@
     },
     {
       "id": "gear_other_1800_staff",
-      "name": "净世法杖",
+      "name": "净世神谕",
       "type": "staff",
       "line": "magic",
       "tier": 5,
@@ -488,7 +488,7 @@
     },
     {
       "id": "gear_other_2500_staff",
-      "name": "渊灭魔杖",
+      "name": "渊灭终章",
       "type": "staff",
       "line": "magic",
       "tier": 5,
@@ -578,7 +578,7 @@
     },
     {
       "id": "gear_big_1000_staff",
-      "name": "终焉法杖",
+      "name": "终焉星陨",
       "type": "staff",
       "line": "magic",
       "tier": 5,
