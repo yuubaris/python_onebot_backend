@@ -632,8 +632,10 @@ def cmd_sell(user, group_id, args, at_qqs=None):
         if row is None:
             not_owned.append(item["name"])
             continue
-        sp = int(item["price"] * 0.6)   # 售价 = 购买价 60%
-        sold.append((item["name"], sp))
+        is_rare = item["id"] in rare_item_ids()
+        # 售价：普通装备 = 购买价 60%；掉落稀有装备回收价下调为 30%
+        sp = int(item["price"] * (0.3 if is_rare else 0.6))
+        sold.append((item["name"], sp, is_rare))
         total += sp
         user.copper += sp
         db.session.delete(row)
@@ -641,11 +643,15 @@ def cmd_sell(user, group_id, args, at_qqs=None):
     lines = []
     if sold:
         if len(sold) == 1:
-            n, sp = sold[0]
-            lines.append(f"出售成功！卖出「{n}」×1，获得 {format_currency(sp)}（购买价 60%）")
+            n, sp, is_rare = sold[0]
+            note = "（稀有装备回收价 30%）" if is_rare else "（购买价 60%）"
+            lines.append(f"出售成功！卖出「{n}」×1，获得 {format_currency(sp)}{note}")
         else:
-            detail = "、".join(n for n, _ in sold)
-            lines.append(f"出售成功！卖出：{detail}，共获得 {format_currency(total)}（购买价 60%）")
+            detail = "、".join(n for n, _, _ in sold)
+            if any(r for _, _, r in sold):
+                lines.append(f"出售成功！卖出：{detail}，共获得 {format_currency(total)}（含稀有装备按回收价 30% 计）")
+            else:
+                lines.append(f"出售成功！卖出：{detail}，共获得 {format_currency(total)}（购买价 60%）")
     if missing:
         lines.append("未找到：" + "、".join(f"「{n}」" for n in missing))
     if not_owned:
