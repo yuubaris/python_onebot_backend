@@ -572,6 +572,23 @@ def settle_dungeon(user):
         if user.dungeon_progress <= 1e-9 and remaining > 1e-9:
             cleared_layer = user.dungeon_layer  # 刚通关的这层
             bt = boss_type(cleared_layer)
+            # 命名 Boss 关（有名字的守关：100/200/…/3000/3600）：
+            # 进度跑完 → 按战力胜率判定胜负（我方战力高于 Boss 战力则胜率上升、反之下降，保留 3% 保底）；
+            # 判定失败 → 进度重置（重新计算这一关进度），本关收益继续计算；
+            # 其余 Boss 关（精英/小Boss/无名字的整百层 Boss）进度跑完即通关。
+            import random as _random
+            try:
+                import boss as _boss_mod
+                named = _boss_mod.boss_for_layer(cleared_layer)
+            except Exception:
+                named = None
+            if named is not None:
+                p = _boss_mod._success_rate(user, named)
+                if _random.random() >= p:
+                    # 挑战失败：重置本关进度（重新攻略），收益照常继续计算；不推进、不结算掉落
+                    user.dungeon_progress = effective_layer_total(cleared_layer)
+                    report.append(f"💀 第{cleared_layer}层 {named['name']} 挑战失败（胜率 {p * 100:.0f}%），进度重置，收益继续计算。")
+                    continue
             if cleared_layer >= DUNGEON_MAX_LAYER:
                 # —— 封顶层（3600）：不再向更高层推进 ——
                 if not user.dungeon_capped:
