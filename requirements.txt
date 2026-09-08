@@ -1,0 +1,4 @@
+flask>=2.2
+flask-sqlalchemy>=3.0
+websocket-client>=1.4
+Pillow>=10.0

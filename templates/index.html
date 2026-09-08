@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OneBot 11 签到机器人 · 管理台</title>
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --primary: #2f6fed;
+    --text: #1f2329;
+    --muted: #8a919f;
+    --border: #e5e6eb;
+    --ok: #00b42a;
+    --danger: #f53f3f;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    background: var(--card); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  header h1 { font-size: 18px; }
+  header .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .head-right { display: flex; align-items: center; gap: 10px; }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 20px; font-size: 13px;
+    background: #f2f3f5; color: var(--muted);
+  }
+  .status-badge.online { background: #e8ffea; color: var(--ok); }
+  .status-badge.offline { background: #ffece8; color: var(--danger); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+  .card {
+    background: var(--card); border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .card h2 { font-size: 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .sub { font-size: 12px; color: var(--muted); font-weight: normal; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .field input, .field select {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+    border-radius: 6px; font-size: 14px; background: #fff; color: var(--text);
+  }
+  .field input:focus, .field select:focus { outline: 2px solid #d6e4ff; border-color: var(--primary); }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+  .row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .btn {
+    padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;
+    font-size: 14px; background: var(--primary); color: #fff; white-space: nowrap;
+  }
+  .btn:hover { opacity: .9; }
+  .btn.secondary { background: #f2f3f5; color: var(--text); }
+  .btn.danger { background: var(--danger); }
+  .btn.success { background: var(--ok); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .mt { margin-top: 12px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; background: #fafbfc; }
+  tr:hover td { background: #fafbfc; }
+  .empty { color: var(--muted); text-align: center; padding: 14px; }
+
+  .log-box {
+    background: #1f2329; color: #c9cdd4; border-radius: 8px;
+    padding: 12px; height: 240px; overflow-y: auto;
+    font-family: Consolas, "Courier New", monospace; font-size: 12px; line-height: 1.7;
+  }
+  .log-box div { white-space: pre-wrap; word-break: break-all; }
+
+  .pill { padding: 2px 10px; border-radius: 10px; font-size: 12px; }
+  .pill.on { background: #e8ffea; color: var(--ok); }
+  .pill.off { background: #ffece8; color: var(--danger); }
+
+  .toast {
+    position: fixed; top: 20px; right: 20px; z-index: 999;
+    background: #1f2329; color: #fff; padding: 10px 16px; border-radius: 8px;
+    font-size: 13px; opacity: 0; transition: opacity .3s; pointer-events: none; max-width: 360px;
+  }
+  .toast.show { opacity: 1; }
+
+  .tabs { display: flex; gap: 4px; margin-bottom: 14px; flex-wrap: wrap; }
+  .tab {
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px;
+    background: #f2f3f5; color: var(--muted); border: none;
+  }
+  .tab.active { background: var(--primary); color: #fff; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div>
+      <h1>🪙 OneBot 11 签到机器人</h1>
+      <div class="sub">Python · Flask · SQLAlchemy · SQLite ｜ 反向连接 OneBot WS 服务端</div>
+    </div>
+    <div class="head-right">
+      <span id="statusBadge" class="status-badge offline"><span class="dot"></span><span id="statusText">未连接</span></span>
+      <button class="btn success" onclick="startBot()">启动</button>
+      <button class="btn secondary" onclick="restartBot()">重连</button>
+      <button class="btn danger" onclick="stopBot()">停止</button>
+    </div>
+  </header>
+
+  <!-- 连接配置 -->
+  <div class="card">
+    <h2>连接配置 <span class="sub">修改后点击「保存并重连」生效</span></h2>
+    <div class="grid">
+      <div class="field">
+        <label>主机（Host）</label>
+        <input id="cfg_host" type="text" placeholder="127.0.0.1">
+      </div>
+      <div class="field">
+        <label>端口（Port）</label>
+        <input id="cfg_port" type="text" placeholder="6700">
+      </div>
+      <div class="field">
+        <label>路径（Path）</label>
+        <input id="cfg_path" type="text" placeholder="/">
+      </div>
+      <div class="field">
+        <label>授权 Token</label>
+        <input id="cfg_token" type="password" placeholder="可为空">
+      </div>
+      <div class="field">
+        <label>消息格式</label>
+        <select id="cfg_format">
+          <option value="array">array（数组）</option>
+          <option value="string">string（字符串）</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>角色（Role）</label>
+        <select id="cfg_role">
+          <option value="universal">Universal（推荐，路径 /）</option>
+          <option value="api">API（仅调用，路径 /api）</option>
+          <option value="event">Event（仅事件，路径 /event）</option>
+        </select>
+      </div>
+    </div>
+    <div class="hint">
+      提示：本程序以客户端身份连接 OneBot 的正向 WebSocket 服务端（主机:端口 + 路径）。
+      角色选择 Universal 时路径建议为 "/"（同一连接同时支持 API 调用与事件推送）。
+    </div>
+    <div class="row mt">
+      <button class="btn" onclick="saveConfig()">保存并重连</button>
+      <button class="btn secondary" onclick="loadConfig()">刷新</button>
+    </div>
+  </div>
+
+  <!-- 消息频率限制 -->
+  <div class="card">
+    <h2>消息频率限制 <span class="sub">按「群 × 用户」统计 "/" 指令，超出后限流提示并静默过滤</span></h2>
+    <div class="grid">
+      <div class="field">
+        <label>启用</label>
+        <select id="rl_enable">
+          <option value="false">关闭</option>
+          <option value="true">开启</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>窗口内最多消息数</label>
+        <input id="rl_max" type="number" min="1" value="15">
+      </div>
+      <div class="field">
+        <label>统计窗口（秒）</label>
+        <input id="rl_window" type="number" min="1" value="60">
+      </div>
+      <div class="field">
+        <label>提示冷却时长（秒）</label>
+        <input id="rl_cooldown" type="number" min="1" value="60">
+      </div>
+    </div>
+    <div class="hint">
+      例如：15 条 / 60 秒。超出后提示「发送消息过快，请在 60 秒后再试」；
+      冷却期内（默认 60 秒）该用户再次发送的消息将被静默过滤，不再提示。
+    </div>
+    <div class="row mt">
+      <button class="btn" onclick="saveRateLimit()">保存频率限制</button>
+      <button class="btn secondary" onclick="loadConfig()">刷新</button>
+    </div>
+  </div>
+
+  <!-- 直播间监控 -->
+  <div class="card">
+    <h2>直播间监控 <span class="sub">B 站开播/下播推送：轮询 API（60 秒），一个群最多绑定 1 个直播间</span></h2>
+    <div class="row">
+      <div class="field" style="flex:1;min-width:150px;">
+        <label>群号</label>
+        <input id="lm_group" type="text" placeholder="例如 123456789">
+      </div>
+      <div class="field" style="flex:1;min-width:120px;">
+        <label>B 站房间号</label>
+        <input id="lm_room" type="text" placeholder="例如 5440">
+      </div>
+      <div class="field" style="flex:1;min-width:150px;">
+        <label>备注/主播名（可选）</label>
+        <input id="lm_remark" type="text" placeholder="例如 某某主播">
+      </div>
+      <button class="btn" onclick="addLivemon()">添加监控</button>
+      <button class="btn secondary" onclick="checkLivemon()">立即检测</button>
+    </div>
+    <div class="hint">
+      仅 <b>直播中（live_status=1）</b> 视为开播；轮播状态不视为开播。开播推送：标题/主播/开播时间/链接；
+      下播推送：标题/主播。首次添加只记录状态不通知。
+    </div>
+    <div class="mt">
+      <table>
+        <thead><tr><th>ID</th><th>群号</th><th>房间号</th><th>备注</th><th>状态</th><th>最近检测</th><th style="width:190px">操作</th></tr></thead>
+        <tbody id="livemonBody"><tr><td colspan="7" class="empty">加载中…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="mt">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:13px;color:var(--muted)">监控日志（轮询/开播/下播/操作记录）</span>
+        <button class="btn secondary" style="padding:3px 10px;font-size:12px" onclick="loadLivemonLogs()">刷新日志</button>
+      </div>
+      <div class="log-box" id="livemonLogBox" style="height:160px"><div>暂无监控日志</div></div>
+    </div>
+  </div>
+
+  <!-- UP 主动态监控 -->
+  <div class="card">
+    <h2>动态监控 <span class="sub">B 站 UP 主新动态推送：队列式轮询，每项间隔 3 分钟，一个群可绑多个 UP 主</span></h2>
+    <div class="row">
+      <div class="field" style="flex:1;min-width:150px;">
+        <label>群号</label>
+        <input id="dm_group" type="text" placeholder="例如 123456789">
+      </div>
+      <div class="field" style="flex:1;min-width:120px;">
+        <label>UP 主 UID</label>
+        <input id="dm_uid" type="text" placeholder="例如 293793435">
+      </div>
+      <div class="field" style="flex:1;min-width:150px;">
+        <label>备注/UP主名（可选）</label>
+        <input id="dm_remark" type="text" placeholder="例如 某某UP主">
+      </div>
+      <button class="btn" onclick="addDynamon()">添加监控</button>
+      <button class="btn secondary" onclick="checkDynamon()">立即检测</button>
+    </div>
+    <div class="hint">
+      队列式串行轮询：多个 UP 主时逐个轮询、每项间隔 3 分钟（如 A→3分→B→3分→A…），
+      仅 1 个 UP 主时每 3 分钟一次，拉大间隔规避 B 站风控。检测到新动态推送：UP 主 / 类型 / 内容 / 时间 / 链接。
+      首次添加只记录最新动态不通知，避免误报历史动态。
+    </div>
+    <div class="mt">
+      <table>
+        <thead><tr><th>ID</th><th>群号</th><th>UP主UID</th><th>备注</th><th>最近动态ID</th><th>最近检测</th><th style="width:190px">操作</th></tr></thead>
+        <tbody id="dynamonBody"><tr><td colspan="7" class="empty">加载中…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="mt">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:13px;color:var(--muted)">动态监控日志（轮询/新动态/操作记录）</span>
+        <button class="btn secondary" style="padding:3px 10px;font-size:12px" onclick="loadDynamonLogs()">刷新日志</button>
+      </div>
+      <div class="log-box" id="dynamonLogBox" style="height:160px"><div>暂无动态监控日志</div></div>
+    </div>
+  </div>
+
+  <!-- 群聊白名单 -->
+  <div class="card">
+    <h2>群聊白名单 <span class="sub">仅白名单内群聊的 "/" 指令会被处理</span></h2>
+    <div class="row">
+      <div class="field" style="flex:1;min-width:180px;">
+        <label>群号</label>
+        <input id="new_gid" type="text" placeholder="例如 123456789">
+      </div>
+      <div class="field" style="flex:1;min-width:180px;">
+        <label>群名称（可选）</label>
+        <input id="new_gname" type="text" placeholder="例如 我的测试群">
+      </div>
+      <button class="btn" onclick="addGroup()">添加白名单</button>
+    </div>
+    <div class="mt">
+      <table>
+        <thead><tr><th>群号</th><th>群名称</th><th>状态</th><th>加入时间</th><th style="width:150px">操作</th></tr></thead>
+        <tbody id="groupBody"><tr><td colspan="5" class="empty">加载中…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 用户 / 装备 / 地下城 -->
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" data-tab="users" onclick="switchTab('users')">用户资产</button>
+      <button class="tab" data-tab="records" onclick="switchTab('records')">签到记录</button>
+      <button class="tab" data-tab="equipment" onclick="switchTab('equipment')">装备库</button>
+      <button class="tab" data-tab="dungeon" onclick="switchTab('dungeon')">地下城</button>
+    </div>
+    <div id="panel-users">
+      <table>
+        <thead><tr><th>昵称</th><th>QQ号</th><th>资产</th><th>装备</th><th>连续签到</th><th>累计签到</th><th>最近签到</th><th>未知指令</th></tr></thead>
+        <tbody id="userBody"><tr><td colspan="8" class="empty">加载中…</td></tr></tbody>
+      </table>
+    </div>
+    <div id="panel-records" style="display:none;">
+      <table>
+        <thead><tr><th>时间</th><th>群号</th><th>用户</th><th>签到日期</th><th>连续天数</th><th>奖励(铜币)</th></tr></thead>
+        <tbody id="recordBody"><tr><td colspan="6" class="empty">加载中…</td></tr></tbody>
+      </table>
+    </div>
+    <div id="panel-equipment" style="display:none;">
+      <div class="hint" style="margin-bottom:10px">
+        装备数据保存在 <b>equipment.json</b>，直接编辑该文件即可维护；数据库仅记录用户持有的装备 id。
+        价格档（指数递增，封顶 4 金币 50 银币）：50 / 75 / 120 / 200 / 350 / 600 / 1000 / 1700 / 3000 / 5200 / 9000 / 15000 / 26000 / 45000 铜币。出售价 = 购买价 60%。
+      </div>
+      <table>
+        <thead><tr><th>名称</th><th>ID</th><th>类型</th><th>攻</th><th>防</th><th>命</th><th>魔</th><th>敏</th><th>智</th><th>价格(铜币)</th></tr></thead>
+        <tbody id="equipBody"><tr><td colspan="10" class="empty">加载中…</td></tr></tbody>
+      </table>
+    </div>
+    <div id="panel-dungeon" style="display:none;">
+      <div class="hint" style="margin-bottom:10px">
+        地下城推进公式：<b>(攻击力×2 + 敏捷×1.5 + 智力×1.25 + 魔力值×1.2) × (1+防御/400) × (1+生命/600)</b>；
+        金币按 5 秒为单位核算，第 1 层 60 秒 1 铜币。同类型装备只取公式收益最高的一件。层难度与产币均为幂函数曲线（防数值膨胀）：层总进度=1000×n^0.75，每秒产币=(1/60)×n^0.6。
+      </div>
+      <table>
+        <thead><tr><th>玩家</th><th>层数</th><th>进度</th><th>推进速度</th><th>金币/5秒</th><th>通关层</th><th>本次铜币</th><th>累计铜币</th><th>保存进度</th></tr></thead>
+        <tbody id="dungeonBody"><tr><td colspan="9" class="empty">加载中…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 运行日志 -->
+  <div class="card">
+    <h2>运行日志</h2>
+    <div class="log-box" id="logBox"><div>暂无日志</div></div>
+  </div>
+
+  <div style="text-align:center;color:var(--muted);font-size:12px;padding:8px 0 24px;">
+    货币体系：100 铜币 = 1 银币 ｜ 100 银币 = 1 金币 ｜ 100 金币 = 1 王国币 ｜ 100 王国币 = 1 圣王国币
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ---------- 基础工具 ----------
+  async function api(path, method, body) {
+    const opt = { method: method || 'GET', headers: { 'Content-Type': 'application/json' } };
+    if (body !== undefined) opt.body = JSON.stringify(body);
+    const resp = await fetch(path, opt);
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data.error || ('请求失败 ' + resp.status));
+    return data;
+  }
+  function toast(msg, ms) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), ms || 2600);
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    document.getElementById('panel-users').style.display = name === 'users' ? '' : 'none';
+    document.getElementById('panel-records').style.display = name === 'records' ? '' : 'none';
+    document.getElementById('panel-equipment').style.display = name === 'equipment' ? '' : 'none';
+    document.getElementById('panel-dungeon').style.display = name === 'dungeon' ? '' : 'none';
+  }
+  const TYPE_NAMES = { weapon: '武器', shield: '盾牌', armor: '防具', robe: '法袍', accessory: '饰品', other: '其他' };
+  // 货币换算：100铜币=1银币，100银币=1金币，100金币=1王国币，100王国币=1圣王国币
+  function fmtCur(c) {
+    c = Number(c) || 0;
+    const units = [['圣王国币', 100000000], ['王国币', 1000000], ['金币', 10000], ['银币', 100], ['铜币', 1]];
+    const parts = [];
+    for (const [name, val] of units) {
+      if (c >= val) { const n = Math.floor(c / val); parts.push(n + ' ' + name); c -= n * val; }
+    }
+    return parts.length ? parts.join(' ') : '0 铜币';
+  }
+
+  // ---------- 状态轮询 ----------
+  async function loadStatus() {
+    try {
+      const s = await api('/api/status');
+      const badge = document.getElementById('statusBadge');
+      const text = document.getElementById('statusText');
+      if (s.connected) {
+        badge.className = 'status-badge online';
+        text.textContent = '已连接 ' + (s.connected_at || '');
+      } else {
+        badge.className = 'status-badge offline';
+        text.textContent = '未连接';
+        if (s.last_error) {
+          badge.title = s.last_error;
+          text.textContent = '连接失败';
+        }
+      }
+      document.getElementById('statusBadge').title = s.url ? ('目标: ' + s.url) : '';
+    } catch (e) { /* 忽略瞬时错误 */ }
+  }
+
+  // ---------- 配置 ----------
+  async function loadConfig() {
+    try {
+      const c = await api('/api/config');
+      document.getElementById('cfg_host').value = c.bot_host || '';
+      document.getElementById('cfg_port').value = c.bot_port || '';
+      document.getElementById('cfg_path').value = c.bot_path || '/';
+      document.getElementById('cfg_token').value = c.bot_token || '';
+      document.getElementById('cfg_format').value = c.bot_message_format || 'array';
+      document.getElementById('cfg_role').value = c.bot_role || 'universal';
+      document.getElementById('rl_enable').value = String(c.rate_limit_enable === true || c.rate_limit_enable === 'true' ? 'true' : 'false');
+      document.getElementById('rl_max').value = c.rate_limit_max || 15;
+      document.getElementById('rl_window').value = c.rate_limit_window || 60;
+      document.getElementById('rl_cooldown').value = c.rate_limit_cooldown || 60;
+    } catch (e) { toast('加载配置失败: ' + e.message); }
+  }
+  async function saveRateLimit() {
+    const cfg = {
+      rate_limit_enable: document.getElementById('rl_enable').value,
+      rate_limit_max: document.getElementById('rl_max').value,
+      rate_limit_window: document.getElementById('rl_window').value,
+      rate_limit_cooldown: document.getElementById('rl_cooldown').value,
+    };
+    try {
+      await api('/api/config', 'POST', cfg);
+      toast('频率限制已保存');
+    } catch (e) { toast('保存失败: ' + e.message); }
+  }
+  async function saveConfig() {
+    const cfg = {
+      bot_host: document.getElementById('cfg_host').value.trim(),
+      bot_port: document.getElementById('cfg_port').value.trim(),
+      bot_path: document.getElementById('cfg_path').value.trim() || '/',
+      bot_token: document.getElementById('cfg_token').value.trim(),
+      bot_message_format: document.getElementById('cfg_format').value,
+      bot_role: document.getElementById('cfg_role').value,
+    };
+    try {
+      await api('/api/config', 'POST', cfg);
+      toast('配置已保存，正在重连…');
+      await api('/api/bot/restart', 'POST');
+      setTimeout(loadStatus, 500);
+    } catch (e) { toast('保存配置失败: ' + e.message); }
+  }
+
+  // ---------- 群白名单 ----------
+  async function loadGroups() {
+    try {
+      const rows = await api('/api/groups');
+      const tb = document.getElementById('groupBody');
+      if (!rows.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">暂无白名单群，请在下方添加</td></tr>'; return; }
+      tb.innerHTML = rows.map(g => `
+        <tr>
+          <td>${esc(g.group_id)}</td>
+          <td>${esc(g.group_name) || '—'}</td>
+          <td><span class="pill ${g.enabled ? 'on' : 'off'}">${g.enabled ? '启用' : '停用'}</span></td>
+          <td>${esc(g.added_at) || '—'}</td>
+          <td>
+            <button class="btn secondary" style="padding:4px 10px;font-size:12px" onclick="toggleGroup(${g.group_id})">${g.enabled ? '停用' : '启用'}</button>
+            <button class="btn danger" style="padding:4px 10px;font-size:12px" onclick="removeGroup(${g.group_id})">移除</button>
+          </td>
+        </tr>`).join('');
+    } catch (e) { toast('加载白名单失败: ' + e.message); }
+  }
+  async function addGroup() {
+    const gid = document.getElementById('new_gid').value.trim();
+    const gname = document.getElementById('new_gname').value.trim();
+    if (!gid) { toast('请填写群号'); return; }
+    try {
+      await api('/api/groups', 'POST', { group_id: gid, group_name: gname });
+      document.getElementById('new_gid').value = '';
+      document.getElementById('new_gname').value = '';
+      toast('已添加白名单');
+      loadGroups();
+    } catch (e) { toast('添加失败: ' + e.message); }
+  }
+  async function toggleGroup(gid) {
+    try { await api('/api/groups/' + gid + '/toggle', 'POST'); loadGroups(); }
+    catch (e) { toast('操作失败: ' + e.message); }
+  }
+  async function removeGroup(gid) {
+    if (!confirm('确认移除群 ' + gid + ' 的白名单？')) return;
+    try { await api('/api/groups/' + gid, 'DELETE'); toast('已移除'); loadGroups(); }
+    catch (e) { toast('移除失败: ' + e.message); }
+  }
+
+  // ---------- 用户 / 记录 ----------
+  async function loadUsers() {
+    try {
+      const rows = await api('/api/users');
+      const tb = document.getElementById('userBody');
+      if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">暂无用户，群内触发 /签到 后出现</td></tr>'; return; }
+      tb.innerHTML = rows.map(u => `
+        <tr>
+          <td>${esc(u.nickname)}</td>
+          <td>${esc(u.user_id)}</td>
+          <td style="color:var(--primary);font-weight:600">${esc(u.balance_text)}</td>
+          <td>${u.item_count || 0} 件</td>
+          <td>${u.checkin_streak} 天</td>
+          <td>${u.total_checkin} 次</td>
+          <td>${esc(u.last_checkin_date) || '—'}</td>
+          <td style="${(u.unknown_count || 0) > 3 ? 'color:#EA6668;font-weight:600' : ''}">${u.unknown_count || 0} 次</td>
+        </tr>`).join('');
+    } catch (e) { toast('加载用户失败: ' + e.message); }
+  }
+  async function loadRecords() {
+    try {
+      const rows = await api('/api/records?limit=50');
+      const tb = document.getElementById('recordBody');
+      if (!rows.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">暂无签到记录</td></tr>'; return; }
+      tb.innerHTML = rows.map(r => `
+        <tr>
+          <td>${esc(r.created_at)}</td>
+          <td>${esc(r.group_id)}</td>
+          <td>${esc(r.nickname)} (${esc(r.user_id)})</td>
+          <td>${esc(r.checkin_date)}</td>
+          <td>${r.streak_after} 天</td>
+          <td>+${r.reward}</td>
+        </tr>`).join('');
+    } catch (e) { toast('加载记录失败: ' + e.message); }
+  }
+  async function loadEquipment() {
+    try {
+      const rows = await api('/api/equipment');
+      const tb = document.getElementById('equipBody');
+      if (!rows.length) { tb.innerHTML = '<tr><td colspan="10" class="empty">装备库为空，请编辑 equipment.json</td></tr>'; return; }
+      tb.innerHTML = rows.map(it => `
+        <tr>
+          <td style="font-weight:600">${esc(it.name)}</td>
+          <td style="color:var(--muted)">${esc(it.id)}</td>
+          <td>${TYPE_NAMES[it.type] || esc(it.type)}</td>
+          <td>${it.attack || 0}</td>
+          <td>${it.defense || 0}</td>
+          <td>${it.hp || 0}</td>
+          <td>${it.mp || 0}</td>
+          <td>${it.agility || 0}</td>
+          <td>${it.intelligence || 0}</td>
+          <td style="color:var(--primary);font-weight:600">${fmtCur(it.price)}</td>
+        </tr>`).join('');
+    } catch (e) { toast('加载装备失败: ' + e.message); }
+  }
+  async function loadDungeon() {
+    try {
+      const rows = await api('/api/dungeon');
+      const tb = document.getElementById('dungeonBody');
+      if (!rows.length) { tb.innerHTML = '<tr><td colspan="9" class="empty">暂无玩家在地下城中</td></tr>'; return; }
+      tb.innerHTML = rows.map(d => `
+        <tr>
+          <td style="font-weight:600">${esc(d.nickname)} (${esc(d.user_id)})</td>
+          <td style="color:var(--primary);font-weight:600">${d.layer > 0 ? '第 ' + d.layer + ' 层' : '—'}</td>
+          <td>${d.layer > 0 ? d.progress_pct + '%' : '—'}</td>
+          <td>${d.in_dungeon ? d.speed : '—'}</td>
+          <td>${d.in_dungeon ? d.coin_per_5s : '—'}</td>
+          <td>${d.cleared}</td>
+          <td>${d.in_dungeon ? d.run_coins : '—'}</td>
+          <td>${d.total_coins}</td>
+          <td>${d.in_dungeon ? '冒险中' : (d.saved_layer > 0 ? `第 ${d.saved_layer} 层（剩 ${d.saved_progress}）` : '—')}</td>
+        </tr>`).join('');
+    } catch (e) { toast('加载地下城失败: ' + e.message); }
+  }
+
+  // ---------- 直播间监控 ----------
+  const LM_STATUS = { 0: '未开播', 1: '直播中', 2: '轮播中', null: '待检测' };
+  async function loadLivemon() {
+    try {
+      const rows = await api('/api/livemon');
+      const tb = document.getElementById('livemonBody');
+      if (!rows.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">暂无监控的直播间，请在下方添加</td></tr>'; return; }
+      tb.innerHTML = rows.map(m => `
+        <tr>
+          <td>${m.id}</td>
+          <td>${esc(m.group_id)}</td>
+          <td>${esc(m.room_id)}</td>
+          <td>${esc(m.remark) || '—'}</td>
+          <td><span class="pill ${m.last_status === 1 ? 'on' : 'off'}">${LM_STATUS[m.last_status] ?? '未知'}</span></td>
+          <td>${esc(m.last_check_at) || '—'}</td>
+          <td>
+            <button class="btn secondary" style="padding:4px 10px;font-size:12px" onclick="toggleLivemon(${m.id})">${m.enabled ? '停用' : '启用'}</button>
+            <button class="btn danger" style="padding:4px 10px;font-size:12px" onclick="removeLivemon(${m.id})">删除</button>
+          </td>
+        </tr>`).join('');
+    } catch (e) { toast('加载直播监控失败: ' + e.message); }
+  }
+  async function addLivemon() {
+    const group_id = document.getElementById('lm_group').value.trim();
+    const room_id = document.getElementById('lm_room').value.trim();
+    const remark = document.getElementById('lm_remark').value.trim();
+    if (!group_id || !room_id) { toast('请填写群号与房间号'); return; }
+    try {
+      await api('/api/livemon', 'POST', { group_id, room_id, remark });
+      document.getElementById('lm_group').value = '';
+      document.getElementById('lm_room').value = '';
+      document.getElementById('lm_remark').value = '';
+      toast('已添加直播监控');
+      loadLivemon();
+    } catch (e) { toast('添加失败: ' + e.message); }
+  }
+  async function toggleLivemon(mid) {
+    try { await api('/api/livemon/' + mid + '/toggle', 'POST'); loadLivemon(); }
+    catch (e) { toast('操作失败: ' + e.message); }
+  }
+  async function removeLivemon(mid) {
+    if (!confirm('确认删除该直播监控？')) return;
+    try { await api('/api/livemon/' + mid, 'DELETE'); toast('已删除'); loadLivemon(); }
+    catch (e) { toast('删除失败: ' + e.message); }
+  }
+  async function checkLivemon() {
+    try { await api('/api/livemon/check', 'POST'); toast('已触发检测'); loadLivemon(); loadLivemonLogs(); }
+    catch (e) { toast('检测失败: ' + e.message); }
+  }
+  async function loadLivemonLogs() {
+    try {
+      const d = await api('/api/livemon/logs');
+      const box = document.getElementById('livemonLogBox');
+      box.innerHTML = d.logs.length
+        ? d.logs.map(l => '<div>' + esc(l) + '</div>').join('')
+        : '<div>暂无监控日志</div>';
+      box.scrollTop = box.scrollHeight;
+    } catch (e) { /* 忽略瞬时错误 */ }
+  }
+
+  // ---------- UP 主动态监控 ----------
+  async function loadDynamon() {
+    try {
+      const rows = await api('/api/dynamon');
+      const tb = document.getElementById('dynamonBody');
+      if (!rows.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">暂无监控的 UP 主，请在下方添加</td></tr>'; return; }
+      tb.innerHTML = rows.map(m => `
+        <tr>
+          <td>${m.id}</td>
+          <td>${esc(m.group_id)}</td>
+          <td>${esc(m.uid)}</td>
+          <td>${esc(m.remark) || '—'}</td>
+          <td style="font-size:12px">${esc(m.last_dynamic_id) || '—'}</td>
+          <td>${esc(m.last_check_at) || '—'}</td>
+          <td>
+            <button class="btn secondary" style="padding:4px 10px;font-size:12px" onclick="toggleDynamon(${m.id})">${m.enabled ? '停用' : '启用'}</button>
+            <button class="btn danger" style="padding:4px 10px;font-size:12px" onclick="removeDynamon(${m.id})">删除</button>
+          </td>
+        </tr>`).join('');
+    } catch (e) { toast('加载动态监控失败: ' + e.message); }
+  }
+  async function addDynamon() {
+    const group_id = document.getElementById('dm_group').value.trim();
+    const uid = document.getElementById('dm_uid').value.trim();
+    const remark = document.getElementById('dm_remark').value.trim();
+    if (!group_id || !uid) { toast('请填写群号与 UP 主 UID'); return; }
+    try {
+      await api('/api/dynamon', 'POST', { group_id, uid, remark });
+      document.getElementById('dm_group').value = '';
+      document.getElementById('dm_uid').value = '';
+      document.getElementById('dm_remark').value = '';
+      toast('已添加动态监控');
+      loadDynamon();
+    } catch (e) { toast('添加失败: ' + e.message); }
+  }
+  async function toggleDynamon(mid) {
+    try { await api('/api/dynamon/' + mid + '/toggle', 'POST'); loadDynamon(); }
+    catch (e) { toast('操作失败: ' + e.message); }
+  }
+  async function removeDynamon(mid) {
+    if (!confirm('确认删除该动态监控？')) return;
+    try { await api('/api/dynamon/' + mid, 'DELETE'); toast('已删除'); loadDynamon(); }
+    catch (e) { toast('删除失败: ' + e.message); }
+  }
+  async function checkDynamon() {
+    try { await api('/api/dynamon/check', 'POST'); toast('已触发检测'); loadDynamon(); loadDynamonLogs(); }
+    catch (e) { toast('检测失败: ' + e.message); }
+  }
+  async function loadDynamonLogs() {
+    try {
+      const d = await api('/api/dynamon/logs');
+      const box = document.getElementById('dynamonLogBox');
+      box.innerHTML = d.logs.length
+        ? d.logs.map(l => '<div>' + esc(l) + '</div>').join('')
+        : '<div>暂无动态监控日志</div>';
+      box.scrollTop = box.scrollHeight;
+    } catch (e) { /* 忽略瞬时错误 */ }
+  }
+
+  // ---------- 日志 ----------
+  async function loadLogs() {
+    try {
+      const d = await api('/api/logs');
+      const box = document.getElementById('logBox');
+      box.innerHTML = d.logs.length
+        ? d.logs.map(l => '<div>' + esc(l) + '</div>').join('')
+        : '<div>暂无日志</div>';
+      box.scrollTop = box.scrollHeight;
+    } catch (e) { /* 忽略 */ }
+  }
+
+  // ---------- 机器人控制 ----------
+  async function restartBot() {
+    try { await api('/api/bot/restart', 'POST'); toast('已请求重连'); setTimeout(loadStatus, 600); }
+    catch (e) { toast('操作失败: ' + e.message); }
+  }
+  async function stopBot() {
+    try { await api('/api/bot/stop', 'POST'); toast('已停止机器人'); setTimeout(loadStatus, 400); }
+    catch (e) { toast('操作失败: ' + e.message); }
+  }
+  async function startBot() {
+    try { await api('/api/bot/start', 'POST'); toast('已启动机器人'); setTimeout(loadStatus, 600); }
+    catch (e) { toast('操作失败: ' + e.message); }
+  }
+
+  // ---------- 初始化 ----------
+  loadConfig(); loadStatus(); loadGroups(); loadUsers(); loadRecords(); loadEquipment(); loadDungeon(); loadLivemon(); loadLivemonLogs(); loadDynamon(); loadDynamonLogs(); loadLogs();
+  setInterval(loadStatus, 3000);
+  setInterval(loadLogs, 3000);
+  setInterval(loadLivemonLogs, 3000);
+  setInterval(loadDynamonLogs, 3000);
+  setInterval(() => { loadGroups(); loadUsers(); loadRecords(); loadEquipment(); loadDungeon(); loadLivemon(); loadDynamon(); }, 10000);
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "ores": [
+    {"id": "copper_ore", "name": "铜矿石", "rarity": "common"},
+    {"id": "iron_ore", "name": "铁矿石", "rarity": "common"},
+    {"id": "silver_ore", "name": "银矿石", "rarity": "rare"},
+    {"id": "mithril_ore", "name": "秘银矿石", "rarity": "rare"},
+    {"id": "gold_ore", "name": "金矿石", "rarity": "legendary"},
+    {"id": "dragon_crystal", "name": "龙晶石", "rarity": "legendary"}
+  ]
+}

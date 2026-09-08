@@ -1,5 +1,4 @@
-# python_onebot_backend
-（Python + Flask + SQLAlchemy + SQLite）
+# OneBot 11 签到机器人（Python + Flask + SQLAlchemy + SQLite）
 
 一个简单的小程序：通过 WebSocket 连接 OneBot 11 服务端，具备前端管理页面，
 支持配置群聊白名单、识别群聊用户身份，并处理以 `/` 开头的指令。
@@ -236,4 +235,3 @@ COMMANDS = {
 - `/踢 @对方`：发送者（踢人者）头像 120×120 圆形贴在底图 `images.jpg` 的 (400,98)，被 @ 者（被踢者）头像贴在 (75,34)，合成图保存到 `tmp/images_时间戳.jpg` 并作为图片消息发送到群；每个用户 60 秒冷却；头像来自腾讯官方 qlogo 直链（失败时用灰色圆形占位图）。回复文本中被 @ 者优先显示其**群名片/昵称**（机器人在白名单群里所有消息都会记录发送者名片；对被 @ 用户还会异步查询一次 `get_group_member_info` 刷新名片），无记录时显示 QQ 号
 - 所有命令回复通过 `send_group_msg` 以数组格式发送
 - 连接异常会自动每 3 秒重连一次，可在「运行日志」中查看
-

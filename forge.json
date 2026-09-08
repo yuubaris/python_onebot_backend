@@ -1,0 +1,64 @@
+{
+  "recipes": [
+    {
+      "id": "forge_iron_sword", "name": "锻造·精铁重剑", "type": "weapon", "level": 1,
+      "attack": 88, "defense": 14, "hp": 35, "mp": 0, "agility": 13, "intelligence": 5,
+      "price": 64000,
+      "cost": { "copper_ore": 70, "iron_ore": 70 }
+    },
+    {
+      "id": "forge_iron_armor", "name": "锻造·铁壁重铠", "type": "armor", "level": 1,
+      "attack": 0, "defense": 98, "hp": 110, "mp": 0, "agility": 0, "intelligence": 0,
+      "price": 64000,
+      "cost": { "copper_ore": 70, "iron_ore": 70 }
+    },
+    {
+      "id": "forge_iron_staff", "name": "锻造·奥术法杖", "type": "robe", "level": 1,
+      "attack": 0, "defense": 36, "hp": 85, "mp": 320, "agility": 0, "intelligence": 68,
+      "price": 64000,
+      "cost": { "copper_ore": 70, "iron_ore": 70 }
+    },
+    {
+      "id": "forge_silver_sword", "name": "锻造·银辉圣剑", "type": "weapon", "level": 2,
+      "attack": 108, "defense": 18, "hp": 48, "mp": 0, "agility": 16, "intelligence": 8,
+      "price": 125000,
+      "cost": { "copper_ore": 160, "iron_ore": 160, "silver_ore": 38, "mithril_ore": 38 }
+    },
+    {
+      "id": "forge_silver_armor", "name": "锻造·秘银重甲", "type": "armor", "level": 2,
+      "attack": 0, "defense": 120, "hp": 135, "mp": 0, "agility": 0, "intelligence": 0,
+      "price": 125000,
+      "cost": { "copper_ore": 160, "iron_ore": 160, "silver_ore": 38, "mithril_ore": 38 }
+    },
+    {
+      "id": "forge_silver_staff", "name": "锻造·贤者权杖", "type": "robe", "level": 2,
+      "attack": 0, "defense": 45, "hp": 100, "mp": 400, "agility": 0, "intelligence": 82,
+      "price": 125000,
+      "cost": { "copper_ore": 160, "iron_ore": 160, "silver_ore": 38, "mithril_ore": 38 }
+    },
+    {
+      "id": "forge_gold_sword", "name": "锻造·金龙神剑", "type": "weapon", "level": 3,
+      "attack": 130, "defense": 22, "hp": 60, "mp": 0, "agility": 20, "intelligence": 10,
+      "price": 400000,
+      "cost": { "copper_ore": 280, "iron_ore": 280, "silver_ore": 70, "mithril_ore": 70, "gold_ore": 30, "dragon_crystal": 18 }
+    },
+    {
+      "id": "forge_gold_armor", "name": "锻造·龙晶圣铠", "type": "armor", "level": 3,
+      "attack": 0, "defense": 145, "hp": 160, "mp": 0, "agility": 0, "intelligence": 0,
+      "price": 450000,
+      "cost": { "copper_ore": 280, "iron_ore": 280, "silver_ore": 70, "mithril_ore": 70, "gold_ore": 30, "dragon_crystal": 18 }
+    },
+    {
+      "id": "forge_gold_staff", "name": "锻造·创世法袍", "type": "robe", "level": 3,
+      "attack": 0, "defense": 55, "hp": 120, "mp": 500, "agility": 0, "intelligence": 100,
+      "price": 500000,
+      "cost": { "copper_ore": 280, "iron_ore": 280, "silver_ore": 70, "mithril_ore": 70, "gold_ore": 30, "dragon_crystal": 18 }
+    },
+    {
+      "id": "forge_dragon_blade", "name": "锻造·龙神之刃", "type": "weapon", "level": 4,
+      "attack": 160, "defense": 28, "hp": 75, "mp": 0, "agility": 24, "intelligence": 14,
+      "price": 1200000,
+      "cost": { "copper_ore": 360, "iron_ore": 350, "silver_ore": 100, "mithril_ore": 90, "gold_ore": 45, "dragon_crystal": 30 }
+    }
+  ]
+}

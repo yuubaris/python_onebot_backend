@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>群聊冒险机器人 · 玩家 Wiki</title>
+<style>
+  :root{
+    --bg:#f5f4f0; --card:#ffffff; --ink:#1a1b1c; --sub:#6b7280;
+    --line:#e4e3dd; --accent:#9eacea; --accent2:#e1b98f;
+    --ok:#52c41a; --warn:#faad14; --err:#ea6668;
+    --code-bg:#f0eef5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.65;font-size:15px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px;}
+
+  /* Header */
+  header{
+    background:linear-gradient(135deg,#3a3f5c 0%,#5b4a78 55%,#8a5a72 100%);
+    color:#fff;padding:46px 20px 40px;text-align:center;margin-bottom:34px;
+  }
+  header h1{font-size:30px;letter-spacing:2px;font-weight:700;}
+  header p{opacity:.85;margin-top:8px;font-size:14px;}
+  header .badges{margin-top:18px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}
+  header .badge{
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);
+    border-radius:999px;padding:4px 14px;font-size:12.5px;
+  }
+
+  /* TOC */
+  nav.toc{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:18px 22px;margin-bottom:30px;
+  }
+  nav.toc b{display:block;margin-bottom:10px;color:var(--sub);font-size:13px;letter-spacing:1px;}
+  nav.toc ol{list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 18px;}
+  nav.toc a{color:#4a4a6a;text-decoration:none;font-size:14px;}
+  nav.toc a:hover{color:var(--accent);}
+
+  /* Sections */
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px 26px;margin-bottom:26px;}
+  section h2{
+    font-size:20px;padding-bottom:10px;border-bottom:2px solid var(--accent);
+    margin-bottom:16px;display:flex;align-items:center;gap:8px;
+  }
+  section h3{font-size:16px;margin:20px 0 8px;color:#333;}
+  section h4{font-size:14.5px;margin:14px 0 6px;}
+  p{margin:6px 0;}
+  ul,ol{margin:6px 0 6px 22px;}
+  li{margin:3px 0;}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13.5px;}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top;}
+  th{background:#f0eef5;font-weight:600;white-space:nowrap;}
+  tr:nth-child(even) td{background:#faf9f6;}
+
+  .formula{
+    background:var(--code-bg);border-left:4px solid var(--accent);
+    padding:12px 16px;border-radius:0 8px 8px 0;margin:10px 0;
+    font-family:Consolas,'Courier New',monospace;font-size:13.5px;overflow-x:auto;
+    color:#3a3350;
+  }
+  .note{
+    background:#fff8ec;border:1px solid #f0d9a8;border-radius:8px;
+    padding:10px 14px;font-size:13.5px;margin:10px 0;color:#7a5b1a;
+  }
+  .warnbox{
+    background:#fdeeee;border:1px solid #f3b9b9;border-radius:8px;
+    padding:10px 14px;font-size:13.5px;margin:10px 0;color:#8a3434;
+  }
+  .okbox{
+    background:#edf8ec;border:1px solid #b9e3b5;border-radius:8px;
+    padding:10px 14px;font-size:13.5px;margin:10px 0;color:#2f6b2a;
+  }
+  .tag{display:inline-block;padding:1px 9px;border-radius:999px;font-size:11.5px;margin-right:6px;}
+  .t-cmd{background:#eae8f7;color:#5a4a9a;}
+  .t-cur{background:#fdeedb;color:#9a6a2a;}
+  .t-ore{background:#e7f3ee;color:#2f7a62;}
+  code.inline{background:#efe;padding:1px 6px;border-radius:4px;font-size:12.5px;}
+
+  footer{text-align:center;color:var(--sub);font-size:12.5px;margin-top:10px;}
+  @media (max-width:640px){
+    header h1{font-size:23px;}
+    section{padding:18px 14px;}
+    nav.toc ol{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚔️ 群聊冒险机器人 · 玩家 Wiki</h1>
+  <p>签到 · 武具店 · 地下城 · 矿石 · 铁匠铺 · 对战 · 互动图像 · B站监控 —— 全机制与参数手册</p>
+  <div class="badges">
+    <span class="badge">OneBot 11</span>
+    <span class="badge">Flask + SQLAlchemy + SQLite</span>
+    <span class="badge">命令以 / 开头</span>
+    <span class="badge">WS 消息数组格式</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+<nav class="toc">
+  <b>📖 目录</b>
+  <ol>
+    <li><a href="#money">货币体系</a></li>
+    <li><a href="#cmd">命令总览</a></li>
+    <li><a href="#checkin">签到系统</a></li>
+    <li><a href="#shop">武具店</a></li>
+    <li><a href="#dungeon">地下城</a></li>
+    <li><a href="#ore">稀有矿石</a></li>
+    <li><a href="#forge">铁匠铺</a></li>
+    <li><a href="#challenge">对战系统</a></li>
+    <li><a href="#img">互动图像</a></li>
+    <li><a href="#repeat">复读机制</a></li>
+    <li><a href="#unknown">未知指令</a></li>
+    <li><a href="#ratelimit">消息频率限制</a></li>
+    <li><a href="#livemon">B站直播间监控</a></li>
+    <li><a href="#dynmon">B站动态监控</a></li>
+    <li><a href="#arch">技术架构</a></li>
+  </ol>
+</nav>
+
+<!-- ============ 货币体系 ============ -->
+<section id="money">
+  <h2>💰 货币体系</h2>
+  <p>所有资产以最小单位<b>铜币</b>存储，展示时自动换算为高级货币。层级递进均为 <b>100 进制</b>：</p>
+  <table>
+    <tr><th>层级</th><th>名称</th><th>换算</th></tr>
+    <tr><td>Lv1</td><td>铜币（最小单位）</td><td>—</td></tr>
+    <tr><td>Lv2</td><td>银币</td><td>100 铜币 = 1 银币</td></tr>
+    <tr><td>Lv3</td><td>金币</td><td>100 银币 = 1 金币</td></tr>
+    <tr><td>Lv4</td><td>王国币</td><td>100 金币 = 1 王国币</td></tr>
+    <tr><td>Lv5</td><td>圣王国币</td><td>100 王国币 = 1 圣王国币</td></tr>
+  </table>
+  <p>例：<code class="inline">45,000 铜币</code> 显示为 <code class="inline">4 金币 50 银币</code>。</p>
+  <h3>货币获取途径</h3>
+  <table>
+    <tr><th>途径</th><th>产出</th><th>说明</th></tr>
+    <tr><td>每日签到</td><td>期望 ≈154 铜/次</td><td>每天 1 次，见签到章节</td></tr>
+    <tr><td>地下城挂机</td><td>(1/60)×层数^0.6 铜/秒</td><td>层数越高产出越高，见地下城章节</td></tr>
+    <tr><td>对战获胜</td><td>按赌注基准结算</td><td>见对战章节</td></tr>
+    <tr><td>出售装备</td><td>购买价 × 60%</td><td>铁匠铺装备不可出售</td></tr>
+  </table>
+  <h3>货币消耗途径</h3>
+  <table>
+    <tr><th>途径</th><th>消耗</th></tr>
+    <tr><td>武具店购买</td><td>按装备标价</td></tr>
+    <tr><td>铁匠铺锻造</td><td>铜币 + 矿石</td></tr>
+    <tr><td>对战失败</td><td>按赌注基准（不能赊账）</td></tr>
+  </table>
+</section>
+
+<!-- ============ 命令总览 ============ -->
+<section id="cmd">
+  <h2>🎮 命令总览</h2>
+  <p>群聊中消息以 <b>/</b> 开头即进入命令处理，命令名不区分大小写（支持中文 / 英文 / 拼音别名）。</p>
+  <table>
+    <tr><th>命令</th><th>功能</th><th>要点</th></tr>
+    <tr><td><code class="inline">/签到</code></td><td>每日签到</td><td>每天 1 次，连续签到有记录</td></tr>
+    <tr><td><code class="inline">/余额</code></td><td>查看资产</td><td>当前资产 + 持有装备数 + 签到统计</td></tr>
+    <tr><td><code class="inline">/背包</code></td><td>查看持有的武具与矿石</td><td>含铁匠铺装备、矿石列表</td></tr>
+    <tr><td><code class="inline">/武具店</code></td><td>查看可购买的装备</td><td>按价格分档展示</td></tr>
+    <tr><td><code class="inline">/购买 名称 [名称...]</code></td><td>购买装备</td><td>支持空格批量购买，不能赊账</td></tr>
+    <tr><td><code class="inline">/出售 名称 [名称...]</code></td><td>出售装备</td><td>回收购买价 60%</td></tr>
+    <tr><td><code class="inline">/地下城 进入/状态/退出</code></td><td>地下城冒险</td><td>退出保留进度可续</td></tr>
+    <tr><td><code class="inline">/铁匠铺</code></td><td>查看锻造配方</td><td>400 层解锁，超越武具店</td></tr>
+    <tr><td><code class="inline">/锻造 名称</code></td><td>锻造装备</td><td>消耗铜币 + 矿石，不能赊账</td></tr>
+    <tr><td><code class="inline">/挑战 @对方</code></td><td>发起对战</td><td>随机胜负，每天 3 次</td></tr>
+    <tr><td><code class="inline">/踢 @对方</code></td><td>生成踢人图</td><td>30 秒冷却</td></tr>
+    <tr><td><code class="inline">/撅 @对方</code></td><td>生成撅人 GIF</td><td>30 秒冷却，2% 反撅</td></tr>
+    <tr><td><code class="inline">/佬 @对方</code></td><td>生成大佬致敬图</td><td>30 秒冷却</td></tr>
+    <tr><td><code class="inline">/帮助</code></td><td>显示帮助</td><td>—</td></tr>
+  </table>
+</section>
+
+<!-- ============ 签到 ============ -->
+<section id="checkin">
+  <h2>📅 签到系统</h2>
+  <p>每天限签 1 次（按服务器本地日期），记录连续签到天数与累计签到次数。</p>
+  <h3>奖励概率</h3>
+  <table>
+    <tr><th>概率</th><th>奖励</th><th>折算铜币</th></tr>
+    <tr><td>95%</td><td>50 ~ 200 铜币（随机）</td><td>50 ~ 200</td></tr>
+    <tr><td>4%</td><td>888 铜币</td><td>888</td></tr>
+    <tr><td>1%</td><td>1 铜币</td><td>1</td></tr>
+  </table>
+  <div class="formula">期望值 E = 0.95 × 125 + 0.04 × 888 + 0.01 × 1 ≈ 154.3 铜币/次</div>
+  <p>连续签到无额外递增奖励，但会持续记录，用于 /余额 展示。</p>
+</section>
+
+<!-- ============ 武具店 ============ -->
+<section id="shop">
+  <h2>🏪 武具店</h2>
+  <p>用铜币购买装备（<code class="inline">/购买</code>），价格呈指数阶梯拉开差距。<b>持有任意 1 件装备即可进入地下城</b>。出售回收 <b>购买价 60%</b>（<code class="inline">/出售</code>）。</p>
+  <p>装备属性字段：<span class="tag t-cmd">攻击力 attack</span><span class="tag t-cmd">防御力 defense</span><span class="tag t-cmd">生命值 hp</span><span class="tag t-cmd">魔力值 mp</span><span class="tag t-cmd">敏捷 agility</span><span class="tag t-cmd">智力 intelligence</span></p>
+
+  <h3>武器（weapon）</h3>
+  <table>
+    <tr><th>装备</th><th>攻</th><th>防</th><th>命</th><th>魔</th><th>敏</th><th>智</th><th>价格</th></tr>
+    <tr><td>短剑</td><td>8</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>50 铜</td></tr>
+    <tr><td>铁剑</td><td>10</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>75 铜</td></tr>
+    <tr><td>长剑</td><td>13</td><td>0</td><td>0</td><td>0</td><td>2</td><td>0</td><td>120 铜</td></tr>
+    <tr><td>精钢剑</td><td>16</td><td>0</td><td>0</td><td>0</td><td>2</td><td>0</td><td>200 铜</td></tr>
+    <tr><td>骑士剑</td><td>20</td><td>3</td><td>0</td><td>0</td><td>3</td><td>0</td><td>350 铜</td></tr>
+    <tr><td>秘银剑</td><td>24</td><td>4</td><td>0</td><td>0</td><td>4</td><td>0</td><td>600 铜</td></tr>
+    <tr><td>屠龙剑</td><td>30</td><td>5</td><td>10</td><td>0</td><td>5</td><td>0</td><td>1000 铜</td></tr>
+    <tr><td>圣剑·王者</td><td>38</td><td>6</td><td>15</td><td>0</td><td>6</td><td>2</td><td>1700 铜</td></tr>
+    <tr><td>苍穹之刃</td><td>48</td><td>8</td><td>20</td><td>0</td><td>7</td><td>3</td><td>3000 铜</td></tr>
+    <tr><td>屠神之剑</td><td>60</td><td>10</td><td>25</td><td>0</td><td>9</td><td>4</td><td>9000 铜</td></tr>
+    <tr><td>永恒之刃</td><td>75</td><td>12</td><td>30</td><td>0</td><td>11</td><td>5</td><td>4 金 50 银</td></tr>
+  </table>
+
+  <h3>盾牌（shield）</h3>
+  <table>
+    <tr><th>装备</th><th>攻</th><th>防</th><th>命</th><th>敏</th><th>价格</th></tr>
+    <tr><td>圆盾</td><td>0</td><td>10</td><td>5</td><td>0</td><td>50 铜</td></tr>
+    <tr><td>铁盾</td><td>0</td><td>16</td><td>8</td><td>0</td><td>120 铜</td></tr>
+    <tr><td>骑士盾</td><td>0</td><td>26</td><td>12</td><td>0</td><td>350 铜</td></tr>
+    <tr><td>龙鳞盾</td><td>0</td><td>42</td><td>25</td><td>3</td><td>1000 铜</td></tr>
+    <tr><td>神盾·壁垒</td><td>0</td><td>52</td><td>40</td><td>3</td><td>1700 铜</td></tr>
+    <tr><td>星辉圣盾</td><td>0</td><td>66</td><td>55</td><td>4</td><td>3000 铜</td></tr>
+    <tr><td>众神之盾</td><td>0</td><td>90</td><td>90</td><td>6</td><td>2 金 60 银</td></tr>
+  </table>
+
+  <h3>防具 / 法袍（armor / robe）</h3>
+  <table>
+    <tr><th>装备</th><th>类型</th><th>攻</th><th>防</th><th>命</th><th>魔</th><th>智</th><th>价格</th></tr>
+    <tr><td>皮甲</td><td>armor</td><td>0</td><td>12</td><td>15</td><td>0</td><td>0</td><td>75 铜</td></tr>
+    <tr><td>木杖</td><td>robe</td><td>0</td><td>0</td><td>0</td><td>15</td><td>8</td><td>75 铜</td></tr>
+    <tr><td>布袍</td><td>robe</td><td>0</td><td>5</td><td>10</td><td>25</td><td>10</td><td>120 铜</td></tr>
+    <tr><td>锁子甲</td><td>armor</td><td>0</td><td>22</td><td>25</td><td>0</td><td>0</td><td>200 铜</td></tr>
+    <tr><td>学徒法杖</td><td>robe</td><td>0</td><td>0</td><td>0</td><td>40</td><td>16</td><td>200 铜</td></tr>
+    <tr><td>板甲</td><td>armor</td><td>0</td><td>34</td><td>45</td><td>0</td><td>0</td><td>600 铜</td></tr>
+    <tr><td>贤者法杖</td><td>robe</td><td>0</td><td>8</td><td>15</td><td>70</td><td>24</td><td>600 铜</td></tr>
+    <tr><td>大法师袍</td><td>robe</td><td>0</td><td>12</td><td>30</td><td>100</td><td>30</td><td>1000 铜</td></tr>
+    <tr><td>圣袍·守护</td><td>robe</td><td>0</td><td>18</td><td>40</td><td>140</td><td>38</td><td>1700 铜</td></tr>
+    <tr><td>元素法袍</td><td>robe</td><td>0</td><td>25</td><td>55</td><td>200</td><td>48</td><td>5200 铜</td></tr>
+    <tr><td>混沌魔袍</td><td>robe</td><td>0</td><td>35</td><td>80</td><td>300</td><td>60</td><td>1 金 50 银</td></tr>
+  </table>
+
+  <h3>饰品（accessory）</h3>
+  <table>
+    <tr><th>装备</th><th>防</th><th>命</th><th>魔</th><th>敏</th><th>智</th><th>价格</th></tr>
+    <tr><td>魔法披风</td><td>8</td><td>20</td><td>30</td><td>8</td><td>8</td><td>350 铜</td></tr>
+  </table>
+  <div class="note">武具店是新手过渡装备来源；中后期毕业装备来自铁匠铺（见下）。</div>
+</section>
+
+<!-- ============ 地下城 ============ -->
+<section id="dungeon">
+  <h2>🏰 地下城</h2>
+  <h3>进入条件与限制</h3>
+  <ul>
+    <li>持有<b>任意 1 件</b>装备即可进入（<code class="inline">/地下城 进入</code>）。</li>
+    <li>进入后除 <code class="inline">/签到</code>、<code class="inline">/地下城</code>（退出/状态）、<code class="inline">/余额</code>、<code class="inline">/背包</code>、<code class="inline">/帮助</code>、<code class="inline">/踢</code>、<code class="inline">/撅</code>、<code class="inline">/佬</code>、<code class="inline">/挑战</code> 外，其余动作一律拒绝。</li>
+    <li>退出时保存进度（层数 + 剩余进度），再次进入可<b>直达续上</b>。</li>
+  </ul>
+
+  <h3>初始属性（所有用户一致）</h3>
+  <table>
+    <tr><th>攻击</th><th>防御</th><th>生命</th><th>魔力</th><th>敏捷</th><th>智力</th></tr>
+    <tr><td>5</td><td>2</td><td>20</td><td>5</td><td>5</td><td>5</td></tr>
+  </table>
+
+  <h3>推进公式（核心）</h3>
+  <p>地下城按真实流逝时间自动推进，每个用户独立核算。<b>有效属性</b> = 初始属性 + 各类型装备中「公式收益最高」的那件属性之和（同类型只取一件，跨类型可叠加）。</p>
+  <div class="formula">推进速度 = (攻击×2 + 敏捷×1.5 + 智力×1.25 + 魔力×1.2) × (1 + 防御/400) × (1 + 生命/600)</div>
+  <div class="formula">单件装备公式收益分 = (攻×2 + 敏×1.5 + 智×1.25 + 魔×1.2) × (1 + 防/400) × (1 + 命/600)</div>
+
+  <h3>难度曲线（防数值膨胀）</h3>
+  <p>第 n 层总进度条采用幂函数，远慢于指数增长：</p>
+  <div class="formula">第 n 层总进度 = 1000 × n^0.75</div>
+  <p>例：第 1 层 1000、第 10 层 ≈ 5623、第 100 层 ≈ 31623、第 400 层 ≈ 89443。</p>
+
+  <h3>产币曲线</h3>
+  <div class="formula">每秒铜币 = (1/60) × n^0.6　　按 5 秒为单位核算</div>
+  <table>
+    <tr><th>层数</th><th>挂机 24h 铜币</th></tr>
+    <tr><td>1 层</td><td>≈ 1,440</td></tr>
+    <tr><td>100 层</td><td>≈ 22,822</td></tr>
+    <tr><td>400 层</td><td>≈ 52,432</td></tr>
+    <tr><td>667 层</td><td>≈ 71,259</td></tr>
+    <tr><td>1000 层</td><td>≈ 90,858</td></tr>
+  </table>
+  <p>产币增速（n^0.6）低于难度曲线（n^0.75），保证后期数值稳健不膨胀。</p>
+</section>
+
+<!-- ============ 稀有矿石 ============ -->
+<section id="ore">
+  <h2>⛏️ 稀有矿石</h2>
+  <p>地下城 <b>400 层以上</b>、<b>再次进入</b>时获得本轮矿石资格（进入时快照当前层数，本轮有效；退出后资格作废，下次进入重新判定）。</p>
+  <div class="warnbox">只有「进入时当前层数 &gt; 400」的本轮才会产出矿石；从低层一路挂到 1000 层不产出。</div>
+  <h3>结算周期</h3>
+  <p>每 <b>15 分钟（900 秒）</b>为一个结算周期，挂机时自动掷骰一次。<b>懒结算</b>：不足一个周期的时间余数直接丢弃（如挂 32.5 分钟 = 2 个周期）。</p>
+
+  <h3>掉落概率</h3>
+  <table>
+    <tr><th>档位</th><th>基础概率</th><th>矿石</th><th>层数加成</th></tr>
+    <tr><td>普通</td><td>30%（固定）</td><td>铜矿石 / 铁矿石（各 50%）</td><td>无</td></tr>
+    <tr><td>稀有</td><td>8%（固定）</td><td>银矿石 / 秘银矿石（各 50%）</td><td>无</td></tr>
+    <tr><td>传说</td><td>2%（基础）</td><td>金矿石 / 龙晶石（各 50%）</td><td>有（见下）</td></tr>
+    <tr><td>无掉落</td><td>其余</td><td>—</td><td>—</td></tr>
+  </table>
+  <div class="formula">传说档概率 = 2% × (层数 / 400)^0.5　（上限 30%，仅传说档受层数加成）</div>
+  <p>例：401 层传说≈2%、667 层≈2.58%、1600 层≈4%、极高楼层封顶 30%。</p>
+  <p><b>日产出参考</b>（96 周期/天，400 层挂机）：普通矿各≈14.4/天、稀有矿各≈3.8/天、传说矿各≈0.96/天。</p>
+  <div class="note">矿石仅用于铁匠铺锻造材料；价值出口（打铁铺）为后续开发项。</div>
+</section>
+
+<!-- ============ 铁匠铺 ============ -->
+<section id="forge">
+  <h2>🔨 铁匠铺</h2>
+  <p>到达地下城 <b>400 层</b>解锁。铁匠铺制造的装备<b>全部超越武具店顶级</b>（永恒之刃）。锻造消耗<b>铜币 + 矿石</b>，不能赊账；铁匠铺装备<b>不可 /出售</b> 回收。</p>
+  <p>矿石消耗链设计：低级矿石在高级配方中持续消耗，任何档位矿石都不会囤积。</p>
+
+  <h3>Lv1 · 基础锻造（≈5 天集矿）</h3>
+  <table>
+    <tr><th>装备</th><th>类型</th><th>属性</th><th>消耗</th></tr>
+    <tr><td>锻造·精铁重剑</td><td>武器</td><td>攻88 防14 命35 敏13 智5</td><td>铜矿70 铁矿70 + 12000 铜</td></tr>
+    <tr><td>锻造·铁壁重铠</td><td>护甲</td><td>防98 命110</td><td>铜矿70 铁矿70 + 12000 铜</td></tr>
+    <tr><td>锻造·奥术法杖</td><td>法袍</td><td>防36 命85 魔320 智68</td><td>铜矿70 铁矿70 + 12000 铜</td></tr>
+  </table>
+
+  <h3>Lv2 · 进阶锻造（累计 ≈15 天）</h3>
+  <table>
+    <tr><th>装备</th><th>类型</th><th>属性</th><th>消耗</th></tr>
+    <tr><td>锻造·银辉圣剑</td><td>武器</td><td>攻108 防18 命48 敏16 智8</td><td>铜矿60 铁矿60 银矿38 秘银38 + 25000 铜</td></tr>
+    <tr><td>锻造·秘银重甲</td><td>护甲</td><td>防120 命135</td><td>铜矿60 铁矿60 银矿38 秘银38 + 25000 铜</td></tr>
+    <tr><td>锻造·贤者权杖</td><td>法袍</td><td>防45 命100 魔400 智82</td><td>铜矿60 铁矿60 银矿38 秘银38 + 25000 铜</td></tr>
+  </table>
+
+  <h3>Lv3 · 大师锻造（累计 ≈30 天）</h3>
+  <table>
+    <tr><th>装备</th><th>类型</th><th>属性</th><th>消耗</th></tr>
+    <tr><td>锻造·金龙神剑</td><td>武器</td><td>攻130 防22 命60 敏20 智10</td><td>铜80 铁80 银40 秘银40 金15 龙晶8 + 50000 铜</td></tr>
+    <tr><td>锻造·龙晶圣铠</td><td>护甲</td><td>防145 命160</td><td>铜80 铁80 银40 秘银40 金15 龙晶8 + 50000 铜</td></tr>
+    <tr><td>锻造·创世法袍</td><td>法袍</td><td>防55 命120 魔500 智100</td><td>铜80 铁80 银40 秘银40 金15 龙晶8 + 50000 铜</td></tr>
+  </table>
+
+  <h3>Lv4 · 终极（再 ≈1 个月）</h3>
+  <table>
+    <tr><th>装备</th><th>类型</th><th>属性</th><th>消耗</th></tr>
+    <tr><td>锻造·龙神之刃</td><td>武器</td><td>攻160 防28 命75 敏24 智14</td><td>铜150 铁150 银60 秘银60 金30 龙晶30 + 120000 铜</td></tr>
+  </table>
+
+  <h3>强度对照（地下城公式收益分）</h3>
+  <table>
+    <tr><th>装备</th><th>来源</th><th>收益分</th></tr>
+    <tr><td>永恒之刃</td><td>武具店（45000 铜）</td><td>≈204</td></tr>
+    <tr><td>锻造·精铁重剑</td><td>铁匠铺 Lv1</td><td>≈221</td></tr>
+    <tr><td>锻造·银辉圣剑</td><td>铁匠铺 Lv2</td><td>≈282</td></tr>
+    <tr><td>锻造·金龙神剑</td><td>铁匠铺 Lv3</td><td>≈351</td></tr>
+    <tr><td>锻造·龙神之刃</td><td>铁匠铺 Lv4</td><td>≈450</td></tr>
+  </table>
+  <div class="okbox">铁匠铺最低档都超过武具店顶级，是玩家真正的毕业装备线。</div>
+</section>
+
+<!-- ============ 对战系统 ============ -->
+<section id="challenge">
+  <h2>⚔️ 对战系统</h2>
+  <p><code class="inline">/挑战 @对方</code>：纯随机 <b>50/50</b> 胜负，含三段文字演出（每条间隔 2 秒）。</p>
+  <h3>挑战限制</h3>
+  <ul>
+    <li><b>发起方</b>每天最多 <b>3 次</b>（跨日重置，按日期 YYYY-MM-DD）。</li>
+    <li><b>被挑战方</b>不限次数。</li>
+    <li>不能挑战自己；对方需已注册。</li>
+    <li>地下城内也可发起/被挑战。</li>
+  </ul>
+  <h3>赌注基准（赔率核心参数）</h3>
+  <div class="formula">
+    基准 = max( min( 全服资产中位数 × 3% , 双方资产之和 × 10% ), 50 铜币 )
+  </div>
+  <table>
+    <tr><th>场景</th><th>支付金额</th></tr>
+    <tr><td>挑战方 败</td><td>基准 × 1.2（挑战方自担系数）</td></tr>
+    <tr><td>被挑战方 败</td><td>基准 × 0.8</td></tr>
+  </table>
+  <div class="warnbox">不能赊账：输家资产不足时<b>全部资产</b>支付（最低可降到 0），对方也只能拿到那么多。</div>
+  <p>示例：全服中位数 10000 → 中位数×3%=300；双方资产各 1000 → 双方和×10%=200 → 基准=min(300,200)=200，再与保底 50 取大 → <b>200</b>。挑战方败付 200×1.2=240；被挑战方败付 200×0.8=160。</p>
+  <h3>演出文案格式</h3>
+  <div class="formula">
+    消息1：A 使出一记上勾拳，击中 B 胸口！<br>
+    消息2：B 反手一记右鞭腿，击中 A 面门！（间隔 2s）<br>
+    消息3：B 用一记头槌终结了比赛，B 获胜！B 获得 XXX 铜币。
+  </div>
+</section>
+
+<!-- ============ 互动图像 ============ -->
+<section id="img">
+  <h2>🖼️ 互动图像</h2>
+  <p>三个图像命令共享冷却（均为 <b>30 秒</b>，冷却中提示剩余秒数）。</p>
+  <table>
+    <tr><th>命令</th><th>产物</th><th>合成规则</th></tr>
+    <tr><td><code class="inline">/踢 @B</code></td><td>单张图片</td><td>A 头像 120×120 圆形贴 (75,34)，B 头像 120×120 圆形贴 (400,98)，底图 images.jpg</td></tr>
+    <tr><td><code class="inline">/撅 @B</code></td><td>3 帧 GIF</td><td>逐帧按坐标贴 A/B 头像，2% 概率位置互换（A 撅失败被 B 反撅，头像方向互换）</td></tr>
+    <tr><td><code class="inline">/佬 @B</code></td><td>单张图片</td><td>A 头像 54×54 圆形贴 (91,121)，B 头像 54×54 圆形贴 (200,3)，底图 dalao.png</td></tr>
+  </table>
+  <p>被 @ 的用户显示<b>群昵称</b>（本地已记录则优先昵称，否则 QQ 号）。</p>
+</section>
+
+<!-- ============ 复读机制 ============ -->
+<section id="repeat">
+  <h2>🔁 复读机制</h2>
+  <p>群内 <b>2 个不同用户</b>发送<b>完全相同</b>的非命令消息后，机器人立即复读一次。</p>
+  <table>
+    <tr><th>参数</th><th>值</th></tr>
+    <tr><td>相同内容计数窗口</td><td>60 秒（过期自动重置）</td></tr>
+    <tr><td>触发复读所需不同用户数</td><td>2</td></tr>
+    <tr><td>每轮复读次数</td><td>1 次（第 3 人及之后不再复读）</td></tr>
+  </table>
+  <div class="note">同一用户重复发送不计入；机器人自身消息不计入；命令消息不参与复读。</div>
+</section>
+
+<!-- ============ 未知指令 ============ -->
+<section id="unknown">
+  <h2>🚫 未知指令</h2>
+  <p>对不存在的命令（<code class="inline">/xxx</code>）累计计数：</p>
+  <ul>
+    <li>前 2 次：提示「未知指令，发送 /帮助 查看可用命令」。</li>
+    <li><b>第 3 次</b>：发送 beat.jpeg 合成图（把该用户头像以 46×46 圆形裁切贴在 (23,82)），并提示不再响应。</li>
+    <li>第 4 次起：完全静默，不再响应该用户的未知指令（有效命令不受影响）。</li>
+  </ul>
+  <div class="note">阈值 UNKNOWN_LIMIT = 3；该计数跨会话累计。</div>
+</section>
+
+<!-- ============ 消息频率限制 ============ -->
+<section id="ratelimit">
+  <h2>⏱️ 消息频率限制</h2>
+  <p>按「群 × 用户」维度统计 <code class="inline">/</code> 指令发送频率，可在管理后台配置（默认关闭）。</p>
+  <table>
+    <tr><th>配置项</th><th>默认值</th><th>含义</th></tr>
+    <tr><td>rate_limit_enable</td><td>false</td><td>是否启用</td></tr>
+    <tr><td>rate_limit_max</td><td>15</td><td>统计窗口内最大指令条数</td></tr>
+    <tr><td>rate_limit_window</td><td>60 秒</td><td>统计窗口</td></tr>
+    <tr><td>rate_limit_cooldown</td><td>60 秒</td><td>超出后冷却时长</td></tr>
+  </table>
+  <p>超出限制：回复「发送消息过快，请在 X 秒后再试」并进入冷却期；<b>冷却期内再收到消息被静默过滤</b>（不再提示、不处理），冷却结束后重新计时。</p>
+</section>
+
+<!-- ============ 直播间监控 ============ -->
+<section id="livemon">
+  <h2>🔴 B站直播间监控</h2>
+  <p>绑定群号监控直播间开播/下播，可在管理页配置启用/禁用。</p>
+  <table>
+    <tr><th>项</th><th>值</th></tr>
+    <tr><td>轮询间隔</td><td>60 秒</td></tr>
+    <tr><td>接口</td><td>批量 getRoomBaseInfo（一次查询全部）</td></tr>
+    <tr><td>直播判定</td><td>live_status == 1 才算直播中（<b>轮播 2 不算开播</b>）</td></tr>
+    <tr><td>绑定约束</td><td>一个群最多绑 1 个直播间；一个直播间可绑多个群（1 对多）</td></tr>
+    <tr><td>规模预估</td><td>不超过 3 个</td></tr>
+  </table>
+  <h3>推送内容</h3>
+  <ul>
+    <li><b>开播</b>（0/2 → 1）：直播间标题 / 主播名 / 开播时间 / 直播间链接</li>
+    <li><b>下播</b>（1 → 0/2）：直播间标题 / 主播名</li>
+    <li>首次监控只记录状态不通知；接口异常本轮跳过不误报</li>
+  </ul>
+</section>
+
+<!-- ============ 动态监控 ============ -->
+<section id="dynmon">
+  <h2>📢 B站动态监控</h2>
+  <p>绑定群号监控 UP 主新动态并推送（支持图文动态带图）。</p>
+  <table>
+    <tr><th>项</th><th>值</th></tr>
+    <tr><td>轮询方式</td><td>队列式串行轮询，每轮询完一个 UP 等 200 秒再轮询下一个（单 UP 间隔 200s；N 个 UP 每个约 N×200s）</td></tr>
+    <tr><td>请求层</td><td>CDP 真实 Edge 浏览器优先（复用登录态），失败自动降级 curl.exe</td></tr>
+    <tr><td>接口</td><td>空间动态列表 web-dynamic/v1/feed/space</td></tr>
+    <tr><td>去重</td><td>记录最新动态 id，只推送更新的动态</td></tr>
+    <tr><td>置顶处理</td><td>按 pub_ts 真实发布时间倒序，避免置顶动态挡住新动态</td></tr>
+  </table>
+  <h3>推送内容</h3>
+  <ul>
+    <li>UP 主名 / 动态类型 / 内容 / 发布时间 / 动态链接</li>
+    <li>图文动态：文字 + 图片（下载到本地后以 file:// 发送）</li>
+    <li>首次监控只记录最新动态 id、不通知（避免误报历史动态）</li>
+  </ul>
+  <div class="note">风控处理：命中 B 站风控（-352/-412/非 JSON）进入 300s 冷却，静默跳过，避免被拉黑。</div>
+</section>
+
+<!-- ============ 技术架构 ============ -->
+<section id="arch">
+  <h2>🛠️ 技术架构</h2>
+  <table>
+    <tr><th>层</th><th>技术</th></tr>
+    <tr><td>语言 / 框架</td><td>Python + Flask</td></tr>
+    <tr><td>数据库</td><td>Flask-SQLAlchemy + SQLite（onebot_bot.db）</td></tr>
+    <tr><td>协议</td><td>OneBot 11 WebSocket（消息格式：数组；角色 universal）</td></tr>
+    <tr><td>管理页</td><td>Web 前端（群白名单、频率限制、直播/动态监控配置与日志）</td></tr>
+    <tr><td>图片合成</td><td>Pillow（圆形裁切 / GIF 多帧 / 坐标贴图）</td></tr>
+    <tr><td>监控请求</td><td>CDP（Chrome DevTools Protocol） + curl.exe 降级</td></tr>
+    <tr><td>数据文件</td><td>equipment.json / forge.json / ores.json（改数值即生效，数据库只存 id）</td></tr>
+  </table>
+  <h3>设计原则</h3>
+  <ul>
+    <li>货币统一以铜币存储，展示时换算，杜绝浮点误差。</li>
+    <li>数值曲线：难度 n^0.75 &gt; 产币 n^0.6，装备价格指数拉开，防后期数值膨胀。</li>
+    <li>矿石 + 铜币双门槛，铁匠铺装备 1 个月毕业线。</li>
+    <li>所有消耗不能赊账；对抗有保底与上限，资产不可为负。</li>
+  </ul>
+</section>
+
+<footer>群聊冒险机器人 · 玩家 Wiki —— 基于当前生产配置生成（2026-09-07）</footer>
+</div>
+</body>
+</html>
