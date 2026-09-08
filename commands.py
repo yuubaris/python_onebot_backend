@@ -274,6 +274,9 @@ def cmd_shop(user, group_id, args, at_qqs=None):
     展示规则：未转职先引导转职；已转职把本职业可用装备按「T 档」分组，
     每档标题注明所需称号（如 T3·银辉战士）。当前称号（当前阶级）能买 ≤ 当前档
     的全部装备；更高档标 🔒 并提示需晋升到什么称号（该档只预览最低价几件，防刷屏）。
+
+    自定义开关（/武器库 开关）：开启后**隐藏低于自己等级的装备**，只展示当前档，
+    减少输出刷屏；再次切换恢复全部展示。
     """
     prof = (user.profession or "") or ""
     if not prof:
@@ -287,19 +290,46 @@ def cmd_shop(user, group_id, args, at_qqs=None):
     usable = [it for it in items if item_line(it) in (line, LINE_ANY)]
     if not usable:
         return "武器库暂无可购装备。"
+    # —— 开关子命令：/武器库 开关（切换）/ 开 / 关 ——
+    arg = (args or "").strip()
+    if arg:
+        kw = arg.replace(" ", "").lower()
+        if kw in ("开关", "切换", "toggle", "隐藏低级", "仅当前"):
+            user.shop_filter = 0 if (user.shop_filter or 0) else 1
+            db.session.commit()
+            if user.shop_filter:
+                return f"✅ 已开启武器库精简模式：隐藏低于当前档（T{my_tier}）的装备，只展示当前档。\n再发「/武器库 开关」可恢复全部展示。"
+            return "✅ 已关闭武器库精简模式：恢复展示全部可购装备（T0~当前档）。"
+        if kw in ("开", "on", "1"):
+            user.shop_filter = 1
+            db.session.commit()
+            return f"✅ 已开启武器库精简模式：只展示当前档（T{my_tier}）装备。"
+        if kw in ("关", "off", "0"):
+            user.shop_filter = 0
+            db.session.commit()
+            return "✅ 已关闭武器库精简模式：恢复展示全部可购装备。"
     # 按 T 档分组
     from collections import defaultdict
     by_tier = defaultdict(list)
     for it in usable:
         by_tier[_item_tier(it)].append(it)
     max_shop = max(_item_tier(it) for it in usable)
-    lines = [f"⚔️ 武器库 · {_user_title(user)}（当前称号可购 T0~T{my_tier} 档）"]
+    top_buy = min(my_tier, max_shop)          # 当前实际能买到的最高档
+    hide_low = bool(user.shop_filter or 0)    # 精简模式：隐藏低于当前档
+    head = f"⚔️ 武器库 · {_user_title(user)}"
+    if hide_low:
+        head += f"（精简模式：只显示 T{top_buy} 档，/武器库 开关 恢复全部）"
+    else:
+        head += f"（当前称号可购 T0~T{my_tier} 档，/武器库 开关 可隐藏低级）"
+    lines = [head]
     for ti in range(0, max_shop + 1):
         arr = sorted(by_tier.get(ti, []), key=lambda x: (x["price"], x["name"]))
         if not arr:
             continue
         title_name = tier_title(prof, ti)  # 如 见习战士 / 疾风战士 …
         if ti <= my_tier:
+            if hide_low and ti < top_buy:
+                continue   # 精简模式：隐藏低于当前档的装备
             lines.append(f"—— T{ti} · {title_name} ——")
             for it in arr:
                 lines.append(f"· {it['name']}（{_item_desc(it)}）{format_currency(it['price'])}")

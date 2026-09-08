@@ -61,6 +61,7 @@ class User(db.Model):
     # 职业与阶级（装备系统 v3）：profession=职业标识(空=未转职)；tier=当前阶级(0~6，默认0)
     profession = db.Column(db.String(32), default="", nullable=False)
     tier = db.Column(db.Integer, default=0, nullable=False)
+    shop_filter = db.Column(db.Integer, default=0, nullable=False)  # 武器库开关：1=只显示当前档(隐藏低等级) 0=全部
     # 对战（/挑战）：每日发起次数限制（3 次/天，按日期重置）
     challenge_date = db.Column(db.String(10), default="", nullable=False)   # YYYY-MM-DD
     challenge_count = db.Column(db.Integer, default=0, nullable=False)      # 当日已发起次数

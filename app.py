@@ -709,6 +709,8 @@ def _migrate_schema():
             conn.execute("ALTER TABLE user ADD COLUMN profession VARCHAR(32) DEFAULT ''")
         if "tier" not in cols:
             conn.execute("ALTER TABLE user ADD COLUMN tier INTEGER DEFAULT 0")
+        if "shop_filter" not in cols:
+            conn.execute("ALTER TABLE user ADD COLUMN shop_filter INTEGER DEFAULT 0")
         conn.commit()
         # user_item 表：Boss 掉落 new 标记
         it_cols = {r[1] for r in conn.execute("PRAGMA table_info(user_item)")}
