@@ -173,7 +173,8 @@
       "price": 260000,
       "cost": {
         "chaos_core": 18,
-        "dragon_soul_crystal": 24
+        "dragon_soul_crystal": 24,
+        "adamantite_ore": 40
       },
       "line": "magic",
       "tier": 6
@@ -192,7 +193,8 @@
       "price": 260000,
       "cost": {
         "star_iron": 18,
-        "dragon_crystal": 24
+        "dragon_crystal": 24,
+        "mithril_ore": 40
       },
       "line": "physical",
       "tier": 6
@@ -232,7 +234,8 @@
       "price": 260000,
       "cost": {
         "oracle_stone": 18,
-        "dragon_crystal": 24
+        "dragon_crystal": 24,
+        "mithril_ore": 40
       },
       "line": "magic",
       "tier": 6
@@ -507,7 +510,8 @@
       "price": 260000,
       "cost": {
         "chaos_core": 18,
-        "dragon_soul_crystal": 24
+        "dragon_soul_crystal": 24,
+        "adamantite_ore": 40
       },
       "line": "physical",
       "tier": 6
@@ -526,7 +530,8 @@
       "price": 260000,
       "cost": {
         "oracle_stone": 12,
-        "gold_ore": 16
+        "gold_ore": 16,
+        "silver_ore": 30
       },
       "line": "physical",
       "tier": 6
@@ -545,7 +550,8 @@
       "price": 260000,
       "cost": {
         "star_iron": 12,
-        "gold_ore": 16
+        "gold_ore": 16,
+        "silver_ore": 30
       },
       "line": "magic",
       "tier": 6
@@ -566,7 +572,8 @@
         "chaos_core": 3,
         "oracle_stone": 3,
         "star_iron": 2,
-        "holy_glowstone": 10
+        "holy_glowstone": 10,
+        "stardust_sand": 20
       },
       "line": "any",
       "tier": 6
