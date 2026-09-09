@@ -95,7 +95,7 @@
 
 <header>
   <h1>⚔️ 群聊冒险机器人 · 玩家 Wiki</h1>
-  <p>签到 · 武器库 · 职业/晋升 · 地下城(Boss) · 矿石 · 铁匠铺 · 稀有装备 · 对战 · 互动图像 · B站监控 —— 全机制与参数手册</p>
+  <p>签到 · 武器库 · 职业/晋升 · 地下城(Boss) · 矿石 · 铁匠铺 · 稀有装备 · 对战 · 炼金 —— 地下城冒险全机制与参数手册</p>
   <div class="badges">
     <span class="badge">OneBot 11</span>
     <span class="badge">Flask + SQLAlchemy + SQLite</span>
@@ -118,12 +118,8 @@
     <li><a href="#bossalchemy">Boss挑战·材料·炼金</a></li>
     <li><a href="#forge">铁匠铺</a></li>
     <li><a href="#challenge">对战系统</a></li>
-    <li><a href="#img">互动图像</a></li>
-    <li><a href="#repeat">复读机制</a></li>
-    <li><a href="#unknown">未知指令</a></li>
     <li><a href="#ratelimit">消息频率限制</a></li>
-    <li><a href="#livemon">B站直播间监控</a></li>
-    <li><a href="#dynmon">B站动态监控</a></li>
+    <li><a href="#extract">地下城剥离</a></li>
     <li><a href="#arch">技术架构</a></li>
   </ol>
 </nav>
@@ -183,9 +179,6 @@
     <tr><td><code class="inline">/使用 物品名</code></td><td>使用药水/道具</td><td>药水=属性 BUFF；道具=掉落增益</td></tr>
     <tr><td><code class="inline">/转转 捐赠 <装备名> / 乞讨</code></td><td>装备互助</td><td>捐赠入公共库（他人可乞讨，锻造装除外）；乞讨随机获得一件符合自己等级的装备（tier ≤ 当前阶级/锻造 Lv 已解锁），每天 3 次</td></tr>
     <tr><td><code class="inline">/抽奖 1|2|3 [次数]</code></td><td>抽奖</td><td>（v2.11.92 支持批量：第二参数为次数，默认 1、最多 10）消耗金钱抽金钱/装备/材料/矿石/道具，也有谢谢惠顾；5铜/5银/5金三档，中奖率与卡池稀有度逐档提升；<b>三档均为负期望</b>（≈0.87/0.65/0.45，档位越高亏越多，长期趋向亏损）；<b>高级货保留且高频</b>：档3 每抽 40% 出 tier4~5 装备（其中 20% 稀有大奖）、16% 传说~神话材料/矿石（空奖 38%/30%/6%）；材料与矿石按稀有度同池抽取（v2.11.89），矿石发放入矿石栏；<b>奖等</b>：🥉铜奖/🥈银奖/🥇金奖(稀有大奖/传说材料)/👑特等奖·神话材料/神话矿石</td></tr>
-    <tr><td><code class="inline">/踢 @对方</code></td><td>生成踢人图</td><td>30 秒冷却</td></tr>
-    <tr><td><code class="inline">/撅 @对方</code></td><td>生成撅人 GIF</td><td>30 秒冷却，2% 反撅</td></tr>
-    <tr><td><code class="inline">/佬 @对方</code></td><td>生成大佬致敬图</td><td>30 秒冷却</td></tr>
     <tr><td><code class="inline">/帮助</code></td><td>显示帮助</td><td>—</td></tr>
   </table>
 </section>
@@ -258,7 +251,7 @@
   <h3>进入条件与限制</h3>
   <ul>
     <li>持有<b>任意 1 件</b>装备即可进入（<code class="inline">/地下城 进入</code>）。</li>
-    <li>进入后除 <code class="inline">/签到</code>、<code class="inline">/地下城</code>（退出/状态）、<code class="inline">/余额</code>、<code class="inline">/背包</code>、<code class="inline">/帮助</code>、<code class="inline">/踢</code>、<code class="inline">/撅</code>、<code class="inline">/佬</code>、<code class="inline">/挑战</code>、<code class="inline">/boss</code>、<code class="inline">/炼金</code>、<code class="inline">/使用</code>（即时结算，可在地下层内使用）外，其余动作一律拒绝。</li>
+    <li>进入后除 <code class="inline">/签到</code>、<code class="inline">/地下城</code>（退出/状态）、<code class="inline">/余额</code>、<code class="inline">/背包</code>、<code class="inline">/帮助</code>、<code class="inline">/挑战</code>、<code class="inline">/boss</code>、<code class="inline">/炼金</code>、<code class="inline">/使用</code>、<code class="inline">/锻造</code>、<code class="inline">/铁匠铺</code>（即时结算，可在地下层内使用）外，其余动作一律拒绝。</li>
     <li>退出时保存进度（层数 + 剩余进度），再次进入可<b>直达续上</b>。</li>
   </ul>
 
@@ -442,44 +435,6 @@
   </div>
 </section>
 
-<!-- ============ 互动图像 ============ -->
-<section id="img">
-  <h2>🖼️ 互动图像</h2>
-  <p>三个图像命令共享冷却（均为 <b>30 秒</b>，冷却中提示剩余秒数）。</p>
-  <table>
-    <tr><th>命令</th><th>产物</th><th>合成规则</th></tr>
-    <tr><td><code class="inline">/踢 @B</code></td><td>单张图片</td><td>A 头像 120×120 圆形贴 (75,34)，B 头像 120×120 圆形贴 (400,98)，底图 images.jpg</td></tr>
-    <tr><td><code class="inline">/撅 @B</code></td><td>3 帧 GIF</td><td>逐帧按坐标贴 A/B 头像，2% 概率位置互换（A 撅失败被 B 反撅，头像方向互换）</td></tr>
-    <tr><td><code class="inline">/佬 @B</code></td><td>单张图片</td><td>A 头像 54×54 圆形贴 (91,121)，B 头像 54×54 圆形贴 (200,3)，底图 dalao.png</td></tr>
-  </table>
-  <p>被 @ 的用户显示<b>群昵称</b>（本地已记录则优先昵称，否则 QQ 号）。</p>
-</section>
-
-<!-- ============ 复读机制 ============ -->
-<section id="repeat">
-  <h2>🔁 复读机制</h2>
-  <p>群内 <b>2 个不同用户</b>发送<b>完全相同</b>的非命令消息后，机器人立即复读一次。</p>
-  <table>
-    <tr><th>参数</th><th>值</th></tr>
-    <tr><td>相同内容计数窗口</td><td>60 秒（过期自动重置）</td></tr>
-    <tr><td>触发复读所需不同用户数</td><td>2</td></tr>
-    <tr><td>每轮复读次数</td><td>1 次（第 3 人及之后不再复读）</td></tr>
-  </table>
-  <div class="note">同一用户重复发送不计入；机器人自身消息不计入；命令消息不参与复读。</div>
-</section>
-
-<!-- ============ 未知指令 ============ -->
-<section id="unknown">
-  <h2>🚫 未知指令</h2>
-  <p>对不存在的命令（<code class="inline">/xxx</code>）累计计数：</p>
-  <ul>
-    <li>前 2 次：提示「未知指令，发送 /帮助 查看可用命令」。</li>
-    <li><b>第 3 次</b>：发送 beat.jpeg 合成图（把该用户头像以 46×46 圆形裁切贴在 (23,82)），并提示不再响应。</li>
-    <li>第 4 次起：完全静默，不再响应该用户的未知指令（有效命令不受影响）。</li>
-  </ul>
-  <div class="note">阈值 UNKNOWN_LIMIT = 3；该计数跨会话累计。</div>
-</section>
-
 <!-- ============ 消息频率限制 ============ -->
 <section id="ratelimit">
   <h2>⏱️ 消息频率限制</h2>
@@ -494,56 +449,18 @@
   <p>超出限制：回复「发送消息过快，请在 X 秒后再试」并进入冷却期；<b>冷却期内再收到消息被静默过滤</b>（不再提示、不处理），冷却结束后重新计时。</p>
 </section>
 
-<!-- ============ 直播间监控 ============ -->
-<section id="livemon">
-
+<!-- ============ 地下城剥离 ============ -->
+<section id="extract">
   <h2>🏗️ 地下城剥离（refactor/dungeon-extract）</h2>
   <p>地下城功能已剥离为独立准新仓库 <code>dungeon_service/</code>（0 import 外壳，单进程运行，不做双进程）：</p>
   <ul>
     <li>游戏域 14 模块 + 数据模型迁入包内，根目录同名文件为转发壳（单一实现源）；</li>
     <li>15 个地下城命令集中在 <code>dungeon_service/commands.py</code>，经 <code>GameCore</code> 门面直调
       （settle 保守命令触发结算 / run_command / take_events）；</li>
-    <li>回归基线 <code>dungeon_service/tests/</code>：35 用例（18 golden 逐字 diff），
+    <li>回归基线 <code>dungeon_service/tests/</code>：39 用例（20 golden 逐字 diff），
       <code>python3 -m pytest dungeon_service/tests/ -q</code>；</li>
     <li>玩家可见行为零变化；未来拆独立进程按 <code>docs/dungeon-extract-plan.md</code> §4.3 HTTP 契约起 server.py。</li>
   </ul>
-  <h2>🔴 B站直播间监控</h2>
-  <p>绑定群号监控直播间开播/下播，可在管理页配置启用/禁用。</p>
-  <table>
-    <tr><th>项</th><th>值</th></tr>
-    <tr><td>轮询间隔</td><td>60 秒</td></tr>
-    <tr><td>接口</td><td>批量 getRoomBaseInfo（一次查询全部）</td></tr>
-    <tr><td>直播判定</td><td>live_status == 1 才算直播中（<b>轮播 2 不算开播</b>）</td></tr>
-    <tr><td>绑定约束</td><td>一个群最多绑 1 个直播间；一个直播间可绑多个群（1 对多）</td></tr>
-    <tr><td>规模预估</td><td>不超过 3 个</td></tr>
-  </table>
-  <h3>推送内容</h3>
-  <ul>
-    <li><b>开播</b>（0/2 → 1）：直播间标题 / 主播名 / 开播时间 / 直播间链接</li>
-    <li><b>下播</b>（1 → 0/2）：直播间标题 / 主播名</li>
-    <li>首次监控只记录状态不通知；接口异常本轮跳过不误报</li>
-  </ul>
-</section>
-
-<!-- ============ 动态监控 ============ -->
-<section id="dynmon">
-  <h2>📢 B站动态监控</h2>
-  <p>绑定群号监控 UP 主新动态并推送（支持图文动态带图）。</p>
-  <table>
-    <tr><th>项</th><th>值</th></tr>
-    <tr><td>轮询方式</td><td>队列式串行轮询，每轮询完一个 UP 等 200 秒再轮询下一个（单 UP 间隔 200s；N 个 UP 每个约 N×200s）</td></tr>
-    <tr><td>请求层</td><td>CDP 真实 Edge 浏览器优先（复用登录态），失败自动降级 curl.exe</td></tr>
-    <tr><td>接口</td><td>空间动态列表 web-dynamic/v1/feed/space</td></tr>
-    <tr><td>去重</td><td>记录最新动态 id，只推送更新的动态</td></tr>
-    <tr><td>置顶处理</td><td>按 pub_ts 真实发布时间倒序，避免置顶动态挡住新动态</td></tr>
-  </table>
-  <h3>推送内容</h3>
-  <ul>
-    <li>UP 主名 / 动态类型 / 内容 / 发布时间 / 动态链接</li>
-    <li>图文动态：文字 + 图片（下载到本地后以 file:// 发送）</li>
-    <li>首次监控只记录最新动态 id、不通知（避免误报历史动态）</li>
-  </ul>
-  <div class="note">风控处理：命中 B 站风控（-352/-412/非 JSON）进入 300s 冷却，静默跳过，避免被拉黑。</div>
 </section>
 
 <!-- ============ 技术架构 ============ -->
@@ -554,9 +471,6 @@
     <tr><td>语言 / 框架</td><td>Python + Flask</td></tr>
     <tr><td>数据库</td><td>Flask-SQLAlchemy + SQLite（onebot_bot.db）</td></tr>
     <tr><td>协议</td><td>OneBot 11 WebSocket（消息格式：数组；角色 universal）</td></tr>
-    <tr><td>管理页</td><td>Web 前端（群白名单、频率限制、直播/动态监控配置与日志）</td></tr>
-    <tr><td>图片合成</td><td>Pillow（圆形裁切 / GIF 多帧 / 坐标贴图）</td></tr>
-    <tr><td>监控请求</td><td>CDP（Chrome DevTools Protocol） + curl.exe 降级</td></tr>
     <tr><td>数据文件</td><td>equipment.json / forge.json / ores.json / rare_drops.json / materials.json / bosses.json / consumables.json / alchemy_recipes.json（改数值即生效；classes.py / tiers.py 定义职业与阶级）</td></tr>
   </table>
   <h3>设计原则</h3>
