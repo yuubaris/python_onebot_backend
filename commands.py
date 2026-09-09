@@ -1403,6 +1403,7 @@ DUNGEON_ALLOWED = {"签到", "checkin", "qiandao",
                    "转职", "class", "zhuanzhi",
                    "晋升", "promote", "jinsheng",
                    "帮助", "help", "bangzhu",
+                   "抽奖", "lottery", "choujiang", "lucky",
                    "踢", "kick", "ti",
                    "撅", "jue",
                    "佬", "lao",
@@ -1453,7 +1454,7 @@ def dispatch_command(text, user, group_id, at_qqs=None):
         settle_dungeon(user)  # 先按流逝时间结算（可能触发 Boss 掉落），再判断
         if handler is None or name not in DUNGEON_ALLOWED:
             return (f"⚠️ 你正在地下城第 {user.dungeon_layer} 层中。\n"
-                    f"地下城内可使用 /签到、/余额、/背包、/帮助、/踢、/撅、/佬、/挑战 或 /地下城 退出。")
+                    f"地下城内可使用 /签到、/余额、/背包、/抽奖、/帮助、/踢、/撅、/佬、/挑战 或 /地下城 退出。")
 
     if handler is None:
         # 未知指令计数：达到阈值（第 3 次）发 beat.jpg+头像合成图并停止响应
