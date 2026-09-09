@@ -2,8 +2,10 @@
 """抽奖模块：3 档抽奖（5 铜 / 5 银 / 5 金），各档中奖率与卡池稀有度不同。
 
 - 档1（5 铜）：小奖为主——高概率小额铜币返还，实物多为低级装备/草药/低阶消耗品；
-- 档2（5 银）：中奖率提升、稀有度上移——装备 tier2~3、稀有~传说材料、中阶消耗品；
-- 档3（5 金）：高投入高回报——大额金钱、tier4~5 装备、传说~神话材料、高阶消耗品、稀有装备大奖。
+- 档2（5 银）：中奖率提升、稀有度上移——装备 tier2、稀有~传说材料、中阶消耗品；
+- 档3（5 金）：高投入——大额金钱、tier4~5 装备、传说~神话材料、高阶消耗品、稀有装备大奖。
+- 期望设计（v2.11.72）：三档均为**负期望**（EV/成本 ≈ 0.87 / 0.65 / 0.29），档位越高亏得越多，
+  长期抽奖整体趋向亏损（铜币回收口径；材料/消耗品无定价未计入，实际略高于该值）。
 
 奖励发放：金钱 → user.copper；装备 → UserItem；材料 → material.grant_materials；
 消耗品 → consumable.grant_consumables。调用方负责 commit。
@@ -48,7 +50,9 @@ def _equip_pool(min_tier, max_tier, include_rare=False):
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rare_drops.json")
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
-    rares = [it for it in (data.get("rare_drops", data.get("items", data)))
+    if isinstance(data, dict):
+        data = data.get("rare_drops", data.get("items", data))
+    rares = [it for it in data
              if (it.get("tier") or 0) >= min_tier and (it.get("tier") or 0) <= max_tier]
     return shop, rares
 
@@ -82,15 +86,15 @@ def roll(user, tier_no, rnd=None):
 
     if tier_no == 1:
         kind = _pick([
-            (15, "thanks"), (58, "money"), (20, "equip"), (5, "material"), (2, "consumable"),
+            (38, "thanks"), (45, "money"), (6, "equip"), (6, "material"), (5, "consumable"),
         ])
     elif tier_no == 2:
         kind = _pick([
-            (12, "thanks"), (42, "money"), (28, "equip"), (12, "material"), (6, "consumable"),
+            (30, "thanks"), (38, "money"), (18, "equip"), (8, "material"), (6, "consumable"),
         ])
     else:
         kind = _pick([
-            (8, "thanks"), (28, "money"), (32, "equip"), (20, "material"), (12, "consumable"),
+            (12, "thanks"), (26, "money"), (32, "equip"), (20, "material"), (10, "consumable"),
         ])
 
     jackpot = False
@@ -98,11 +102,11 @@ def roll(user, tier_no, rnd=None):
         text = "🙏 谢谢惠顾，再接再厉！"
     elif kind == "money":
         if tier_no == 1:
-            amt = random.randint(2, 9)
+            amt = random.randint(1, 5)
         elif tier_no == 2:
-            amt = random.randint(100, 800)
+            amt = random.randint(80, 650)
         else:
-            amt = random.randint(8000, 90000)
+            amt = random.randint(6000, 60000)
         user.copper += amt
         text = f"💰 幸运金钱！获得 {amt} 铜币"
     elif kind == "equip":
@@ -110,7 +114,7 @@ def roll(user, tier_no, rnd=None):
             shop, _ = _equip_pool(0, 1)
             it = _rand_item(shop)
         elif tier_no == 2:
-            shop, _ = _equip_pool(2, 3)
+            shop, _ = _equip_pool(2, 2)
             it = _rand_item(shop)
         else:
             shop, rares = _equip_pool(4, 5, include_rare=True)
@@ -163,10 +167,10 @@ def rule_text():
     for no in (1, 2, 3):
         t = TIERS[no]
         if no == 1:
-            desc = "15% 谢谢惠顾 · 58% 小额铜币(2~9) · 20% 低级装备(tier0~1) · 5% 草药/稀有材料 · 2% 低阶药水道具"
+            desc = "38% 谢谢惠顾 · 45% 小额铜币(1~5) · 6% 低级装备(tier0) · 6% 草药/稀有材料 · 5% 低阶药水道具（期望≈0.87，长期略亏）"
         elif no == 2:
-            desc = "12% 谢谢惠顾 · 42% 金钱(100~800) · 28% 装备(tier2~3) · 12% 稀有~传说材料 · 6% 中阶药水道具"
+            desc = "30% 谢谢惠顾 · 38% 金钱(80~650) · 18% 装备(tier2) · 8% 稀有~传说材料 · 6% 中阶药水道具（期望≈0.65，亏损）"
         else:
-            desc = "8% 谢谢惠顾 · 28% 金钱(8千~9万) · 32% 装备(tier4~5,10% 稀有掉落) · 20% 传说~神话材料 · 12% 高阶药水道具"
+            desc = "12% 谢谢惠顾 · 26% 金钱(6千~6万) · 32% 装备(tier4~5,10% 稀有掉落) · 20% 传说~神话材料 · 10% 高阶药水道具（期望≈0.29，大亏）"
         lines.append(f"· {t['name']}：{t['cost_txt']}/次 —— {desc}")
     return "\n".join(lines)
