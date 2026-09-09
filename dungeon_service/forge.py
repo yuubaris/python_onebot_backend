@@ -81,13 +81,33 @@ def suggest_forges(keyword, limit=5):
     return hits[:limit]
 
 
+_ATTR_ORDER = [
+    ("attack", "攻"),
+    ("mp", "魔"),
+    ("agility", "敏"),
+    ("intelligence", "智"),
+    ("hp", "命"),
+    ("defense", "防"),
+]
+
+
+def _attr_desc(r):
+    """配方装备属性文本（如：攻67 敏18 命35 防14），只列非零项。"""
+    parts = []
+    for key, label in _ATTR_ORDER:
+        val = r.get(key)
+        if val:
+            parts.append(f"{label}{val}")
+    return " ".join(parts)
+
+
 def recommend_text(user):
     """/锻造 推荐：按背包矿石/铜币计算可锻造的配方及数量。
 
     - 只列当前职业可用的配方（physical/magic 匹配，any 通用）；
     - 可锻造数 = min(各矿石持有÷需求、铜币÷价格) 向下取整；
-    - 历史最高层不足解锁的列出但标 🔒（材料已够只差层数）；
-    - 矿石不够的配方不列出。
+    - 按锻造 Lv 分组排列，组内已解锁在前、未解锁（🔒，材料已够只差层数）在后；
+    - 每条展示装备属性与材料/铜币消耗；矿石不够的配方不列出。
     """
     load_forges()
     from .dungeon import historical_best_layer
@@ -114,18 +134,28 @@ def recommend_text(user):
         if can is None or can < 1:
             continue
         lv = int(r.get("level", 1))
-        ok.append((lv, r, can, best < FORGE_LV_LAYER.get(lv, 10 ** 9)))
+        locked = best < FORGE_LV_LAYER.get(lv, 10 ** 9)
+        ok.append((lv, r, can, locked))
     if not ok:
         return ("当前矿石与铜币不足以锻造任何装备。\n"
                 "发送 /铁匠铺 查看配方及需求。")
-    # 未解锁排后，同组按等级、价格升序
-    ok.sort(key=lambda x: (x[3], x[0], x[1].get("price", 0)))
+    # 按等级分组；组内已解锁在前、未解锁在后，同状态按价格升序
+    ok.sort(key=lambda x: (x[0], x[3], x[1].get("price", 0)))
     lines = ["🔨 锻造推荐（按当前背包可制作）："]
+    cur_lv = None
     for lv, r, can, locked in ok:
-        cost = format_cost(r.get("cost", {}))
-        line = f"· {r['name']}（{_cls.TYPE_NAMES.get(r.get('type'), r.get('type', ''))}）×{can} —— {cost} + {price_txt(r.get('price', 0))}"
+        if lv != cur_lv:
+            cur_lv = lv
+            if best >= FORGE_LV_LAYER.get(lv, 10 ** 9):
+                head = f"—— Lv{lv}（已解锁）——"
+            else:
+                head = f"—— Lv{lv}（🔒 需到第 {FORGE_LV_LAYER.get(lv)} 层）——"
+            lines.append(head)
+        attrs = _attr_desc(r)
+        line = (f"· {r['name']}（{_cls.TYPE_NAMES.get(r.get('type'), r.get('type', ''))}）×{can}"
+                f" —— {attrs} —— {format_cost(r.get('cost', {}))} + {price_txt(r.get('price', 0))}")
         if locked:
-            line += f"（🔒 需到地下城第 {FORGE_LV_LAYER.get(lv)} 层）"
+            line += " 🔒"
         lines.append(line)
     lines.append("—— 用法：/锻造 <装备名> 制作；/铁匠铺 查看全部配方 ——")
     return "\n".join(lines)
