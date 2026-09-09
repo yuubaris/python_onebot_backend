@@ -1,7 +1,11 @@
 # dungeon_service（准新仓库 · 剥离中）
 
 地下城功能剥离的落地区：先建立无头回归基线，再逐步把游戏域搬入本目录。
-**当前进度：P0 回归基线已完成（v2.11.86 快照）。**
+**当前进度：P1 包搬移完成（纯搬移，0 外壳依赖）。**
+
+- 14 个游戏域模块 + `models` 已复制进本包，顶层/延迟 import 全部改写为包内相对导入；
+- 数据文件（equipment/ores/materials/forge/consumables/bosses/boss_gear/alchemy_recipes.json）读取仓库根共享数据源（拆仓库时连同 json 一起带走）；
+- `tests/test_p1_package.py`：0 外壳 import 断言 + 包内/根目录确定性函数等价 + 同 seed 随机掉落等价 + 包内 settle 冒烟。
 
 ## 测试
 
