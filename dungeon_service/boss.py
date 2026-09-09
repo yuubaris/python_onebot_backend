@@ -472,16 +472,15 @@ def gear_list_text(user=None, gear_name=None):
         ])
 
     big = set(BIG_BOSS_LAYERS)
-    out = ["👑 命名 Boss 专属装备（全服限量 · 掉率极低）",
-           "—— 4 大 Boss（每件全服 3 件 · 掉率 0.1%）——"]
+    by_layer = {}
     for g in gears:
-        if int(g.get("boss_layer", 0) or 0) in big:
-            out.append(f"· {g['name']}（{_GEAR_LINE_CN.get(g.get('line', ''), '')}·"
-                       f"{_GEAR_TYPE_CN.get(g.get('type', ''), g.get('type', ''))}）"
-                       f"{_gear_attrs_txt(g)} 评分{round(dungeon.item_score(g), 1)} 余量{remain_txt(g)}")
-    out.append("—— 其他命名 Boss（每件全服 5 件 · 掉率 3%）——")
-    for g in gears:
-        if int(g.get("boss_layer", 0) or 0) not in big:
+        by_layer.setdefault(int(g.get("boss_layer", 0) or 0), []).append(g)
+    out = ["👑 命名 Boss 专属装备（全服限量 · 掉率极低）"]
+    for layer in sorted(by_layer):
+        boss_name = layer_name.get(layer, f"第 {layer} 层")
+        rate = 0.1 if layer in big else 3
+        out.append(f"—— {boss_name}（{layer} 层 · 掉率 {rate:.1f}%）——")
+        for g in by_layer[layer]:
             out.append(f"· {g['name']}（{_GEAR_LINE_CN.get(g.get('line', ''), '')}·"
                        f"{_GEAR_TYPE_CN.get(g.get('type', ''), g.get('type', ''))}）"
                        f"{_gear_attrs_txt(g)} 评分{round(dungeon.item_score(g), 1)} 余量{remain_txt(g)}")
