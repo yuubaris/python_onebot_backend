@@ -57,26 +57,18 @@ UNKNOWN_IMAGE = os.path.join(_BASE_DIR, "beat.jpeg")
 
 # 签到奖励概率（单位：铜币）：
 #   95% 概率 50~200 铜币；4% 概率 888 铜币；1% 概率 1 铜币
-CHECKIN_BIG_COPPER = 888  # 4% 特殊奖励
 
 
 
 
-def roll_checkin_reward():
-    """按概率返回签到奖励（单位：铜币）。"""
-    r = random.random()
-    if r < 0.01:             # 1% → 1 铜币
-        return 1
-    if r < 0.05:             # 4% → 888 铜币
-        return CHECKIN_BIG_COPPER
-    return random.randint(50, 200)  # 95% → 50~200 铜币
 
 
 # ---- 地下城命令实现已迁移至 dungeon_service.commands（单一实现源），此处仅转发 ----
 from dungeon_service.commands import (
     cmd_dungeon, cmd_bag, cmd_shop, cmd_buy, cmd_sell, cmd_class, cmd_promote,
     cmd_forge, cmd_forge_shop, cmd_alchemy, cmd_use, cmd_challenge, cmd_boss,
-    cmd_lottery, cmd_turn, _user_title, _buff_status_block, local_today,
+    cmd_lottery, cmd_turn, cmd_checkin, cmd_balance,
+    _user_title, _buff_status_block, local_today,
 )
 from dungeon_service.game_core import game as _game, _DUNGEON_COMMANDS as _GAMECORE_ALIASES
 
@@ -96,55 +88,10 @@ def ensure_user(user_id, nickname):
 
 # ---------- 签到 ----------
 
-def cmd_checkin(user, group_id, args, at_qqs=None):
-    today = local_today()
-    if user.last_checkin_date == today:
-        return (f"今天已经签到过啦～\n"
-                f"目前已连续签到 {user.checkin_streak} 天，"
-                f"当前资产：{format_currency(user.copper)}")
-
-    yesterday = today - timedelta(days=1)
-    if user.last_checkin_date == yesterday:
-        user.checkin_streak += 1
-    else:
-        user.checkin_streak = 1
-
-    reward = roll_checkin_reward()
-    user.total_checkin += 1
-    user.copper += reward
-    user.last_checkin_date = today
-
-    record = CheckinRecord(
-        user_id=user.user_id,
-        group_id=group_id,
-        nickname=user.nickname,
-        checkin_date=today,
-        streak_after=user.checkin_streak,
-        reward=reward,
-    )
-    db.session.add(record)
-    db.session.commit()
-
-    return (f"签到成功！已连续签到 {user.checkin_streak} 天，累计签到 {user.total_checkin} 次。\n"
-            f"获得 {format_currency(reward)}，当前资产：{format_currency(user.copper)}")
 
 
 # ---------- 余额 ----------
 
-def cmd_balance(user, group_id, args, at_qqs=None):
-    items = owned_items(user)
-    prof = (user.profession or "") or ""
-    t = user.tier or 0
-    bonus = int((TIER_ATTR_BONUS.get(t, 1.0) - 1) * 100) if t > 0 else 0
-    class_txt = f"{class_name(prof)} · {_user_title(user)}" if prof else "未转职·冒险者"
-    bonus_txt = f"（称号加成 +{bonus}% 全属性）" if bonus else ""
-    base = (f"当前资产：{format_currency(user.copper)}\n"
-            f"职业/称号：{class_txt} {bonus_txt}\n"
-            f"持有装备 {len(items)} 件；累计签到 {user.total_checkin} 次，连续签到 {user.checkin_streak} 天。")
-    buff_block = _buff_status_block(user)
-    if buff_block:
-        return base + "\n" + buff_block
-    return base
 
 
 # ---------- 背包 ----------
@@ -214,6 +161,8 @@ def cmd_balance(user, group_id, args, at_qqs=None):
 
 def cmd_help(user, group_id, args, at_qqs=None):
     return ("可用命令（消息以 / 开头）：\n"
+            "\n"
+            "⚔️ 地下城（冒险）\n"
             "/签到 - 每日签到，随机获得铜币/银币\n"
             "/余额 - 查看当前资产/职业/称号\n"
             "/背包 - 查看当前持有的武具与矿石\n"
@@ -231,6 +180,8 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/挑战 @对方 / 列表 / <Boss名|层数|称号> - 玩家对战 · Boss 清单 · Boss 挑战（如 挑战 1000层）\n"
             "/转转 捐赠 <装备名> / 乞讨 - 装备互助：捐赠入公共库，乞讨一件符合自己等级的装备（每天 3 次）\n"
             "/抽奖 1|2|3 - 抽奖：消耗金钱抽装备/材料/道具/金钱（5铜/5银/5金，各档概率与稀有度不同）\n"
+            "\n"
+            "🎮 娱乐\n"
             "/踢 @对方 - 生成踢人图（30 秒冷却）\n"
             "/撅 @对方 - 生成撅人 GIF（30 秒冷却）\n"
             "/佬 @对方 - 生成大佬致敬图（30 秒冷却）\n"

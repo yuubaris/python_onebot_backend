@@ -1098,3 +1098,67 @@ def cmd_use(user, group_id, args, at_qqs=None):
         lines.append("—— 用法：/使用 <物品名> 生效 ——")
         return "\n".join(lines)
     return consumable.use_by_name(user, name)
+
+# ---------- 签到/余额（v2.11.87 起归入地下城命令组，走 GameCore 门面） ----------
+
+# 签到奖励概率（单位：铜币）：95% 概率 50~200 铜币；4% 概率 888 铜币；1% 概率 1 铜币
+CHECKIN_BIG_COPPER = 888  # 4% 特殊奖励
+
+
+def roll_checkin_reward():
+    """按概率返回签到奖励（单位：铜币）。"""
+    r = random.random()
+    if r < 0.01:             # 1% → 1 铜币
+        return 1
+    if r < 0.05:             # 4% → 888 铜币
+        return CHECKIN_BIG_COPPER
+    return random.randint(50, 200)
+
+
+def cmd_checkin(user, group_id, args, at_qqs=None):
+    today = local_today()
+    if user.last_checkin_date == today:
+        return (f"今天已经签到过啦～\n"
+                f"目前已连续签到 {user.checkin_streak} 天，"
+                f"当前资产：{format_currency(user.copper)}")
+
+    yesterday = today - timedelta(days=1)
+    if user.last_checkin_date == yesterday:
+        user.checkin_streak += 1
+    else:
+        user.checkin_streak = 1
+
+    reward = roll_checkin_reward()
+    user.total_checkin += 1
+    user.copper += reward
+    user.last_checkin_date = today
+
+    record = CheckinRecord(
+        user_id=user.user_id,
+        group_id=group_id,
+        nickname=user.nickname,
+        checkin_date=today,
+        streak_after=user.checkin_streak,
+        reward=reward,
+    )
+    db.session.add(record)
+    db.session.commit()
+
+    return (f"签到成功！已连续签到 {user.checkin_streak} 天，累计签到 {user.total_checkin} 次。\n"
+            f"获得 {format_currency(reward)}，当前资产：{format_currency(user.copper)}")
+
+
+def cmd_balance(user, group_id, args, at_qqs=None):
+    items = owned_items(user)
+    prof = (user.profession or "") or ""
+    t = user.tier or 0
+    bonus = int((TIER_ATTR_BONUS.get(t, 1.0) - 1) * 100) if t > 0 else 0
+    class_txt = f"{class_name(prof)} · {_user_title(user)}" if prof else "未转职·冒险者"
+    bonus_txt = f"（称号加成 +{bonus}% 全属性）" if bonus else ""
+    base = (f"当前资产：{format_currency(user.copper)}\n"
+            f"职业/称号：{class_txt} {bonus_txt}\n"
+            f"持有装备 {len(items)} 件；累计签到 {user.total_checkin} 次，连续签到 {user.checkin_streak} 天。")
+    buff_block = _buff_status_block(user)
+    if buff_block:
+        return base + "\n" + buff_block
+    return base

@@ -50,8 +50,8 @@ def test_dispatch_dungeon_status(app):
     assert "第 1500 层" in out
 
 
-def test_dispatch_checkin_shell_command(app):
-    """非地下城命令仍走外壳 handler。"""
+def test_dispatch_checkin_via_gamecore(app):
+    """签到已归入地下城命令组，经 GameCore 门面执行。"""
     u = build_player_a(None)
     out = dispatch_command("/签到", u, 12345)
     assert "签到成功" in out
@@ -61,6 +61,23 @@ def test_dispatch_unknown_first(app):
     u = build_player_a(None)
     out = dispatch_command("/不存在的命令", u, 12345)
     assert out == "未知指令，发送 /帮助 查看可用命令。"
+
+
+def test_dispatch_balance_via_gamecore(app):
+    u = build_player_a(None)
+    out = dispatch_command("/余额", u, 12345)
+    assert "当前资产" in out
+
+
+def test_help_grouped_dungeon(app):
+    """帮助中地下城命令独立成组展示。"""
+    from commands import cmd_help
+    out = cmd_help(None, 12345, "")
+    assert "⚔️ 地下城（冒险）" in out
+    assert "🎮 娱乐" in out
+    # 地下城组包含签到/余额
+    assert out.index("⚔️ 地下城（冒险）") < out.index("/签到")
+    assert out.index("/签到") < out.index("🎮 娱乐")
 
 
 def test_dispatch_boss_report_only_on_dungeon(app):

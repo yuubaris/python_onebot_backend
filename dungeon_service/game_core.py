@@ -10,13 +10,15 @@
 """
 from . import dungeon
 from .commands import (
-    cmd_bag, cmd_shop, cmd_buy, cmd_sell, cmd_class, cmd_promote, cmd_dungeon,
-    cmd_forge, cmd_forge_shop, cmd_alchemy, cmd_use, cmd_challenge, cmd_boss,
-    cmd_lottery, cmd_turn,
+    cmd_checkin, cmd_balance, cmd_bag, cmd_shop, cmd_buy, cmd_sell, cmd_class,
+    cmd_promote, cmd_dungeon, cmd_forge, cmd_forge_shop, cmd_alchemy, cmd_use,
+    cmd_challenge, cmd_boss, cmd_lottery, cmd_turn,
 )
 
 # 地下城命令别名表（与根目录 COMMANDS 的地下城部分一致）
 _DUNGEON_COMMANDS = {
+    "签到": cmd_checkin, "checkin": cmd_checkin, "qiandao": cmd_checkin,
+    "余额": cmd_balance, "balance": cmd_balance, "yue": cmd_balance,
     "背包": cmd_bag, "bag": cmd_bag, "beibao": cmd_bag,
     "武器库": cmd_shop, "武器": cmd_shop, "wqp": cmd_shop,
     "武具店": cmd_shop, "shop": cmd_shop, "wujudian": cmd_shop,
