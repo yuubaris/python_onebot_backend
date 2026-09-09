@@ -1412,10 +1412,10 @@ DUNGEON_ALLOWED = {"签到", "checkin", "qiandao",
                    "使用", "use", "shiyong"}
 
 
-# 会展示“地下城 Boss 战报”的命令 handler：仅自身状态/结算类查看命令
-# （/地下城、/签到、/余额、/背包）。娱乐/对他人命令（/踢、/撅、/佬、/挑战、/帮助 等）
-# 不夹带战报——掉落照常入账，战报保留至下次状态类命令一并展示。
-_BOSS_REPORT_COMMANDS = {cmd_dungeon, cmd_checkin, cmd_balance, cmd_bag}
+# 会展示“地下城战利品结算”的命令 handler：仅 /地下城（进入/状态/退出/列表）。
+# /签到、/余额、/背包 等查看命令不再夹带战报（v2.11.81）——掉落照常入账，
+# 战报保留至下次 /地下城 时一并展示。
+_BOSS_REPORT_COMMANDS = {cmd_dungeon}
 
 
 def _prepend_boss_report(user, reply):
@@ -1476,8 +1476,8 @@ def dispatch_command(text, user, group_id, at_qqs=None):
 
     try:
         reply = handler(user, group_id, args, at_qqs)
-        # Boss 掉落战报仅在自身状态/结算类命令（地下城/签到/余额/背包）时展示；
-        # /踢 /撅 /佬 /挑战 等娱乐命令不再夹带（掉落照常入账，战报保留待下次状态命令带出）。
+        # 战利品结算播报仅在 /地下城 时展示（v2.11.81）；
+        # 签到/余额/背包等不再夹带（掉落照常入账，战报保留待下次 /地下城 带出）。
         if handler in _BOSS_REPORT_COMMANDS:
             return _prepend_boss_report(user, reply)
         return reply
