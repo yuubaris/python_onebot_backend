@@ -138,16 +138,21 @@ def _forge_lv(item):
 
 
 def _item_usable(it, tier_max, best_layer):
-    """装备是否对当前玩家生效：商店/稀有按「tier ≤ 当前阶级」；锻造按「铁匠铺 Lv 已解锁」。
+    """装备是否对当前玩家生效：商店/稀有按「tier ≤ 当前阶级」；锻造按「铁匠铺 Lv 已解锁」；Boss 专属不要求穿戴等级。
 
     forge 配方都有 level 字段（Lv1~Lv4），其解锁层见 forge.FORGE_LV_LAYER：
     玩家历史最高层达到对应解锁层即可穿戴该锻造装（不受当前阶级 tier 限制）。
+    Boss 专属装备（boss_gear.json，v2.11.77 起）：掉落即生效，不受 tier ≤ 阶级限制。
     """
     lv = _forge_lv(it)
     if lv is not None:
         # 锻造装备：以铁匠铺 Lv 解锁层为准（历史最高层达标即可用）
         from forge import FORGE_LV_LAYER
         return (best_layer or 0) >= FORGE_LV_LAYER.get(lv, 10 ** 9)
+    from boss_gear import is_gear
+    if is_gear(it.get("id", "")):
+        # Boss 专属装备：不要求穿戴等级
+        return True
     return _item_tier(it) <= tier_max
 
 
