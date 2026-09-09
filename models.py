@@ -69,6 +69,8 @@ class User(db.Model):
     challenge_count = db.Column(db.Integer, default=0, nullable=False)      # 当日已发起次数
     # 未知指令计数（累计）：超过 3 次后发 beat.jpeg 并停止响应其未知指令
     unknown_count = db.Column(db.Integer, default=0, nullable=False)
+    # 最近活跃群（v2.11.68）：/地下城 排名 按群展示的依据；0=尚未归群（多群活跃时漂移为最近说话群）
+    group_id = db.Column(db.BigInteger, default=0, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 

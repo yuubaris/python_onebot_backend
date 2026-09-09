@@ -173,6 +173,11 @@ def _handle_event_inner(data):
     nickname = sender.get("card") or sender.get("nickname") or str(user_id)
     user = ensure_user(user_id, nickname)
 
+    # 记录最近活跃群（/地下城 排名 等按群展示的依据；仅群变化时写入，避免频繁 commit）
+    if user.group_id != group_id:
+        user.group_id = group_id
+        db.session.commit()
+
     # 提取消息文本
     text = message_to_text(data.get("message"))
 
@@ -715,6 +720,9 @@ def _migrate_schema():
             conn.execute("ALTER TABLE user ADD COLUMN turn_date VARCHAR(10) DEFAULT ''")
         if "turn_count" not in cols:
             conn.execute("ALTER TABLE user ADD COLUMN turn_count INTEGER DEFAULT 0")
+        # 排名按群（v2.11.68）：最近活跃群（0=未归群，/地下城 排名 仅统计同群用户）
+        if "group_id" not in cols:
+            conn.execute("ALTER TABLE user ADD COLUMN group_id BIGINT DEFAULT 0")
         conn.commit()
         # user_item 表：Boss 掉落 new 标记
         it_cols = {r[1] for r in conn.execute("PRAGMA table_info(user_item)")}
