@@ -453,7 +453,7 @@ def _load_rare_pool():
     try:
         import json as _json
         import os as _os
-        path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "rare_drops.json")
+        path = _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))), "rare_drops.json")
         mtime = _os.path.getmtime(path)
         if _rare_cache["mtime"] == mtime:
             return _rare_cache["items"]
