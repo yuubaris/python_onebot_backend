@@ -930,20 +930,47 @@ def settle_dungeon(user):
         dt_herb = now - user.dungeon_herb_last
         herb_cycles = int(dt_herb // material.HERB_CYCLE_SECONDS)
         if herb_cycles > 0:
+            import random as _random
             layer_now = max(user.dungeon_layer, 1)
             h_gained, s_gained, m_gained = {}, {}, {}
             for _ in range(herb_cycles):
-                mid = material.roll_material(layer_now)
-                if not mid:
-                    continue
-                meta = material.material_meta(mid)
-                cat = meta.get("category") if meta else ""
-                if cat == "special":
-                    s_gained[mid] = s_gained.get(mid, 0) + 1
-                elif cat == "boss":
-                    m_gained[mid] = m_gained.get(mid, 0) + 1   # 万宝源晶(神话档)
+                # v2.11.86 数量递增参考矿石：基础 1 颗 + 每满 300 层 +1（封顶 4）；
+                # 60% 得 b 颗 / 30% 得 b+1 颗 / 10% 得 b+2 颗，每颗再独立判定种类
+                _base = 1 + min(layer_now // 300, 3)
+                _rr = _random.random()
+                if _rr < 0.60:
+                    _n = _base
+                elif _rr < 0.90:
+                    _n = _base + 1
                 else:
-                    h_gained[mid] = h_gained.get(mid, 0) + 1
+                    _n = _base + 2
+                for _ in range(_n):
+                    mid = material.roll_material(layer_now)
+                    if not mid:
+                        continue
+                    meta = material.material_meta(mid)
+                    cat = meta.get("category") if meta else ""
+                    if cat == "special":
+                        s_gained[mid] = s_gained.get(mid, 0) + 1
+                    elif cat == "boss":
+                        m_gained[mid] = m_gained.get(mid, 0) + 1   # 万宝源晶(神话档)
+                    else:
+                        h_gained[mid] = h_gained.get(mid, 0) + 1
+                # 对齐矿石「必不掉空」：数量判定后每颗独立判种类，若整周期全未命中则兜底补 1 颗
+                if not h_gained and not s_gained and not m_gained:
+                    for _ in range(20):  # 20 次重试(≈1e-6 仍空)，对齐矿石必不掉空
+                        mid = material.roll_material(layer_now)
+                        if not mid:
+                            continue
+                        meta = material.material_meta(mid)
+                        cat = meta.get("category") if meta else ""
+                        if cat == "special":
+                            s_gained[mid] = s_gained.get(mid, 0) + 1
+                        elif cat == "boss":
+                            m_gained[mid] = m_gained.get(mid, 0) + 1
+                        else:
+                            h_gained[mid] = h_gained.get(mid, 0) + 1
+                        break
             # 掉率增益：草药乘采药符(scope=herb)、特殊乘祈灵符(scope=special)、
             # 万宝源晶只乘全材料增益(万宝符 scope=all，不吃采药/祈灵符)
             if mult_herb > 1.0 and h_gained:
