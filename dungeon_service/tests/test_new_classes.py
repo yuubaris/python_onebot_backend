@@ -1,0 +1,190 @@
+# -*- coding: utf-8 -*-
+"""新职业落地：魔剑士（weapon+focus+robe）& 近战法师（staff+shield+armor）（v2.12.14）。"""
+import os
+import sys
+
+import pytest
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
+
+import flask  # noqa: E402
+from models import db, User, UserItem  # noqa: E402
+from dungeon_service import dungeon  # noqa: E402
+from dungeon_service.commands import cmd_class, cmd_buy, cmd_bag  # noqa: E402
+from dungeon_service.skills import title_skill, LEVEL_TITLE_SKILLS  # noqa: E402
+from dungeon_service.tiers import tier_title  # noqa: E402
+from dungeon_service.classes import class_lines, class_types, item_usable_for  # noqa: E402
+
+
+@pytest.fixture()
+def app():
+    app = flask.Flask(__name__)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+    db.init_app(app)
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        yield app
+
+
+def _mk_user(app, profession=None, tier=4, user_id=97001):
+    u = User(user_id=user_id, nickname="测试", profession=profession, tier=tier,
+             copper=10_000_000, saved_dungeon_layer=1200)
+    db.session.add(u)
+    db.session.flush()
+    db.session.commit()
+    return u
+
+
+def _give(user, item_id, equipped=0):
+    db.session.add(UserItem(user_id=user.user_id, item_id=item_id, equipped=equipped))
+    db.session.commit()
+
+
+# —— 职业注册 ——
+
+def test_classes_registered():
+    assert class_lines("spellblade") == {"physical", "magic"}
+    assert class_types("spellblade") == {"weapon", "focus", "robe"}
+    assert class_lines("battlemage") == {"physical", "magic"}
+    assert class_types("battlemage") == {"staff", "shield", "armor"}
+
+
+def test_item_usable_whitelist():
+    shop = {it["id"]: it for it in dungeon.load_equipment()}
+    w = shop["star_weapon"] if "star_weapon" in shop else next(iter(shop.values()))
+    # 魔剑士：weapon 可用
+    assert item_usable_for(shop["iron_sword"] if "iron_sword" in shop else shop[w["id"]], "spellblade")
+    # 找一个 shield（物理线但不在魔剑士白名单）
+    shield = next(it for it in shop.values() if it["type"] == "shield")
+    assert not item_usable_for(shield, "spellblade")
+    # 近战法师：shield 可用、weapon 不可用
+    assert item_usable_for(shield, "battlemage")
+    weapon = next(it for it in shop.values() if it["type"] == "weapon")
+    assert not item_usable_for(weapon, "battlemage")
+
+
+# —— 转职 ——
+
+def test_cmd_class_spellblade(app):
+    u = _mk_user(app)
+    reply = cmd_class(u, 99999, "魔剑士")
+    assert "魔剑士" in reply and "转职成功" in reply
+    assert u.profession == "spellblade"
+    assert "魔剑士" in _user_title(u)
+
+
+def test_cmd_class_battlemage(app):
+    u = _mk_user(app)
+    cmd_class(u, 99999, "近战法师")
+    assert u.profession == "battlemage"
+    assert "近战法师" in _user_title(u)
+
+
+def _user_title(u):
+    from dungeon_service.tiers import tier_title
+    return tier_title(u.profession, u.tier or 0)
+
+
+# —— 装备组合（effective_stats 双线）——
+
+def test_effective_stats_spellblade_uses_cross_line(app):
+    u = _mk_user(app, profession="spellblade", tier=4)
+    shop = dungeon.load_equipment()
+    # 取 T4 档 weapon/focus/robe 各一件 + 饰品
+    pick = {"weapon": None, "focus": None, "robe": None, "accessory": None}
+    for it in shop:
+        if int(it.get("tier", 0)) != 4:
+            continue
+        t = it["type"]
+        if t in pick and pick[t] is None:
+            pick[t] = it
+    for it in pick.values():
+        _give(u, it["id"])
+    stats = dungeon.effective_stats(u, dungeon.owned_items(u))
+    assert stats["attack"] > 0 and stats["intelligence"] > 0
+    assert stats["mp"] > 0  # focus/robe 提供魔力
+
+
+def test_effective_stats_spellblade_ignores_shield(app):
+    """魔剑士穿盾（物理线但非白名单）→ 不进入属性计算。"""
+    u = _mk_user(app, profession="spellblade", tier=4)
+    shield = next(it for it in dungeon.load_equipment()
+                  if it["type"] == "shield" and int(it.get("tier", 0)) <= 4)
+    _give(u, shield["id"])
+    stats = dungeon.effective_stats(u, dungeon.owned_items(u))
+    # 盾牌属性全部不生效（对比裸装 = BASE_STATS×称号）
+    base = dict(dungeon.BASE_STATS)
+    t4 = dungeon._tiers_mod.TIER_ATTR_BONUS[4]
+    for k in base:
+        assert stats[k] == pytest.approx(base[k] * t4)
+
+
+def test_effective_stats_battlemage(app):
+    u = _mk_user(app, profession="battlemage", tier=4)
+    shop = dungeon.load_equipment()
+    pick = {"staff": None, "shield": None, "armor": None, "accessory": None}
+    for it in shop:
+        if int(it.get("tier", 0)) != 4:
+            continue
+        if it["type"] in pick and pick[it["type"]] is None:
+            pick[it["type"]] = it
+    for it in pick.values():
+        _give(u, it["id"])
+    stats = dungeon.effective_stats(u, dungeon.owned_items(u))
+    assert stats["attack"] > 0 and stats["mp"] > 0 and stats["defense"] > 0
+
+
+# —— Boss 胜率锚定：新职业按自身组合锚定（≠ 战士/法师）——
+
+def test_named_boss_b0_differs_and_winrate(app):
+    u_w = _mk_user(app, profession="warrior", tier=4, user_id=97011)
+    u_s = _mk_user(app, profession="spellblade", tier=4, user_id=97012)
+    # 档末 1400 层（T4 档：档首 85% → 档末 70% 口径）
+    b0_w = dungeon.named_boss_b0(u_w, 1400)
+    b0_s = dungeon.named_boss_b0(u_s, 1400)
+    assert b0_w > 0 and b0_s > 0
+    assert b0_w != b0_s  # 魔剑士锚定 weapon+focus+robe 组合，不同于战士 weapon+armor+shield
+    # 穿满 T4 商店对应组合 → 胜率 ≈ 70%（x=S/B0=1.327 档末口径）
+    shop = dungeon.load_equipment()
+    for u, types in ((u_s, {"weapon", "focus", "robe", "accessory"}),):
+        for it in shop:
+            if int(it.get("tier", 0)) == 4 and it["type"] in types:
+                _give(u, it["id"])
+    stats = dungeon.effective_stats(u_s, dungeon.owned_items(u_s))
+    s = dungeon.dungeon_speed(stats)
+    x = s / b0_s
+    p = x ** 3 / (1 + x ** 3)
+    assert 0.65 <= p <= 0.75
+
+
+# —— 称号与技能 ——
+
+def test_titles_and_skills():
+    assert tier_title("spellblade", 3) == "银辉魔剑士"
+    assert tier_title("battlemage", 7) == "至尊近战法师"
+    for cid, prefix in (("spellblade", "疾风"), ("battlemage", "苍穹")):
+        for t in range(1, 8):
+            title = tier_title(cid, t)
+            assert title in LEVEL_TITLE_SKILLS
+    sk, eff = title_skill("spellblade", 3)
+    assert isinstance(sk, str) and sk and eff
+
+
+# —— 背包/购买 ——
+
+def test_cmd_bag_marks_unusable(app):
+    u = _mk_user(app, profession="spellblade", tier=4)
+    shield = next(it for it in dungeon.load_equipment()
+                  if it["type"] == "shield" and int(it.get("tier", 0)) <= 4)
+    _give(u, shield["id"])
+    reply = cmd_bag(u, 99999, "")
+    assert "本职业不生效" in reply
+
+
+def test_cmd_buy_rejects_other_line(app):
+    u = _mk_user(app, profession="spellblade", tier=4)
+    shield = next(it for it in dungeon.load_equipment()
+                  if it["type"] == "shield" and int(it.get("tier", 0)) <= 4)
+    reply = cmd_buy(u, 99999, shield["name"])
+    assert "不是魔剑士的装备" in reply or "无法购买" in reply

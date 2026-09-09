@@ -85,7 +85,7 @@ def cmd_bag(user, group_id, args, at_qqs=None):
         return ("🎒 你的背包空空如也。\n"
                 "前往 /武器库 购买一件装备吧！（持有任意装备即可进入 /地下城）")
     prof = (user.profession or "") or ""
-    cl_line = class_line(prof) if prof else None
+    usage = dungeon._usage_for(prof)
     rare_ids = rare_item_ids()
     lines = [f"🎒 我的背包（共 {len(rows)} 件） · {_user_title(user)}"]
     # 套装效果生效中（v2.12.3）：与推进速度同一选件口径
@@ -125,10 +125,10 @@ def cmd_bag(user, group_id, args, at_qqs=None):
             if not dungeon._item_usable(it, user.tier or 0, historical_best_layer(user)):
                 f_lv = dungeon._forge_lv(it)
                 lvl_note = f"（需锻造Lv{f_lv}）" if f_lv is not None else f"（需T{dungeon._item_tier(it)}）"
-            # 转职后另一职业专属装备标注“暂不生效”
+            # 转职后另一职业/不可用装备标注“暂不生效”（双线职业按 lines×types 判定）
             unusable = ""
-            if cl_line and item_line(it) not in (LINE_ANY, cl_line):
-                unusable = "（另一职业·不生效）"
+            if usage and not dungeon._usable_line_type(it, *usage):
+                unusable = "（本职业不生效）"
             lines.append(f"· {disp}{suffix}{mark}{rare_tag}{wear}{lvl_note}（{_item_desc(it)}）{unusable}")
     # 矿石展示（稀有度前缀）
     ores = ore.owned_ores(user.user_id)
@@ -193,13 +193,14 @@ def cmd_shop(user, group_id, args, at_qqs=None):
     prof = (user.profession or "") or ""
     if not prof:
         return ("💡 你是冒险者，请先选择职业：\n"
-                "/转职 战士（物理近战） 或 /转职 魔法师（魔法施法）\n"
+                "/转职 战士（物理近战）/ 转职 魔法师（魔法施法）/ 转职 魔剑士（物主手+法施法）/ 转职 近战法师（法主手+物防护）\n"
                 "选定职业后，/武器库 将展示你可购买的装备。")
     line = class_line(prof)
+    usage = dungeon._usage_for(prof)
     my_tier = user.tier or 0
     items = load_equipment()
-    # 本职业可用（职业 line 或 通用 any）
-    usable = [it for it in items if item_line(it) in (line, LINE_ANY)]
+    # 本职业可用（职业 lines×types 或 通用 any）
+    usable = [it for it in items if dungeon._usable_line_type(it, *usage)] if usage else []
     if not usable:
         return "武器库暂无可购装备。"
     # —— 开关子命令：/武器库 开关（切换）/ 开 / 关 ——
@@ -421,16 +422,16 @@ def cmd_forge(user, group_id, args, at_qqs=None):
         hits = forge.suggest_forges(name)
         hint = f"，你是不是想锻造：{'、'.join(h['name'] for h in hits)}" if hits else ""
         return f"铁匠铺没有「{name}」{hint}\n发送 /铁匠铺 查看配方。"
-    # 职业校验：锻造产物与商店一致，需职业 line 匹配
+    # 职业校验：锻造产物与商店一致，需职业 lines×types 匹配
     prof = (user.profession or "") or ""
+    usage = dungeon._usage_for(prof)
     line = item_line(rec)
     if line != LINE_ANY:
         if not prof:
             return (f"💡 锻造「{rec['name']}」需要职业。\n"
-                    f"请先 /转职 战士 或 /转职 魔法师。")
-        if line != class_line(prof):
-            other = "战士" if line == "physical" else "魔法师"
-            return f"❌ 「{rec['name']}」是{other}的锻造装备，你无法使用。"
+                    f"请先 /转职 选择职业（如 /转职 战士 / 转职 魔法师 / 转职 魔剑士 / 转职 近战法师）。")
+        if not usage or not dungeon._usable_line_type(rec, *usage):
+            return f"❌ 「{rec['name']}」不是{class_name(prof) or '你'}的锻造装备，你无法使用。"
     # 等级解锁校验（新口径）：配方按铁匠铺 Lv 分级，需历史最高层达到该 Lv 解锁层
     lv = int(rec.get("level", 1))
     if not _forge_level_open(user, lv):
@@ -480,16 +481,16 @@ def cmd_buy(user, group_id, args, at_qqs=None):
         return "\n".join(hint_lines) + "\n发送 /武器库 查看商品列表。"
     # 职业/阶级校验
     prof = (user.profession or "") or ""
+    usage = dungeon._usage_for(prof)
     bad = None
     for it in items:
         line = item_line(it)
         if line != LINE_ANY:
             if not prof:
                 return (f"💡 购买「{it['name']}」需要职业。\n"
-                        f"请先 /转职 战士（物理）或 /转职 魔法师（魔法）。")
-            if line != class_line(prof):
-                other = "战士" if line == "physical" else "魔法师"
-                return f"❌ 「{it['name']}」是{other}的装备，你无法购买使用。"
+                        f"请先 /转职 选择职业（如 /转职 战士 / 转职 魔法师 / 转职 魔剑士 / 转职 近战法师）。")
+            if not usage or not dungeon._usable_line_type(it, *usage):
+                return f"❌ 「{it['name']}」不是{class_name(prof) or '你'}的装备，你无法购买使用。"
         req_tier = it.get("tier")
         if req_tier is None:
             req_tier = tier_of_price(it.get("price", 0))
@@ -691,7 +692,7 @@ def _dungeon_enter(user):
     class_note = ""
     if not prof:
         class_note = ("\n💡 你尚未选择职业（地下城暂按最优自动生效）。\n"
-                      f"发送 /转职 战士 或 /转职 魔法师 选定职业（影响装备可用）。")
+                      f"发送 /转职 战士 / 魔法师 / 魔剑士 / 近战法师 选定职业（影响装备可用）。")
 
     # 优先从保存的进度继续（直达上次的层数与剩余进度）
     if user.saved_dungeon_layer and user.saved_dungeon_layer > 0:

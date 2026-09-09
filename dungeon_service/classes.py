@@ -3,6 +3,9 @@
 
 设计（见 docs/equipment-system-redo-plan.md §3.1）：
 - 职业决定玩家能穿哪一条「line」（物理/魔法）的装备，不能混搭。
+- 双线职业（魔剑士/近战法师，v2.12.14）：lines 含 physical+magic，
+  由「lines × types 白名单」共同限定可穿部位（如魔剑士可穿 weapon/focus/robe，
+  但不能穿同属物理线的盾牌/战甲）。
 - 未来新增职业只需在此 CLASSES 注册表登记即可。
 """
 import os
@@ -12,13 +15,14 @@ LINE_PHYSICAL = "physical"   # 物理线（战士）
 LINE_MAGIC = "magic"         # 魔法线（法师/魔法师）
 LINE_ANY = "any"             # 通用（饰品/纯生存轻甲，两职业皆可）
 
-# 职业注册表：职业标识 → {名称, 别名列表, line, 可用 type 集合, 描述}
+# 职业注册表：职业标识 → {名称, 别名列表, line(主线), lines(可用线集合), 可用 type 集合, 描述}
 # 可用 type：决定该职业可购买/装备/穿戴哪些部位（防混搭 + 购买限制）。
 CLASSES = {
     "warrior": {
         "name": "战士",
         "aliases": ["战士", "warrior", "zhan", "zhan shi"],
         "line": LINE_PHYSICAL,
+        "lines": {LINE_PHYSICAL},
         "types": {"weapon", "armor", "shield"},
         "desc": "物理近战（攻击/敏捷）",
     },
@@ -26,8 +30,25 @@ CLASSES = {
         "name": "魔法师",
         "aliases": ["魔法师", "法师", "mage", "fashi", "fa shi"],
         "line": LINE_MAGIC,
+        "lines": {LINE_MAGIC},
         "types": {"staff", "robe", "focus"},
         "desc": "魔法施法（智力/魔力）",
+    },
+    "spellblade": {
+        "name": "魔剑士",
+        "aliases": ["魔剑士", "spellblade", "mo jian shi", "mojian", "mo jian", "魔剑"],
+        "line": LINE_PHYSICAL,
+        "lines": {LINE_PHYSICAL, LINE_MAGIC},
+        "types": {"weapon", "focus", "robe"},
+        "desc": "物理主手+魔法施法（攻击/智力）",
+    },
+    "battlemage": {
+        "name": "近战法师",
+        "aliases": ["近战法师", "battlemage", "jin zhan fa shi", "jinzhan", "jin zhan", "战法"],
+        "line": LINE_MAGIC,
+        "lines": {LINE_PHYSICAL, LINE_MAGIC},
+        "types": {"staff", "shield", "armor"},
+        "desc": "魔法主手+物理防护（魔力/敏捷）",
     },
 }
 
@@ -82,9 +103,17 @@ def class_name(class_id):
 
 
 def class_line(class_id):
-    """职业对应 line；未知返回 None。"""
+    """职业对应主线（展示/技能归属）；未知返回 None。"""
     meta = CLASSES.get(class_id)
     return meta["line"] if meta else None
+
+
+def class_lines(class_id):
+    """职业可用的 line 集合（双线职业含 physical+magic）；未知返回 None。"""
+    meta = CLASSES.get(class_id)
+    if not meta:
+        return None
+    return set(meta.get("lines", {meta.get("line")}))
 
 
 def class_types(class_id):
@@ -109,9 +138,14 @@ def item_line(item):
 
 
 def item_usable_for(item, class_id):
-    """装备是否对某职业可用：line=any(通用) 或 line=该职业的 line。"""
+    """装备是否对某职业可用：line=any(通用) 恒可用；否则需 line ∈ 职业 lines 且
+    type ∈ 职业 types 白名单（双线职业防越线混搭，如魔剑士不可穿盾/战甲）。"""
     line = item_line(item)
     if line == LINE_ANY:
         return True
-    cl = class_line(class_id)
-    return bool(cl) and line == cl
+    meta = CLASSES.get(class_id)
+    if not meta:
+        return False
+    if line not in meta.get("lines", {meta.get("line")}):
+        return False
+    return item.get("type", "other") in meta.get("types", set())
