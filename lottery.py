@@ -4,8 +4,10 @@
 - 档1（5 铜）：小奖为主——高概率小额铜币返还，实物多为低级装备/草药/低阶消耗品；
 - 档2（5 银）：中奖率提升、稀有度上移——装备 tier2、稀有~传说材料、中阶消耗品；
 - 档3（5 金）：高投入——大额金钱、tier4~5 装备、传说~神话材料、高阶消耗品、稀有装备大奖。
-- 期望设计（v2.11.72）：三档均为**负期望**（EV/成本 ≈ 0.87 / 0.65 / 0.29），档位越高亏得越多，
+- 期望设计（v2.11.72/73）：三档均为**负期望**（EV/成本 ≈ 0.87 / 0.65 / 0.45），档位越高亏得越多，
   长期抽奖整体趋向亏损（铜币回收口径；材料/消耗品无定价未计入，实际略高于该值）。
+  **高级货保留且高频**：档3 每抽 40% 出 tier4~5 装备（其中 20% 稀有大奖）、16% 出传说~神话材料
+  （神话级 3 种：万瓜圣辉/万瓜圣契/万宝源晶）。
 
 奖励发放：金钱 → user.copper；装备 → UserItem；材料 → material.grant_materials；
 消耗品 → consumable.grant_consumables。调用方负责 commit。
@@ -94,7 +96,7 @@ def roll(user, tier_no, rnd=None):
         ])
     else:
         kind = _pick([
-            (12, "thanks"), (26, "money"), (32, "equip"), (20, "material"), (10, "consumable"),
+            (6, "thanks"), (36, "money"), (40, "equip"), (16, "material"), (2, "consumable"),
         ])
 
     jackpot = False
@@ -106,7 +108,7 @@ def roll(user, tier_no, rnd=None):
         elif tier_no == 2:
             amt = random.randint(80, 650)
         else:
-            amt = random.randint(6000, 60000)
+            amt = random.randint(10000, 70000)
         user.copper += amt
         text = f"💰 幸运金钱！获得 {amt} 铜币"
     elif kind == "equip":
@@ -118,7 +120,7 @@ def roll(user, tier_no, rnd=None):
             it = _rand_item(shop)
         else:
             shop, rares = _equip_pool(4, 5, include_rare=True)
-            if rares and random.random() < 0.10:
+            if rares and random.random() < 0.20:
                 it = _rand_item(rares)
                 jackpot = True
             else:
@@ -171,6 +173,6 @@ def rule_text():
         elif no == 2:
             desc = "30% 谢谢惠顾 · 38% 金钱(80~650) · 18% 装备(tier2) · 8% 稀有~传说材料 · 6% 中阶药水道具（期望≈0.65，亏损）"
         else:
-            desc = "12% 谢谢惠顾 · 26% 金钱(6千~6万) · 32% 装备(tier4~5,10% 稀有掉落) · 20% 传说~神话材料 · 10% 高阶药水道具（期望≈0.29，大亏）"
+            desc = "6% 谢谢惠顾 · 36% 金钱(1万~7万) · 40% 装备(tier4~5,20% 稀有掉落) · 16% 传说~神话材料 · 2% 高阶药水道具（期望≈0.45，仍亏；高级货高频）"
         lines.append(f"· {t['name']}：{t['cost_txt']}/次 —— {desc}")
     return "\n".join(lines)
