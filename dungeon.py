@@ -6,7 +6,7 @@
 - 第 1 层总进度条 = 1000，推进速度按【公式】随时间流逝自动减少，每个用户单独核算。
 - 难度曲线（防数值膨胀）：第 n 层总进度 = 1000 × n^0.75（幂函数，远慢于指数）。
 - 产币曲线：每秒铜币 = (1/60) × n^0.6（增速低于难度曲线，更稳健），按 5 秒为单位核算。
-- 同类型装备只取在【公式】中收益最大的一个，其余类型可叠加。
+- 同槽位装备取「整体推进速度最优」穿法（评分起步 + 迭代校正），跨槽位叠加。
 - 职业（v3）：已转职只吃该职业 line + 通用(any)；未转职自动择优（物理/魔法取高）。
 - 阶级（v3/v5）：商店/稀有装备只能装备 tier ≤ 当前阶级 的；锻造装备按「铁匠铺 Lv」穿戴
   （历史最高层 ≥ 该 Lv 解锁层即可用，不卡当前阶级）。
@@ -151,34 +151,66 @@ def _item_usable(it, tier_max, best_layer):
     return _item_tier(it) <= tier_max
 
 
+_ATTR_KEYS = ("attack", "defense", "hp", "mp", "agility", "intelligence")
+
+
+def _best_slot_combo(candidates_by_slot, base):
+    """同槽位最优穿法：从每槽评分最高件起步，反复单槽替换使整体 dungeon_speed 最大（收敛贪心）。
+
+    修正（v2.11.69）：item_formula_score 的纯防御保底分会让「防肉装」评分虚高、
+    在同槽竞争中被误选——叠加后它输出为 0 且生存乘子贡献微小，实际战力远低于输出件，
+    导致「卖出防肉件后推进速度反而上升」。改用整体速度直接判定：
+    每次替换 speed 严格上升，件数有限 ⇒ 有限步内收敛；槽间顺序仅影响收敛路径不影响最优值。
+    """
+    chosen = {}
+    stats = dict(base)
+    for t, items in candidates_by_slot.items():
+        it = max(items, key=item_formula_score)
+        chosen[t] = it
+        for k in _ATTR_KEYS:
+            stats[k] += it.get(k, 0)
+    improved = True
+    while improved:
+        improved = False
+        cur = dungeon_speed(stats)
+        for t, items in candidates_by_slot.items():
+            cur_it = chosen[t]
+            for it in items:
+                if it is cur_it:
+                    continue
+                trial = dict(stats)
+                for k in _ATTR_KEYS:
+                    trial[k] += it.get(k, 0) - cur_it.get(k, 0)
+                if dungeon_speed(trial) > cur:
+                    chosen[t] = it
+                    stats = trial
+                    cur = dungeon_speed(trial)
+                    improved = True
+                    break
+    return stats
+
+
 def _stats_for_line(owned, line, tier_max, best_layer):
     """按「职业 line + 阶级/锻造解锁」过滤后计算有效属性（不乘称号加成）。
 
     可用 = line 为该职业(或 any 通用) 且（商店/稀有：tier ≤ 当前阶级；锻造：Lv 已按历史层解锁）；
-    再按 type 取公式收益最高一件叠加。
+    再按槽位（type）做「整体推进速度最优」贪心选件叠加（评分起步 + 迭代校正）。
     """
     stats = dict(BASE_STATS)
-    best = {}
+    by_slot = {}
     for it in owned:
         if not _item_usable(it, tier_max, best_layer):
             continue
         if item_line(it) not in (line, LINE_ANY):
             continue
-        score = item_formula_score(it)
-        t = it.get("type", "other")
-        if t not in best or score > best[t]["score"]:
-            best[t] = {"item": it, "score": score}
-    for d in best.values():
-        it = d["item"]
-        for k in ("attack", "defense", "hp", "mp", "agility", "intelligence"):
-            stats[k] += it.get(k, 0)
-    return stats
+        by_slot.setdefault(it.get("type", "other"), []).append(it)
+    return _best_slot_combo(by_slot, stats)
 
 
 def effective_stats(user, owned):
-    """用户的有效属性 = (初始属性 + 各类型收益最高装备之和) × 称号加成。
+    """用户的有效属性 = (初始属性 + 各槽位整体速度最优装备之和) × 称号加成。
 
-    - 同类型只取收益最高 1 件，跨类型叠加；
+    - 同槽位取整体推进速度最优穿法（评分起步 + 迭代校正），跨槽位叠加；
     - 已转职：只吃该职业 line + 通用(any) 的装备（不能混搭）；
     - 未转职：自动择优（分别按物理组/魔法组算速度，取高）；
     - 商店/稀有装备：只计入 tier ≤ 当前阶级 的装备；
@@ -502,8 +534,8 @@ def _load_forge_meta():
 
 def _anchor_combo_s(pool, line, tier_max=None, forge_lv=None, title_bonus=1.0):
     """穿满指定装备池后的 dungeon_speed（商店按 tier≤tier_max / 锻造按 level≤forge_lv；
-    同类型取公式收益最高一件叠加，乘称号加成）。"""
-    best = {}
+    同槽位做「整体推进速度最优」贪心选件叠加（与 _stats_for_line 同一算法），乘称号加成）。"""
+    by_slot = {}
     for it in pool:
         if tier_max is not None and int(it.get('tier', 0)) > tier_max:
             continue
@@ -511,15 +543,8 @@ def _anchor_combo_s(pool, line, tier_max=None, forge_lv=None, title_bonus=1.0):
             continue
         if item_line(it) not in (line, LINE_ANY):
             continue
-        score = item_formula_score(it)
-        t = it.get('type', 'other')
-        if t not in best or score > best[t]['score']:
-            best[t] = {'item': it, 'score': score}
-    stats = dict(BASE_STATS)
-    for d in best.values():
-        it = d['item']
-        for k in ('attack', 'mp', 'agility', 'intelligence', 'defense', 'hp'):
-            stats[k] += it.get(k, 0)
+        by_slot.setdefault(it.get('type', 'other'), []).append(it)
+    stats = _best_slot_combo(by_slot, dict(BASE_STATS))
     stats = {k: v * title_bonus for k, v in stats.items()}
     return dungeon_speed(stats)
 
