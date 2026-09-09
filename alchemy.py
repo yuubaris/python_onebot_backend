@@ -101,19 +101,20 @@ def all_recipes():
     return sorted(recs, key=lambda r: (order.get(r.get("kind", "tool"), 9), r.get("level", 9), r["name"]))
 
 
-def format_cost(recipe):
-    """把配方消耗转成可读文本（材料 + 矿石 + 铜币）。"""
+def format_cost(recipe, count=1):
+    """把配方消耗转成可读文本（材料 + 矿石 + 铜币）；count>1 时按批量折算总量。"""
     cost = recipe.get("cost") or {}
+    count = max(1, int(count or 1))
     parts = []
     for mid in sorted(cost.get("materials", {})):
         meta = material.material_meta(mid)
-        parts.append(f"{(meta or {}).get('name', mid)}×{cost['materials'][mid]}")
+        parts.append(f"{(meta or {}).get('name', mid)}×{cost['materials'][mid] * count}")
     for oid in sorted(cost.get("ores", {})):
         meta = ore.ore_meta(oid)
-        parts.append(f"{(meta or {}).get('name', oid)}×{cost['ores'][oid]}")
+        parts.append(f"{(meta or {}).get('name', oid)}×{cost['ores'][oid] * count}")
     if cost.get("copper"):
         from currency import format_currency
-        parts.append(format_currency(cost["copper"]))
+        parts.append(format_currency(int(cost["copper"]) * count))
     return " ".join(parts) if parts else "无消耗"
 
 
@@ -123,13 +124,14 @@ def recipe_min_layer(recipe):
     return 100 + max(0, lv - 1) * 400
 
 
-def forge_recipe(user, recipe):
-    """执行炼金：校验 + 扣材料/矿石/铜币 + 产出入包。返回提示文本。"""
+def forge_recipe(user, recipe, count=1):
+    """执行炼金（v2.11.85 支持批量）：校验 + 扣材料/矿石/铜币×count + 产出入包×count。返回提示文本。"""
     from dungeon import historical_best_layer
+    count = max(1, int(count or 1))
     cost = recipe.get("cost") or {}
-    need_mats = cost.get("materials", {})
-    need_ores = cost.get("ores", {})
-    need_copper = int(cost.get("copper", 0) or 0)
+    need_mats = {k: v * count for k, v in (cost.get("materials") or {}).items()}
+    need_ores = {k: v * count for k, v in (cost.get("ores") or {}).items()}
+    need_copper = int(cost.get("copper", 0) or 0) * count
     out_id = (recipe.get("output") or {}).get("item_id", "")
     out_meta = consumable.consumable_meta(out_id)
     if out_meta is None:
@@ -144,7 +146,7 @@ def forge_recipe(user, recipe):
     # 铜币校验
     if user.copper < need_copper:
         from currency import format_currency
-        return (f"铜币不足，不能炼金！「{recipe['name']}」需 {format_currency(need_copper)}，"
+        return (f"铜币不足，不能炼金！「{recipe['name']}」×{count} 需 {format_currency(need_copper)}，"
                 f"你只有 {format_currency(user.copper)}。")
 
     # 材料不足 → 缺啥提示啥
@@ -166,12 +168,12 @@ def forge_recipe(user, recipe):
         return "\n".join(lines)
 
     user.copper -= need_copper
-    consumable.grant_consumables(user.user_id, {out_id: int((recipe.get("output") or {}).get("count", 1))})
+    out_cnt = int((recipe.get("output") or {}).get("count", 1)) * count
+    consumable.grant_consumables(user.user_id, {out_id: out_cnt})
     db.session.commit()
-    out_cnt = int((recipe.get("output") or {}).get("count", 1))
     kind = "药水" if out_meta.get("kind") == "potion" else "道具"
     return (f"⚗️ 炼金成功！获得「{out_meta['name']}」×{out_cnt}（{kind}）。\n"
-            f"消耗：{format_cost(recipe)}。\n"
+            f"消耗（×{count}）：{format_cost(recipe, count)}。\n"
             f"发送 /使用 {out_meta['name']} 生效。")
 
 
@@ -194,5 +196,5 @@ def recipe_list_text(user):
             lines.append(f"    消耗：{format_cost(r)}")
             if r.get("desc"):
                 lines.append(f"    效果：{r['desc']}")
-    lines.append("—— 发送 /炼金 <配方名> 制作；/使用 <物品名> 生效；/背包 查看持有 ——")
+    lines.append("—— 发送 /炼金 <配方名> [数量] 制作（数量默认 1，最多 99）；/使用 <物品名> 生效；/背包 查看持有 ——")
     return "\n".join(lines)

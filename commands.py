@@ -1344,12 +1344,17 @@ def cmd_alchemy(user, group_id, args, at_qqs=None):
     name = (args or "").strip()
     if not name or name.lower() in ("配方", "列表", "全部", "查看", "peifang", "list", "all"):
         return alchemy.recipe_list_text(user)
+    # v2.11.85 批量制作：/炼金 <配方名> <数量>，数量为空默认 1
+    count = 1
+    _parts = name.rsplit(maxsplit=1)
+    if len(_parts) == 2 and _parts[1].isdigit():
+        name, count = _parts[0], max(1, min(int(_parts[1]), 99))
     recipe = alchemy.find_recipe(name)
     if recipe is None:
         hits = alchemy.suggest_recipes(name)
         hint = f"，你是不是想炼：{'、'.join(h['name'] for h in hits)}" if hits else ""
         return f"炼金铺没有「{name}」配方{hint}\n发送 /炼金 查看全部配方。"
-    return alchemy.forge_recipe(user, recipe)
+    return alchemy.forge_recipe(user, recipe, count)
 
 
 # ---------- 使用（/使用 <物品名>） ----------
