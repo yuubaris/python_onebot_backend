@@ -702,6 +702,7 @@ def _roll_boss_drop(user, layer, btype):
         ore_count = len(ore_res)
     # 特殊物品（精英 25% / 小Boss 45% / 大Boss 80%，R17；掉落增益 scope=special）→ 有名字单独列
     special_id = material.roll_special(btype)
+    special_hit = None  # (材料名, 数量)；未命中为 None
     if special_id:
         scnt = 1
         try:
@@ -712,9 +713,9 @@ def _roll_boss_drop(user, layer, btype):
         except Exception:
             pass
         material.grant_materials(user.user_id, {special_id: scnt})
-        special_count = scnt
         smeta = material.material_meta(special_id)
         snm = smeta["name"] if smeta else special_id
+        special_hit = (snm, scnt)
         named.append(f"✨ 特殊物品 ×{scnt}（{snm}）")
     # 稀有装备概率：精英 25% / 小Boss 55% / 大Boss 100% → 有名字单独列
     p = {"elite": 0.06, "minor": 0.15, "major": 0.30}.get(btype, 0.06)
@@ -725,7 +726,7 @@ def _roll_boss_drop(user, layer, btype):
             tn = _tn.get(it.get("type", "other"), it.get("type", ""))
             named.append(f"✦ {it['name']}({tn}·稀有) new！")
             rare_count = 1
-    return named, coin_bonus, ore_count, special_count, rare_count
+    return named, coin_bonus, ore_count, special_hit, rare_count
 
 
 def _auto_named_boss_first(user, layer):
@@ -769,7 +770,7 @@ def settle_dungeon(user):
     report = []
     agg_coin = 0       # 本结算周期 Boss 通关金钱合计（合并计数播报）
     agg_ore = 0        # 本结算周期 Boss 通关矿石合计
-    agg_special = 0    # 非命名 Boss 的特殊物品计数（命名 Boss 的已单独行）
+    agg_special = {}   # 非命名 Boss 的特殊物品 {材料名: 数量}（命名 Boss 的已单独行）
     agg_rare = 0       # 非命名 Boss 的稀有装备计数
     # 掉落增益倍率（道具 drop_bonus）：金钱/矿石/草药/特殊（无 buff 则 1.0）
     try:
@@ -829,7 +830,9 @@ def settle_dungeon(user):
                         else:
                             agg_coin += coin_d
                             agg_ore += ore_n
-                            agg_special += sp_n
+                            if sp_n:
+                                nm_, cnt_ = sp_n
+                                agg_special[nm_] = agg_special.get(nm_, 0) + cnt_
                             agg_rare += rare_n
                 # 命名 Boss 自动推进首通（100/200/…/3600 守关层）→ boss 材料（未首通才给）
                 _auto_lines = _auto_named_boss_first(user, cleared_layer)
@@ -854,7 +857,9 @@ def settle_dungeon(user):
                     else:
                         agg_coin += coin_d
                         agg_ore += ore_n
-                        agg_special += sp_n
+                        if sp_n:
+                            nm_, cnt_ = sp_n
+                            agg_special[nm_] = agg_special.get(nm_, 0) + cnt_
                         agg_rare += rare_n
                 # 命名 Boss 自动推进首通（100/200/…/3600 守关层）→ boss 材料（未首通才给）
                 _auto_lines = _auto_named_boss_first(user, cleared_layer)
@@ -868,7 +873,9 @@ def settle_dungeon(user):
     if agg_ore:
         agg_parts.append(f"💎 矿石 ×{agg_ore}")
     if agg_special:
-        agg_parts.append(f"✨ 特殊物品 ×{agg_special}")
+        sp_total = sum(agg_special.values())
+        sp_parts = [f"{nm_}×{cnt_}" for nm_, cnt_ in agg_special.items()]
+        agg_parts.append(f"✨ 特殊物品 ×{sp_total}（{'、'.join(sp_parts)}）")
     if agg_rare:
         agg_parts.append(f"✦ 稀有装备 ×{agg_rare}")
     if agg_parts:
