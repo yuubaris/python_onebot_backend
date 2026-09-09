@@ -275,33 +275,34 @@ def cmd_class(user, group_id, args, at_qqs=None):
 
 
 def cmd_promote(user, group_id, args, at_qqs=None):
-    """晋升阶级（/晋升）：需历史最高层达标 + 消耗货币。"""
+    """晋升阶级（/晋升）：需已通关要求层 + 消耗货币（v2.12.17 起「通关才算」，到达不算）。"""
     cur = user.tier or 0
     nxt = next_promotion(cur)
     if nxt is None:
         return f"你已达最高阶级 {_user_title(user)}！"
-    best = historical_best_layer(user)
+    cleared = user.dungeon_cleared or 0   # 已通关层数（顺序推进，= 已通关最高层）
     need_layer = TIER_LAYER.get(nxt, 0)
     cost = tier_promotion_cost(nxt)
-    if best < need_layer:
+    if cleared < need_layer:
         return (f"晋升 {tier_title(user.profession, nxt)} 需要：\n"
-                f"地下城历史最高层 ≥ {need_layer}（当前 {best}）\n"
+                f"地下城已通关层数 ≥ {need_layer}（当前 {cleared}）\n"
                 f"货币 ≥ {format_currency(cost)}（当前 {format_currency(user.copper)}）")
     if user.copper < cost:
         return (f"货币不足，不能晋升！\n"
                 f"晋升 {tier_title(user.profession, nxt)} 需 {format_currency(cost)}，"
                 f"你只有 {format_currency(user.copper)}。\n"
-                f"（层数已达标：历史最高 {best} ≥ {need_layer}）")
+                f"（层数已达标：已通关 {cleared} ≥ {need_layer}）")
     user.copper -= cost
     user.tier = nxt
     db.session.commit()
-    # 解锁档位（2026-09-08 口径，层门槛 0/50/150/400/800/1600/3200/5000）：
-    # 武器库(商店)档位随阶级解锁；铁匠铺按历史层分级（Lv1@400…Lv4@3200，穿戴随层解锁）。
+    # 解锁档位（2026-09-09 口径，层门槛 0/50/150/400/800/1600/2500/3000）：
+    # 武器库(商店)档位随阶级解锁；铁匠铺按已通关层分级（Lv1@400…Lv4@3200，穿戴随层解锁）。
     # T6 灭世 / T7 至尊 不再纯称号——称号每阶全属性 +5%（T7=+35%），并配合锻造顶级追装。
     from tiers import TIER_ATTR_BONUS, TIER_LAYER as _TL
     if nxt >= 6:
+        forge_note = "铁匠铺 Lv3（已通关 1600）" if nxt == 6 else "铁匠铺 Lv4（已通关 3200）"
         unlock_note = (f"称号加成提升至 全属性 +{int((TIER_ATTR_BONUS[nxt] - 1) * 100)}%！"
-                       f"（灭世/至尊为称号·锻造段：铁匠铺 Lv{3 if nxt == 6 else 4} 及顶级锻造可追）")
+                       f"（灭世/至尊为称号·锻造段：{forge_note} 及顶级锻造可追）")
     else:
         unlock_note = f"武器库已解锁 {tier_title(user.profession, nxt)} 阶级的装备！称号加成 +{int((TIER_ATTR_BONUS[nxt] - 1) * 100)}%。"
     return (f"🎉 晋升成功！{tier_title(user.profession, cur)} → {tier_title(user.profession, nxt)}\n"
