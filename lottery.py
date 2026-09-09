@@ -17,6 +17,7 @@ import random
 import equipment
 import material
 import consumable
+from currency import format_currency
 
 # 档位成本（统一换算成铜币：100 铜 = 1 银，100 银 = 1 金）
 TIERS = {
@@ -110,7 +111,7 @@ def roll(user, tier_no, rnd=None):
         else:
             amt = random.randint(10000, 70000)
         user.copper += amt
-        text = f"💰 幸运金钱！获得 {amt} 铜币"
+        text = f"💰 幸运金钱！获得 {format_currency(amt)}"
     elif kind == "equip":
         if tier_no == 1:
             shop, _ = _equip_pool(0, 1)
