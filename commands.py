@@ -705,7 +705,7 @@ def _dungeon_enter(user):
 
     # 进入地下城：刷新「穿戴中」标记（清空后按当前最优组合标记每槽 1 件；
     # 地下城中新获得的装备在重新进入前不会进入穿戴）
-    marked = mark_best_equipped(user)
+    marked = dungeon.mark_best_equipped(user)
     wear_note = ""
     if marked:
         wear_note = "已穿戴：" + "、".join(marked) + "\n"

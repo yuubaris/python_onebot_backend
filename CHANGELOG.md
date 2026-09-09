@@ -5,6 +5,18 @@
 
 ---
 
+## 2026-09-09 · v2.11.74 —— 修复 /地下城 进入 NameError（mark_best_equipped 未导入）
+
+### 🐛 修复
+- **症状**：`/地下城 进入`（含从保存进度续进）报 `NameError: name 'mark_best_equipped' is not defined`——v2.11.70 穿戴中系统引入的 `mark_best_equipped` 在 commands.py 中以**裸名**调用（`mark_best_equipped(user)`），但 `from dungeon import (...)` 列表未导入它（py_compile 不检查名称、此前集成测试直接调 dungeon 模块，故漏网）。
+- **修复**：改为 `dungeon.mark_best_equipped(user)`（已有 `import dungeon`）。
+- **排查**：全量扫描 commands.py 裸名调用，逐一核对 import 列表/局部 import/模块前缀——`item_line`、`tier_*`、`class_*`、`find_class`、`buffs_status_text`、`format_currency`、`_all_item_meta` 等均正确导入，无其他漏网。
+
+### ✅ 回归测试（内存库，防复发）
+- 新进路径：`_dungeon_enter` 输出「推进速度」+「已穿戴:短剑、圆盾、皮甲、魔法披风」，穿戴标记恰 4 件；
+- 续进路径（saved_dungeon_layer>0）：输出「已从上次进度继续」+「已穿戴」，穿戴标记 4 件；
+- 两条路径均不再抛 NameError。
+
 ## 2026-09-09 · v2.11.73 —— 抽奖再平衡：高级货高频 + 总体仍亏
 
 ### 🎰 设计目标（用户定调）
