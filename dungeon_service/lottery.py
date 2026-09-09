@@ -80,7 +80,7 @@ def _equip_pool(min_tier, max_tier, include_rare=False):
     if not include_rare:
         return shop, None
     import json, os
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rare_drops.json")
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "rare_drops.json")
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
     if isinstance(data, dict):
@@ -91,12 +91,18 @@ def _equip_pool(min_tier, max_tier, include_rare=False):
 
 
 def _material_pool(min_rarity, max_rarity):
-    """材料池（category herb/special/boss，按稀有度区间）"""
+    """材料池（category herb/special/boss + 矿石，按稀有度区间）"""
     order = {"common": 0, "rare": 1, "legendary": 2, "myth": 3}
     lo, hi = order[min_rarity], order[max_rarity]
-    return [m for m in material.load_materials()
+    pool = [m for m in material.load_materials()
             if order.get((m.get("rarity") or "common"), 0) >= lo
             and order.get((m.get("rarity") or "common"), 0) <= hi]
+    # 矿石与草药/特殊材料等价混入（category 标记为 ore）
+    from . import ore as _ore
+    for o in _ore.load_ores():
+        if order.get((o.get("rarity") or "common"), 0) >= lo                 and order.get((o.get("rarity") or "common"), 0) <= hi:
+            pool.append(dict(o, category="ore"))
+    return pool
 
 
 def _consumable_pool(min_level, max_level):
@@ -173,9 +179,15 @@ def roll(user, tier_no, rnd=None):
             cnt = random.randint(1, 3)
         if pool:
             it = _rand_item(pool)
-            grant_materials(user.user_id, {it["id"]: cnt})
-            mark, aword = _award_mark("material", tier_no, it, rarity=it.get("rarity"))
-            text = f"{mark} {aword} · 获得材料「{it['name']}」×{cnt}"
+            if it.get("category") == "ore":
+                from .ore import grant_ores
+                grant_ores(user.user_id, {it["id"]: cnt})
+                mark, aword = _award_mark("material", tier_no, it, rarity=it.get("rarity"))
+                text = f"{mark} {aword} · 获得矿石「{it['name']}」×{cnt}"
+            else:
+                grant_materials(user.user_id, {it["id"]: cnt})
+                mark, aword = _award_mark("material", tier_no, it, rarity=it.get("rarity"))
+                text = f"{mark} {aword} · 获得材料「{it['name']}」×{cnt}"
         else:
             user.copper += tier["cost"]
             text = f"（材料池暂空，退回 {tier['cost_txt']}）"
