@@ -31,17 +31,9 @@ TIER_BONUS = {0: 1.0, 1: 1.05, 2: 1.1, 3: 1.15, 4: 1.2, 5: 1.25}
 
 
 def item_score(it):
-    """与 dungeon.item_formula_score 一致（保留生存乘区、输出对称）。"""
-    a = it.get("attack", 0)
-    mp = it.get("mp", 0)
-    g = it.get("agility", 0)
-    i = it.get("intelligence", 0)
-    d = it.get("defense", 0)
-    h = it.get("hp", 0)
-    off = a * 2 + mp * 2 + g * 1.5 + i * 1.5
-    if off <= 0:
-        return (d * 2 + h * 1.2) * 1.0
-    return off * (1 + d / 400) * (1 + h / 600)
+    """统一口径（v2.11.71）：直接复用 dungeon.item_score（与推进公式同一套）。"""
+    from dungeon import item_score as _s
+    return _s(it)
 
 
 def setk(it, k):

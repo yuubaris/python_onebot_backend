@@ -22,15 +22,9 @@ def load_json(name):
 
 
 def item_score(it):
-    """与 dungeon.item_formula_score 同口径（2026-09-08 方案A：输出权重对称
-    攻=魔=2.0、敏=智=1.5，保留生存乘区 (1+防/400)(1+命/600)）。"""
-    a = it.get("attack", 0); g = it.get("agility", 0)
-    i = it.get("intelligence", 0); m = it.get("mp", 0)
-    d = it.get("defense", 0); h = it.get("hp", 0)
-    off = a * 2 + m * 2 + g * 1.5 + i * 1.5
-    if off <= 0:
-        return (d * 2 + h * 1.2) * 1.0
-    return off * (1 + d / 400) * (1 + h / 600)
+    """统一口径（v2.11.71）：直接复用 dungeon.item_score（与推进公式同一套）。"""
+    from dungeon import item_score as _s
+    return _s(it)
 
 
 def tier_of(it):

@@ -94,30 +94,30 @@ def coin_per_5sec(layer):
     return coin_rate_per_sec(layer) * 5
 
 
-def item_formula_score(item):
-    """单个装备套入进度公式的收益分（用于同类型取最优）。
+def item_score(item, base=None):
+    """装备收益分（评分）= 基础属性 + 该件属性 代入推进公式（与推进速度/推进值同一套公式）。
 
-    评分 = (攻击×2 + 魔力×2 + 敏捷×1.5 + 智力×1.5) × (1+防御/400) × (1+生命/600)。
-
-    （2026-09-08 方案A）输出权重对称化：攻击=魔力、敏捷=智力（攻=魔=2.0、敏=智=1.5），
-    使物理/魔法两线每点输出词条价值相等，法师不再需要堆超高智/魔来对齐战士。
-
-    对纯防御向装备（攻击/敏捷/智力/魔力均为 0，如 防具类），分子恒为 0，
-    会导致同类型多件装备评分全部相同而永远选中第一件（最常见误选）——
-    因此分子为 0 时改以防御/生命折算为保底分：defense×2 + hp×1.2，
-    使其在类型内仍能区分强弱（系数与公式乘子权重一致）。
+    统一口径（v2.11.71）：装备收益/推进速度/装备评分 = dungeon_speed 家族，无第二套公式。
+    评分 = dungeon_speed(BASE_STATS + 该件属性)，即「以基础属性为底的穿上这件后的推进速度」。
+    输出权重对称（攻=魔=2.0、敏=智=1.5）与生存乘区 (1+防/400)(1+命/600) 全部与推进公式一致；
+    因基础属性自带输出词条，纯防御/高防低攻件与输出件天然按真实边际贡献比较，
+    不再需要「保底分」特例（防肉装不再虚高误选）。
     """
-    atk = item.get("attack", 0)
-    agi = item.get("agility", 0)
-    inte = item.get("intelligence", 0)
-    mp = item.get("mp", 0)
-    defense = item.get("defense", 0)
-    hp = item.get("hp", 0)
-    offence = atk * 2 + mp * 2 + agi * 1.5 + inte * 1.5
-    if offence <= 0:
-        # 纯防御向：按防御/生命折算保底分，保证同类型内能选出最强
-        return (defense * 2 + hp * 1.2) * 1.0
-    return offence * (1 + defense / 400) * (1 + hp / 600)
+    st = dict(BASE_STATS if base is None else base)
+    for k in _ATTR_KEYS:
+        st[k] += item.get(k, 0)
+    return dungeon_speed(st)
+
+
+def item_value_ratio(item):
+    """装备性价比（独立口径，非收益公式）：收益分 ÷ 价格（铜币）= 每 1 铜币买到的收益分。
+
+    仅用于「花钱买什么划算」的比较，不参与推进/胜率/Boss 锚定。
+    """
+    price = int(item.get("price") or 0)
+    if price <= 0:
+        return 0.0
+    return item_score(item) / price
 
 
 def _item_tier(item):
@@ -157,7 +157,7 @@ _ATTR_KEYS = ("attack", "defense", "hp", "mp", "agility", "intelligence")
 def _best_slot_chosen(candidates_by_slot):
     """同槽位最优穿法：从每槽评分最高件起步，反复单槽替换使整体 dungeon_speed 最大（收敛贪心）。
 
-    修正（v2.11.69）：item_formula_score 的纯防御保底分会让「防肉装」评分虚高、
+    修正（v2.11.69/71）：旧评分对纯防御件有保底分会让「防肉装」评分虚高、
     在同槽竞争中被误选——叠加后它输出为 0 且生存乘子贡献微小，实际战力远低于输出件，
     导致「卖出防肉件后推进速度反而上升」。改用整体速度直接判定：
     每次替换 speed 严格上升，件数有限 ⇒ 有限步内收敛；槽间顺序仅影响收敛路径不影响最优值。
@@ -165,7 +165,7 @@ def _best_slot_chosen(candidates_by_slot):
     chosen = {}
     stats = dict(BASE_STATS)
     for t, items in candidates_by_slot.items():
-        it = max(items, key=item_formula_score)
+        it = max(items, key=item_score)
         chosen[t] = it
         for k in _ATTR_KEYS:
             stats[k] += it.get(k, 0)
