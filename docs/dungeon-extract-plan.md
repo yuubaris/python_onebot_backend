@@ -2,7 +2,7 @@
 
 > 分支：`refactor/dungeon-extract`（基于 v2.11.86 / `57e55a2`）
 > 状态：**方案已定稿（评审通过）**，进入 P0 实施阶段
-> 评审结论：① 独立服务；② 结算保守（命令触发，与现状一致）；③ 分支内独立组织（等同新仓库）；④ 并行维护
+> 评审结论：① 独立服务（**单进程**，代码独立、运行时合一）；② 结算保守（命令触发，与现状一致）；③ 分支内独立组织（等同新仓库）；④ 并行维护
 
 ---
 
@@ -10,9 +10,9 @@
 
 当前仓库是「QQ 群地下城挂机机器人」单机单体：OneBot 消息收发、命令分发、地下城游戏逻辑、群管理、监控管理全部耦合在 23 个 `.py`（约 6,874 行）中。
 
-**剥离目标**（已拍板）：把「地下城功能」剥离为**独立服务**（进程级隔离），QQ 消息端只做收发，游戏逻辑全部下沉到服务端。剥离后：
+**剥离目标**（已拍板）：把「地下城功能」剥离为**独立服务**（**单进程**：代码上独立成准新仓库，运行时与消息端同进程，不拆双进程）。剥离后：
 
-1. 游戏服务可独立部署、独立测试（无头运行，不依赖 QQ/WebSocket）；
+1. 游戏核心可独立测试（无头运行，不依赖 QQ/WebSocket）；将来若需多平台/扩容，可无缝从「同进程调用」切换为「独立进程 HTTP 调用」；
 2. 代码组织上**等同于新仓库**（独立目录、独立入口、独立依赖），将来可无缝拆出独立 GitHub 仓库复用；
 3. 剥离期间 main 分支并行维护，分支定期合并 main 防分叉；
 4. **线上行为零感知**：命令输出逐字一致、结算时机不变（命令触发）。
@@ -65,7 +65,7 @@
 
 ## 3. 剥离边界定义
 
-### 3.1 划入「游戏服务」（随地下城剥离）
+### 3.1 划入「游戏域」（随地下城剥离）
 
 ```
 dungeon.py  ore.py  material.py  alchemy.py  consumable.py  lottery.py
@@ -86,24 +86,30 @@ boss.py    boss_gear.py  forge.py  classes.py  tiers.py  equipment.py  skills.py
 
 ---
 
-## 4. 方案定稿：独立服务（进程级隔离）
+## 4. 方案定稿：独立服务（单进程准新仓库）
 
-### 4.1 总体架构
+### 4.1 总体架构（单进程）
 
 ```
-┌─────────────────────┐        ┌──────────────────────────┐
-│  QQ 消息端（现状壳） │  HTTP  │  游戏服务 dungeon_service │
-│  bot.py / app.py    │ ─────► │  Flask :8xxx（回环+Token）│
-│  commands.py(非地下城)│ ◄───── │  core/loot/craft/shop/… │
-└─────────────────────┘ 文本回复 │  models.py / texts.py    │
-        │                       └──────────┬───────────────┘
-        │ 共享 SQLite（WAL+busy_timeout）    │ 唯一 DB 写方（收敛目标）
-        └────────────►  data.db ◄───────────┘
+┌────────────────────────────────────────────┐
+│             单进程 python_onebot_backend     │
+│                                            │
+│  消息端壳（现状）          游戏域（准新仓库）    │
+│  bot.py / app.py     ┌─── dungeon_service/  │
+│  commands.py ──────► │  core/loot/craft/    │
+│  （非地下城命令）      │  shop/profile/boss/  │
+│                      │  models / texts      │
+│        └── GameCore 门面（同进程直调）──┘     │
+│                      │                     │
+│              models.py（共享同一份 DB）       │
+│                   data.db（SQLite 单写方）   │
+└────────────────────────────────────────────┘
 ```
 
-- **消息端收到 `/地下城` 等 15 个地下城命令** → `POST /api/game/command` → 游戏服务处理（含保守结算）→ 返回文本 → 消息端原样播报。
-- **消息端非地下城命令**（签到/余额/踢/帮助/排名）：第一版仍本地处理（现状逻辑），涉及 DB 写入与游戏服务**共享 SQLite 文件**。
-- **战报**：服务端结算产生的事件随 `/command` 响应带回，消息端按现有 `_BOSS_REPORT_COMMANDS` 策略播报（仅 /地下城 时展示）。
+- 消息端收到 `/地下城` 等 15 个地下城命令 → **同进程直调 `GameCore.run_command`**（无 HTTP、无进程间通信）→ 返回文本原样播报；
+- 非地下城命令（签到/余额/踢/帮助/排名）保持现状逻辑，**同进程共享同一 SQLite、单一写方，无并发写问题**；
+- **战报**：`GameCore.take_events` 由消息端在 /地下城 时取出播报（沿用 `_BOSS_REPORT_COMMANDS` 策略）；
+- **未来扩展位**：若将来需要独立进程/多平台，把 GameCore 调用点换成 HTTP 即可（见 §4.3 预留契约），当前不启用。
 
 ### 4.2 代码组织（等同新仓库）
 
@@ -112,26 +118,26 @@ boss.py    boss_gear.py  forge.py  classes.py  tiers.py  equipment.py  skills.py
 ```
 python_onebot_backend/
 ├── bot.py / app.py / commands.py / kick.py / …   # 消息端壳（现状，仅命令层改委托）
-├── dungeon_service/                              # ★ 准新仓库（游戏服务）
-│   ├── server.py          # 服务入口（Flask，回环 + Token 鉴权）
+├── dungeon_service/                              # ★ 准新仓库（游戏域，单进程内运行）
+│   ├── game_core.py       # GameCore 门面：唯一对外接口（结算/命令/事件）
 │   ├── core.py            # 结算/推进/胜率/Boss 判定（原 dungeon.py 主体）
 │   ├── loot.py            # 掉落：矿石/草药/特殊/Boss 材料/装备
 │   ├── craft.py           # 炼金 + 锻造 + 使用
 │   ├── shop.py            # 商店/背包/购买/出售/抽奖/转转
 │   ├── profile.py         # 职业/阶级/装备评分/技能
 │   ├── boss.py            # Boss 定义/专属装备/掉落表
-│   ├── models.py          # 游戏域数据模型
-│   ├── config.py          # 端口/Token/DB 路径/周期常量
+│   ├── models.py          # 游戏域数据模型（与外壳 models 合并持有同一份表定义）
+│   ├── texts.py           # 全中文提示文案
+│   ├── config.py          # DB 路径/周期常量/未来服务端口 Token
 │   ├── requirements.txt   # 独立依赖清单
-│   ├── tests/             # 无头测试（内存 sqlite）
-│   └── run.sh             # 独立启动脚本
-├── data.db                # 共享 SQLite
-└── run_all.sh             # 一键起双进程
+│   └── tests/             # 无头测试（内存 sqlite）
+├── data.db                # SQLite（单进程唯一写方）
+└── （server.py 预留，仅未来拆独立进程时启用）
 ```
 
-**硬约束**：`dungeon_service/` 内 0 import 外壳模块（不 import app/bot/commands/kick 等）；仅依赖 `flask`、`sqlalchemy` 与标准库。
+**硬约束**：`dungeon_service/` 内 **0 import 外壳模块**（不 import app/bot/commands/kick 等）；仅依赖 `flask`(可选)、`sqlalchemy` 与标准库。当前以库方式被外壳调用，未来切独立进程时直接套 `server.py` 起 HTTP。
 
-### 4.3 API 契约（第一版）
+### 4.3 API 契约（预留，当前不启用）
 
 | 方法 | 路径 | 请求 | 响应 |
 |---|---|---|---|
@@ -141,17 +147,18 @@ python_onebot_backend/
 
 - 鉴权：请求头 `Authorization: Bearer <config.token>`，仅监听 `127.0.0.1`
 - 失败语义：服务异常返回 `{"ok":false,"error":"…"}`，消息端回退为现状本地提示「指令执行出错：…」，不吞异常
+- **现状**：该契约仅作为「拆独立进程」时的接口标准存档；当前单进程同进程直调 GameCore，不经过 HTTP
 
 ### 4.4 结算保守（评审决定 2）
 
 - 服务端 `/api/game/command` 内部**先按现状逻辑结算**：若该用户 `in_dungeon`，先 `settle`（时间戳驱动、幂等），再执行命令——与 `dispatch_command` 现状逐字一致；
 - 不引入服务端定时结算（时间驱动列为后续扩展位，见 §7 P3+）。
 
-### 4.5 数据层：共享 SQLite
+### 4.5 数据层：单进程 SQLite（无并发写）
 
-- **第一版**：消息端与游戏服务共享同一 `data.db` 文件；`engine` 配置 `connect_args={"timeout": 30}`（SQLite 自带 busy_timeout 语义）+ 开启 WAL（`PRAGMA journal_mode=WAL`）。
-- **风险**：双进程写 SQLite，极端并发下可能 `database is locked`。机器人低频（命令/秒级）、WAL 下读写分离，冲突概率低；服务端捕获锁错误重试 1 次。
-- **收敛目标（P2+）**：消息端非地下城命令也统一走服务 API，服务端成为**唯一 DB 写方**，彻底消除并发写（届时消息端零 DB 直写）。
+- **单进程**：消息端与游戏域同进程共享同一 `data.db`，**单一写方**，不存在双进程锁冲突；
+- 维持现状 `models.py` 表结构（零迁移），游戏域迁移后代码归属调整即可；
+- 将来若拆独立进程，再启用 WAL + timeout 并收敛唯一写方（见 §4.3 预留契约）。
 
 ### 4.6 并行维护（评审决定 4）
 
@@ -160,11 +167,9 @@ python_onebot_backend/
 
 ---
 
-## 5. 迁移策略（两阶段）
+## 5. 迁移策略（单阶段，行为零变化）
 
-### 阶段一：包化 + 本地直连（P0~P2，行为零变化）
-
-> 先把游戏域在**同进程内**拆成 `dungeon_service/` 包并用 GameCore 门面跑通（不立即切 HTTP），保证剥离可回退、可逐模块验证。
+> 游戏域在**同进程内**拆成 `dungeon_service/` 包并用 GameCore 门面跑通，**不拆双进程**；保证剥离可回退、可逐模块验证。
 
 ```python
 class GameCore:
@@ -176,13 +181,8 @@ class GameCore:
 
 - 消息端 `commands.py` 15 个地下城命令改为 `game.run_command(...)`；
 - golden 快照（§6.1）逐字回归；
-- 此阶段结算仍走 `dispatch_command` 里保留的调用点（保守）。
-
-### 阶段二：进程拆分（P3，切 HTTP）
-
-- `server.py` 起 Flask，`GameCore` 实例化到服务进程；
-- 消息端 `cmd_*` 委托改为 `httpx.post("/api/game/command")`；
-- `run_all.sh` 一键起双进程；`dungeon_service/run.sh` 可独立起服务。
+- 结算仍走 `dispatch_command` 里保留的调用点（保守）；
+- 未来拆独立进程：仅需新增 `server.py`（§4.3 契约已存档）并在外壳把 GameCore 调用点换成 HTTP 客户端，**游戏域代码零改动**。
 
 ---
 
@@ -194,22 +194,20 @@ class GameCore:
 |---|---|---|
 | P0 | 回归基线：内存 sqlite + 15 命令 golden 快照 + settle 冒烟 | 0.5~1 天 |
 | P1 | `dungeon_service/` 包骨架 + 纯搬移（不改逻辑，每模块跑 golden diff） | 1~2 天 |
-| P2 | 命令层改 GameCore 委托 + 服务端保守结算 + WAL 配置 | 0.5~1 天 |
-| P3 | `server.py` HTTP 化 + 消息端切 API + 双进程启动脚本 + 鉴权 | 1 天 |
-| P4 | 非地下城命令走 API（唯一写方收敛）+ 文档三件套同步 | 1 天 |
+| P2 | 命令层改 GameCore 委托 + 保守结算保留 + 零迁移验证 | 0.5 天 |
+| P3 | 文档三件套同步 + 预留契约存档 | 0.5 天 |
 
-合计约 **4~6 天**（按现状单人节奏 ~1 天/版本折算为 4~6 个小版本）。
+合计约 **2.5~4 天**（按现状单人节奏 ~1 天/版本折算为 3~4 个小版本）。
 
 ### 6.2 风险与对策
 
 | 风险 | 等级 | 对策 |
 |---|---|---|
-| 双进程写 SQLite 锁冲突 | 高 | 第一版 WAL + timeout=30 + 锁重试 1 次；P4 收敛唯一写方根治 |
 | 命令输出在重构中漂移 | 中 | golden 快照逐字 diff 拦截（P0 先行） |
 | `boss→dungeon`、`dungeon→boss` 循环引用 | 中 | 迁包时先拆 `boss.py` 掉落表归属，打破环 |
 | User 表字段混合误伤社交字段 | 低 | 第一版零迁移；仅按 import 归属搬代码 |
 | 并行维护期间 main 改动冲突 | 中 | 定期 merge main + 冲突解决后跑 golden diff |
-| 服务不可用（未启动/崩溃）时消息端表现 | 中 | 消息端捕获异常回退「指令执行出错」；health 探活 + run_all.sh 重启 |
+| 单进程改造耦合回退 | 低 | GameCore 门面保证调用点单一，回退即改回旧 import |
 
 ---
 
@@ -217,18 +215,16 @@ class GameCore:
 
 1. **P0（本分支下一步）**：建立回归基线 + 无头测试脚手架（`dungeon_service/tests/`）；
 2. **P1**：`dungeon_service/` 包骨架 + 纯搬移（每搬一个模块跑 golden diff）；
-3. **P2**：命令委托 GameCore + 保守结算入服务 + WAL 配置；
-4. **P3**：HTTP 化（server.py + 消息端切 API + 双进程脚本 + 鉴权）；
-5. **P4**：唯一写方收敛 + README-dungeon-service.md + 文档三件套同步；
-6. **并行维护**：main 每有新版本 → merge 到本分支 → 全量 golden diff → 继续。
+3. **P2**：命令委托 GameCore + 保守结算保留 + 零迁移验证；
+4. **P3**：README-dungeon-service.md + 文档三件套同步 + 未来拆分契约存档；
+5. **并行维护**：main 每有新版本 → merge 到本分支 → 全量 golden diff → 继续。
 
 ---
 
 ## 8. 验收标准
 
 - [ ] `dungeon_service/tests/` 全绿；15 个地下城命令输出与剥离前逐字一致（golden diff）；
-- [ ] `dungeon_service/` 0 import 外壳模块；可独立 `python server.py` 启动（回环+Token）；
-- [ ] 双进程跑通：消息端 /地下城 等命令经 API 返回与现状一致；签到/余额本地处理正常；无 `database is locked` 报错；
-- [ ] 服务异常时消息端回退提示不吞异常；
+- [ ] `dungeon_service/` 0 import 外壳模块；单进程跑通：/地下城 等命令经 GameCore 返回与现状一致；
+- [ ] 无 `database is locked` 风险（单进程单一写方）；
 - [ ] 线上 v2.11.x 行为无回归（矿石/材料/掉落/Boss/胜率口径不变）；
-- [ ] README / bot_wiki / CHANGELOG 同步；`run_all.sh` / `dungeon_service/run.sh` 文档化。
+- [ ] README / bot_wiki / CHANGELOG 同步；未来拆独立进程的 HTTP 契约已存档（§4.3）。
