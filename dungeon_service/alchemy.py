@@ -177,6 +177,53 @@ def forge_recipe(user, recipe, count=1):
             f"发送 /使用 {out_meta['name']} 生效。")
 
 
+def recommend_text(user):
+    """/炼金 推荐：按背包材料/矿石/铜币计算可合成的配方及可制作数量。
+
+    - 可制作数 = min(各材料持有÷需求、各矿石持有÷需求、铜币÷需求) 向下取整；
+    - 历史最高层不足解锁的配方列出但标 🔒（材料已够，只差层数）；
+    - 材料不够的配方不列出。
+    """
+    load_recipes()
+    from .dungeon import historical_best_layer
+    mats = {m["id"]: m["count"] for m in material.owned_materials(user.user_id)}
+    ores = {o["id"]: o["count"] for o in ore.owned_ores(user.user_id)}
+    best = historical_best_layer(user)
+
+    ok = []
+    for r in load_recipes():
+        cost = r.get("cost") or {}
+        need_m = cost.get("materials") or {}
+        need_o = cost.get("ores") or {}
+        need_c = int(cost.get("copper", 0) or 0)
+        can = None
+        for mid, n in need_m.items():
+            c = mats.get(mid, 0) // n
+            can = c if can is None else min(can, c)
+        for oid, n in need_o.items():
+            c = ores.get(oid, 0) // n
+            can = c if can is None else min(can, c)
+        if need_c:
+            c = user.copper // need_c
+            can = c if can is None else min(can, c)
+        if can is None or can < 1:
+            continue
+        ok.append((int(r.get("level") or 1), r, can, best < recipe_min_layer(r)))
+    if not ok:
+        return ("当前背包材料不足以炼任何配方。\n"
+                "发送 /炼金 查看全部配方及需求。")
+    # 未解锁排后，同组按产物等级升序
+    ok.sort(key=lambda x: (x[3], x[0]))
+    lines = ["⚗️ 炼金推荐（按当前背包可制作）："]
+    for _lv, r, can, locked in ok:
+        line = f"· {r['name']} ×{can}"
+        if locked:
+            line += f"（🔒 需历史最高层 ≥ {recipe_min_layer(r)}）"
+        lines.append(line)
+    lines.append("—— 用法：/炼金 <配方名> <数量> 批量制作 ——")
+    return "\n".join(lines)
+
+
 def recipe_list_text(user):
     """/炼金 列表：按 药水/道具 分组展示配方（含消耗与产物说明）。"""
     from .dungeon import historical_best_layer

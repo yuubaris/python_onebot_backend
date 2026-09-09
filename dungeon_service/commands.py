@@ -1070,6 +1070,8 @@ def cmd_alchemy(user, group_id, args, at_qqs=None):
     name = (args or "").strip()
     if not name or name.lower() in ("配方", "列表", "全部", "查看", "peifang", "list", "all"):
         return alchemy.recipe_list_text(user)
+    if name.lower() in ("推荐", "tuijian", "recommend"):
+        return alchemy.recommend_text(user)
     # v2.11.85 批量制作：/炼金 <配方名> <数量>，数量为空默认 1
     count = 1
     _parts = name.rsplit(maxsplit=1)
