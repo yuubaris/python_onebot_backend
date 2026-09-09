@@ -45,13 +45,20 @@ def _usage_for(prof):
 
 
 def _usable_line_type(it, lines, types):
-    """装备对某 (lines, types) 是否可用：any 恒可用；否则 line ∈ lines 且 type ∈ types。"""
+    """装备对某 (lines, types) 是否可用：any 恒可用；否则 line ∈ lines 且 type ∈ types。
+
+    饰品（accessory）为通用部位：不受职业 types 白名单限制（仅按 line 归属判定），
+    故带物理/魔法归属线的 Boss 专属饰品（如 裂渊空印/终焉灵印）各职业线均可穿。
+    """
     ln = item_line(it)
     if ln == LINE_ANY:
         return True
     if ln not in lines:
         return False
-    return types is None or it.get("type", "other") in types
+    t = it.get("type", "other")
+    if t == "accessory":
+        return True
+    return types is None or t in types
 
 LAYER1_TOTAL = 1000.0
 

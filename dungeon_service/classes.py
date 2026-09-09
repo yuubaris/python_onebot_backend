@@ -139,7 +139,11 @@ def item_line(item):
 
 def item_usable_for(item, class_id):
     """装备是否对某职业可用：line=any(通用) 恒可用；否则需 line ∈ 职业 lines 且
-    type ∈ 职业 types 白名单（双线职业防越线混搭，如魔剑士不可穿盾/战甲）。"""
+    type ∈ 职业 types 白名单（双线职业防越线混搭，如魔剑士不可穿盾/战甲）。
+
+    饰品（accessory）为通用部位：不参与 types 白名单（仅按 line 归属判定），
+    与 dungeon._usable_line_type 口径一致（v2.12.21）。
+    """
     line = item_line(item)
     if line == LINE_ANY:
         return True
@@ -148,4 +152,7 @@ def item_usable_for(item, class_id):
         return False
     if line not in meta.get("lines", {meta.get("line")}):
         return False
-    return item.get("type", "other") in meta.get("types", set())
+    t = item.get("type", "other")
+    if t == "accessory":
+        return True
+    return t in meta.get("types", set())

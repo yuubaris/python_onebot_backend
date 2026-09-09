@@ -281,3 +281,51 @@ def test_buy_all_insufficient(app):
     db.session.commit()
     reply = cmd_buy(u, 99999, "全部")
     assert "铜币不足" in reply
+
+
+# —— 专属饰品通用部位修复（v2.12.21）——
+
+def test_gear_accessory_usable_by_line(app):
+    """带归属线的专属饰品：按 line 判定、不受 types 白名单限制。"""
+    from dungeon_service import dungeon as dg
+    from dungeon_service.classes import item_usable_for
+    liyuan = {"type": "accessory", "line": "physical"}      # 裂渊空印
+    zhongyuan = {"type": "accessory", "line": "magic"}      # 终焉灵印
+    # 战士（physical 线）：可穿裂渊空印，不可穿魔法线饰品
+    assert item_usable_for(liyuan, "warrior")
+    assert not item_usable_for(zhongyuan, "warrior")
+    # 魔法师：反之
+    assert not item_usable_for(liyuan, "mage")
+    assert item_usable_for(zhongyuan, "mage")
+    # 双线职业：两系饰品均可穿
+    assert item_usable_for(liyuan, "spellblade") and item_usable_for(zhongyuan, "spellblade")
+    assert item_usable_for(liyuan, "battlemage") and item_usable_for(zhongyuan, "battlemage")
+    # dungeon 同口径
+    for prof in ("warrior", "mage"):
+        usage = dg._usage_for(prof)
+        assert dg._usable_line_type(liyuan, *usage) == item_usable_for(liyuan, prof)
+        assert dg._usable_line_type(zhongyuan, *usage) == item_usable_for(zhongyuan, prof)
+
+
+def test_boss_gear_drop_includes_accessory(app):
+    """战士候选应含物理线专属饰品（裂渊空印），魔法线版本（裂渊虚核）被过滤。"""
+    from dungeon_service.boss_gear import gear_for_layer
+    from dungeon_service.classes import item_usable_for
+    u = _mk_user(app, profession="warrior", tier=4, user_id=97031)
+    _roll_gear_many(u, 800)
+    gear_800 = gear_for_layer(800)
+    liyuan = [g for g in gear_800 if g["id"] == "gear_other_800_accessory" and g.get("line") == "physical"][0]
+    xuh = [g for g in gear_800 if g["id"] == "gear_other_800_accessory" and g.get("line") == "magic"][0]
+    assert item_usable_for(liyuan, "warrior")      # 物理版可掉
+    assert not item_usable_for(xuh, "warrior")     # 魔法版被过滤
+
+
+def test_bag_marks_gear_accessory_usable(app):
+    """背包：战士持 裂渊空印 不再标「本职业不生效」。"""
+    from dungeon_service.commands import cmd_bag
+    u = _mk_user(app, profession="warrior", tier=4, user_id=97032)
+    from models import UserItem as _UI
+    db.session.add(_UI(user_id=u.user_id, item_id="gear_other_800_accessory"))
+    db.session.commit()
+    reply = cmd_bag(u, 99999, "")
+    assert "裂渊空印" in reply and "本职业不生效" not in reply
