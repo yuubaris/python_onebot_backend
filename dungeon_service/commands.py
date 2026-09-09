@@ -596,6 +596,13 @@ def _cmd_sell_all(user):
         db.select(UserItem).where(UserItem.user_id == user.user_id)
     ).scalars().all()
     meta = {m["id"]: m for m in load_equipment()}
+    # 补充稀有掉落装备（rare_drops.json）：否则稀有闲置（未穿戴、非本部位最高评分）
+    # 永远被跳过——v2.12.7 起 load_equipment() 只含商店装备，一键出售漏卖稀有。
+    try:
+        for m in dungeon._load_rare_pool():
+            meta.setdefault(m["id"], m)
+    except Exception:
+        pass
     sellable = []   # (row, item_meta, item_score)
     for r in rows:
         it = meta.get(r.item_id)

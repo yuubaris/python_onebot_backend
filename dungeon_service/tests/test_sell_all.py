@@ -62,3 +62,41 @@ def test_sell_all_no_sellable(app):
     cmd_sell(u, 12345, "全部")   # 已卖完可卖的
     reply = cmd_sell(u, 12345, "全部")
     assert "没有可一键出售的装备" in reply
+
+
+def _mk_user_rare_spares(app):
+    """复现 v2.12.8 bug 场景：稀有闲置装备（未穿戴、非本部位最高评分）应被一键出售。
+    修复前 meta 仅含商店装备（load_equipment），稀有装备全部被跳过 → 误报无可卖。"""
+    u = User(user_id=95002, nickname="测试", profession="warrior", tier=4,
+             copper=100000, saved_dungeon_layer=1200)
+    db.session.add(u)
+    db.session.flush()
+    for iid, equipped in (
+        ("rare_weapon_4", 1),        # 武器：稀有，穿戴
+        ("rare_shield_4", 1),        # 盾牌：稀有，穿戴（部位最高）
+        ("star_shield", 0),          # 盾牌：商店 T2，闲置、非最高 → 应卖
+        ("rare_armor_4", 1),         # 防具：稀有，穿戴
+        ("rare_armor_4", 0),         # 防具：稀有，闲置同件 → 应卖
+        ("rare_accessory_3", 0),     # 饰品：稀有，闲置 → 应卖
+        ("rare_accessory_4", 0),     # 饰品：稀有，闲置（部位最高保留 1 件）
+        ("rare_accessory_4", 0),     # 饰品：稀有，闲置 → 应卖
+        ("gear_other_800_accessory", 1),  # 专属（限定）：不可售
+    ):
+        db.session.add(UserItem(user_id=u.user_id, item_id=iid, equipped=equipped))
+    db.session.commit()
+    return u
+
+
+def test_sell_all_sells_rare_spares(app):
+    """稀有掉落闲置件可被一键出售（v2.12.9 修复：meta 合并 rare_drops.json）。"""
+    u = _mk_user_rare_spares(app)
+    reply = cmd_sell(u, 12345, "全部")
+    assert "卖出 4 件" in reply
+    for nm in ("星辉圣盾", "星穹战铠×1", "月蚀吊坠×1", "星穹法印×1"):
+        assert nm in reply
+    rows = db.session.execute(
+        db.select(UserItem).where(UserItem.user_id == u.user_id)
+    ).scalars().all()
+    ids = {r.item_id for r in rows}
+    assert ids == {"rare_weapon_4", "rare_shield_4", "rare_armor_4",
+                   "rare_accessory_4", "gear_other_800_accessory"}
