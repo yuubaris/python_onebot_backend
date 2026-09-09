@@ -54,7 +54,7 @@ def _award_mark(kind, tier_no, it=None, rarity=None, jackpot=False):
         return ("🥉", "铜奖") if tier_no == 1 else (("🥈", "银奖") if tier_no == 2 else ("🥇", "金奖"))
     if kind == "equip":
         if jackpot:
-            return ("👑", "特等奖")
+            return ("🥇", "金奖")  # 稀有装备：v2.11.80 从特等下放至金奖
         t = int(it.get("tier", 0) or 0)
         if t <= 1:
             return ("🥉", "铜奖")
@@ -64,8 +64,10 @@ def _award_mark(kind, tier_no, it=None, rarity=None, jackpot=False):
     if kind == "material":
         r = _RARITY_ORDER.get((rarity or "common"), 0)
         if r >= 3:
-            return ("👑", "特等奖")  # 神话材料：全场最稀有（3 种 / 6%），与稀有大奖并列顶级
-        return ("🥉", "铜奖") if r <= 1 else ("🥈", "银奖")
+            return ("👑", "特等奖")  # 神话材料：全场最稀有（3 种 / 6%），独占特等
+        if r == 2:
+            return ("🥇", "金奖")  # 传说材料：v2.11.80 从银奖升至金奖
+        return ("🥉", "铜奖")
     # consumable
     lv = int(it.get("level", 1) or 1)
     return ("🥉", "铜奖") if lv <= 2 else (("🥈", "银奖") if lv == 3 else ("🥇", "金奖"))
@@ -199,7 +201,7 @@ def roll(user, tier_no, rnd=None):
 def rule_text():
     """抽奖规则说明（三档成本 + 概率/稀有度概览）。"""
     lines = ["🎰 抽奖（/抽奖 1|2|3 或 /抽奖 铜|银|金）",
-             "奖等（按奖品稀有度/价值，跨档一致）：🥉铜奖·低级 | 🥈银奖·中级 | 🥇金奖·高级 | 👑特等奖·稀有大奖/神话材料"]
+             "奖等（按奖品稀有度/价值，跨档一致）：🥉铜奖·低级 | 🥈银奖·中级 | 🥇金奖·高级(稀有大奖/传说材料) | 👑特等奖·神话材料"]
     for no in (1, 2, 3):
         t = TIERS[no]
         if no == 1:
