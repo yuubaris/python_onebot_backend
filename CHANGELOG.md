@@ -5,6 +5,16 @@
 
 ---
 
+## 2026-09-09 · 地下城剥离（分支 refactor/dungeon-extract）—— P0~P3 完成
+
+### 🏗️ 架构变更（不影响线上行为，golden 逐字回归）
+- **P0 回归基线**：`dungeon_service/tests/` 无头测试脚手架（内存 sqlite + 固定 seed），18 个地下城命令 golden 快照 + settle 冒烟（推进/矿石草药互不抢占/必不掉空/战报队列）；
+- **P1 包搬移**：14 个游戏域模块 + models 迁入 `dungeon_service/`（纯搬移，包内相对导入，0 import 外壳）；根目录同名文件改为转发壳（单一实现源）；
+- **P2 命令委托**：15 个地下城命令迁入 `dungeon_service/commands.py`（集中命令层，单向无环）；新增 `GameCore` 门面（`settle` 保守命令触发结算 / `run_command` 直调 / `take_events` 取战报）；
+- **P3 消息端切换**：`dispatch_command` 地下城命令走 `game.run_command`，结算入口合并为 `game.settle`（与现状逐字一致），非地下城命令（签到/余额/帮助/踢/撅/佬）仍走外壳 handlers；
+- 全量测试 **35 用例绿**（golden 逐字 diff / 包内-根目录等价 / GameCore / dispatch 消息路径）；
+- **验收口径**：拆独立进程时按 `docs/dungeon-extract-plan.md` §4.3 HTTP 契约起 server.py，游戏域零改动；当前单进程不启用。
+
 ## 2026-09-09 · v2.11.86 —— 草药/特殊材料掉落数量递增（参考矿石）
 
 ### 🌿 变更

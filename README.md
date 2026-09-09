@@ -6,6 +6,18 @@
 `/挑战`、`/踢`、`/撅`、`/佬` 等指令与多级货币体系、职业/晋升/稀有装备、矿石与锻造玩法、
 B 站直播/动态监控。
 
+
+## 🏗️ 地下城剥离（进行中：refactor/dungeon-extract 分支）
+
+把地下城功能剥离为**独立服务（单进程）**：代码独立成准新仓库 `dungeon_service/`（0 import 外壳，
+将来整体拎出即成新仓库），运行时与消息端同进程，**不做双进程**。
+
+- 游戏域 14 模块 + models 已迁入 `dungeon_service/`；根目录同名文件为转发壳（单一实现源）；
+- 15 个地下城命令集中在 `dungeon_service/commands.py`，消息端经 `GameCore` 门面
+  （`settle` 保守命令触发结算 / `run_command` / `take_events`）直调；
+- 回归门槛：`python3 -m pytest dungeon_service/tests/ -q`（35 用例，含 18 个 golden 逐字 diff）；
+- 详细方案见 `docs/dungeon-extract-plan.md`；未来拆独立进程按 §4.3 HTTP 契约起 server.py。
+
 > 📋 版本更新记录见 **[CHANGELOG.md](./CHANGELOG.md)**。
 
 ## 功能特性

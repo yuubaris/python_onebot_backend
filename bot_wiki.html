@@ -496,6 +496,17 @@
 
 <!-- ============ 直播间监控 ============ -->
 <section id="livemon">
+
+  <h2>🏗️ 地下城剥离（refactor/dungeon-extract）</h2>
+  <p>地下城功能已剥离为独立准新仓库 <code>dungeon_service/</code>（0 import 外壳，单进程运行，不做双进程）：</p>
+  <ul>
+    <li>游戏域 14 模块 + 数据模型迁入包内，根目录同名文件为转发壳（单一实现源）；</li>
+    <li>15 个地下城命令集中在 <code>dungeon_service/commands.py</code>，经 <code>GameCore</code> 门面直调
+      （settle 保守命令触发结算 / run_command / take_events）；</li>
+    <li>回归基线 <code>dungeon_service/tests/</code>：35 用例（18 golden 逐字 diff），
+      <code>python3 -m pytest dungeon_service/tests/ -q</code>；</li>
+    <li>玩家可见行为零变化；未来拆独立进程按 <code>docs/dungeon-extract-plan.md</code> §4.3 HTTP 契约起 server.py。</li>
+  </ul>
   <h2>🔴 B站直播间监控</h2>
   <p>绑定群号监控直播间开播/下播，可在管理页配置启用/禁用。</p>
   <table>

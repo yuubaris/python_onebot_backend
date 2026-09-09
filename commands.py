@@ -78,6 +78,7 @@ from dungeon_service.commands import (
     cmd_forge, cmd_forge_shop, cmd_alchemy, cmd_use, cmd_challenge, cmd_boss,
     cmd_lottery, cmd_turn, _user_title, _buff_status_block, local_today,
 )
+from dungeon_service.game_core import game as _game, _DUNGEON_COMMANDS as _GAMECORE_ALIASES
 
 
 def ensure_user(user_id, nickname):
@@ -437,7 +438,9 @@ DUNGEON_ALLOWED = {"签到", "checkin", "qiandao",
 # 会展示“地下城战利品结算”的命令 handler：仅 /地下城（进入/状态/退出/列表）。
 # /签到、/余额、/背包 等查看命令不再夹带战报（v2.11.81）——掉落照常入账，
 # 战报保留至下次 /地下城 时一并展示。
-_BOSS_REPORT_COMMANDS = {cmd_dungeon}
+# 会展示“地下城战利品结算”的命令：仅 /地下城（进入/状态/退出/列表）。
+# 地下城命令已走 GameCore 门面，用别名集合判定（原 {cmd_dungeon} 函数对象判定失效）。
+_BOSS_REPORT_ALIASES = {"地下城", "dungeon", "dixiacheng"}
 
 
 def _prepend_boss_report(user, reply):
@@ -469,10 +472,10 @@ def dispatch_command(text, user, group_id, at_qqs=None):
 
     handler = COMMANDS.get(name)
 
-    # 地下城状态结算与动作限制
+    # 地下城状态结算与动作限制（保守：命令触发结算，与 v2.11.x 行为一致）
     in_dungeon = user.dungeon_layer and user.dungeon_layer > 0
     if in_dungeon:
-        settle_dungeon(user)  # 先按流逝时间结算（可能触发 Boss 掉落），再判断
+        _game.settle(user)  # GameCore 门面结算（等价原 settle_dungeon）
         if handler is None or name not in DUNGEON_ALLOWED:
             return (f"⚠️ 你正在地下城第 {user.dungeon_layer} 层中。\n"
                     f"地下城内可使用 /签到、/余额、/背包、/抽奖、/帮助、/踢、/撅、/佬、/挑战 或 /地下城 退出。")
@@ -497,10 +500,14 @@ def dispatch_command(text, user, group_id, at_qqs=None):
         return "未知指令，发送 /帮助 查看可用命令。"
 
     try:
-        reply = handler(user, group_id, args, at_qqs)
+        # 地下城命令统一走 GameCore 门面直调；其余（签到/余额/帮助/踢/撅/佬）走本地 handler
+        if name in _GAMECORE_ALIASES:
+            reply = _game.run_command(name, user, group_id, args, at_qqs)
+        else:
+            reply = handler(user, group_id, args, at_qqs)
         # 战利品结算播报仅在 /地下城 时展示（v2.11.81）；
         # 签到/余额/背包等不再夹带（掉落照常入账，战报保留待下次 /地下城 带出）。
-        if handler in _BOSS_REPORT_COMMANDS:
+        if name in _BOSS_REPORT_ALIASES:
             return _prepend_boss_report(user, reply)
         return reply
     except Exception as exc:
