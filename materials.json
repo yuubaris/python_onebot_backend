@@ -92,21 +92,21 @@
   },
   {
    "id": "souvenir_final",
-   "name": "终焉圣契",
+   "name": "终焉刻印",
    "category": "souvenir",
    "rarity": "myth",
    "desc": "万古魔主·终焉的收藏级战利品，与万瓜圣契同级的稀世之物。"
   },
   {
    "id": "souvenir_abyss",
-   "name": "归墟魔契",
+   "name": "归墟之心",
    "category": "souvenir",
    "rarity": "myth",
    "desc": "万劫魔帝·归墟的收藏级战利品，与万瓜圣契同级的稀世之物。"
   },
   {
    "id": "souvenir_rift",
-   "name": "裂界玄契",
+   "name": "裂界残片",
    "category": "souvenir",
    "rarity": "myth",
    "desc": "万渊魔尊·裂界的收藏级战利品，与万瓜圣契同级的稀世之物。"

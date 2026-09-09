@@ -38,7 +38,7 @@ GROUP_LABEL = {"normal": "守关 Boss", "big": "大 Boss（1000/2000/3000/3600�
 # 3600「万瓜圣契」原为挑战成功必掉，按用户「掉率极低」口径统一为 SOUVENIR_DROP_RATE。
 FINAL_BOSS_RELIC = "souvenir_wangua"
 SOUVENIR_LAYERS = {1000: "souvenir_final", 2000: "souvenir_abyss", 3000: "souvenir_rift", 3600: FINAL_BOSS_RELIC}
-SOUVENIR_DROP_RATE = 0.10    # 专属特殊道具掉率（极低，四大大 Boss 一致）
+SOUVENIR_DROP_RATE = 0.001   # 专属特殊道具掉率（极低 0.1%，与 4 大 Boss 专属装备同档）
 # 究极大 Boss(1000/2000/3000) 挑战成功必掉的专属材料「万宝源晶」；3600 最终 Boss 在其外额外掉落（万宝符原料）
 MYRIAD_GEM = "boss_myriad"
 
