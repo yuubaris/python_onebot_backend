@@ -219,8 +219,10 @@ def cmd_bag(user, group_id, args, at_qqs=None):
     if mats:
         _cat_name = {"herb": "🌿 草药", "special": "✨ 特殊材料", "boss": "💎 Boss材料", "souvenir": "🏷️ 特殊道具"}
         _mat_mark = {"myth": "★", "legendary": "✦", "rare": "◆", "common": "·"}
+        _cat_order = {c: i for i, c in enumerate(("herb", "special", "boss", "souvenir"))}
         cur_cat = None
-        for m in mats:
+        # v2.11.83：先按类别稳定排序，避免同类材料被拆到多个分组
+        for m in sorted(mats, key=lambda x: _cat_order.get(x["category"], 99)):
             if m["category"] != cur_cat:
                 cur_cat = m["category"]
                 lines.append(f"—— {_cat_name.get(cur_cat, cur_cat)} ——")
