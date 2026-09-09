@@ -774,8 +774,11 @@ def _dungeon_status(user):
     bt_txt = "（BOSS）" if bt else ""
     buff_block = _buff_status_block(user)
     buff_line = ("\n" + buff_block) if buff_block else ""
+    stats = effective_stats(user, owned_items(user))
+    speed = dungeon_speed(stats)
     return (f"📍 地下城第 {user.dungeon_layer} 层{bt_txt} · {_user_title(user)}\n"
             f"进度：{pct:.1f}%（剩余 {remaining:.0f} / 总计 {total:.0f}）\n"
+            f"推进速度：{speed:.2f} 进度/秒\n"
             f"金币速度：约 {coin_per_5sec(user.dungeon_layer):.4f} 铜币/5秒\n"
             f"本次地下城已获得 {user.dungeon_run_coins} 铜币；累计通关 {user.dungeon_cleared} 层，"
             f"累计获得 {user.dungeon_coins_earned} 铜币。\n"
