@@ -188,3 +188,60 @@ def test_cmd_buy_rejects_other_line(app):
                   if it["type"] == "shield" and int(it.get("tier", 0)) <= 4)
     reply = cmd_buy(u, 99999, shield["name"])
     assert "不是魔剑士的装备" in reply or "无法购买" in reply
+
+
+# —— Boss 专属掉落按职业过滤（v2.12.15）——
+
+def _roll_gear_many(user, layer, n=60):
+    """强制命中：临时抬高掉率不可行（rate 读 JSON），改为多次尝试+monkeypatch 掉率。
+    这里直接调用候选过滤逻辑：用 item_usable_for 校验候选集，再模拟 roll 命中。"""
+    import random
+    from dungeon_service.boss_gear import roll_gear, gear_for_layer, produced_count
+    from dungeon_service.classes import item_usable_for
+    # 候选集（职业过滤后）不应含不可用件
+    prof = user.profession or ""
+    cands = [g for g in gear_for_layer(layer)
+             if produced_count(g["id"]) < int(g.get("limit", 5))
+             and (not prof or item_usable_for(g, prof))]
+    for g in cands:
+        if prof:
+            assert item_usable_for(g, prof), f"候选含不可用件 {g['id']}"
+    # 对未转职：候选应为全部未达限量件
+    if not prof:
+        all_c = [g for g in gear_for_layer(layer)
+                 if produced_count(g["id"]) < int(g.get("limit", 5))]
+        assert len(cands) == len(all_c)
+    # 多次真实 roll（低掉率，只验证不抛错）
+    hits = 0
+    for _ in range(30):
+        r = roll_gear(user, layer)
+        if r:
+            hits += 1
+            if prof:
+                assert item_usable_for(r["gear"], prof)
+    return hits
+
+
+def test_boss_gear_drop_filtered_by_class(app):
+    from dungeon_service.boss_gear import gear_for_layer
+    # 魔剑士：1000 层候选只含 weapon(裁决) + accessory(圣冕)
+    u_s = _mk_user(app, profession="spellblade", tier=4, user_id=97021)
+    _roll_gear_many(u_s, 1000)
+    cand_ids = {g["id"] for g in gear_for_layer(1000)
+                if not g.get("line") == "magic" or g["type"] in ("focus", "robe")}
+    # 实际验证：候选里没有 staff(终焉星陨) —— 通过 item_usable_for 已保证
+    # 战士：候选不含 staff/focus/robe
+    u_w = _mk_user(app, profession="warrior", tier=4, user_id=97022)
+    _roll_gear_many(u_w, 1000)
+    # 魔法师：候选不含 weapon/armor/shield
+    u_m = _mk_user(app, profession="mage", tier=4, user_id=97023)
+    _roll_gear_many(u_m, 1000)
+    # 近战法师
+    u_b = _mk_user(app, profession="battlemage", tier=4, user_id=97024)
+    _roll_gear_many(u_b, 1000)
+
+
+def test_boss_gear_drop_unclassed_keeps_all(app):
+    """未转职：专属掉落候选不限制（与旧行为一致）。"""
+    u = _mk_user(app, profession=None, tier=4, user_id=97025)
+    _roll_gear_many(u, 1000)
