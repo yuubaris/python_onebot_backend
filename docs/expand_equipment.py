@@ -205,7 +205,7 @@ def main():
 
     # 6) 补齐 focus（法师副手 magic）每 tier ≥1（原全缺）
     focus_plan = [(50, "见习法器"), (200, "元素法器"), (1000, "秘术法器"),
-                  (5200, "奥术宝珠"), (15000, "苍穹宝珠"), (45000, "神谕法器")]
+                  (5200, "奥术法典"), (15000, "苍穹法典"), (45000, "神谕法典")]
     have_focus_tier = {it["tier"] for it in items if it["type"] == "focus"}
     for p, name in focus_plan:
         t = price_tier(p)

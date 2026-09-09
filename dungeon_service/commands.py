@@ -237,7 +237,7 @@ def cmd_shop(user, group_id, args, at_qqs=None):
                 continue   # 精简模式：隐藏低于当前档的装备
             lines.append(f"—— T{ti} · {title_name} ——")
             for it in arr:
-                lines.append(f"· {it['name']}（{_item_desc(it)}）{format_currency(it['price'])}")
+                lines.append(f"· {it['name']}（{TYPE_NAMES.get(it.get('type'), it.get('type') or '')}·{_item_desc(it)}）{format_currency(it['price'])}")
         else:
             lines.append(f"—— 🔒 T{ti} · {title_name} 需 /晋升 至「{title_name}」——")
             preview = "、".join(it["name"] for it in arr[:4])

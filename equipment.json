@@ -870,7 +870,7 @@
   },
   {
    "id": "focus_5200",
-   "name": "奥术宝珠",
+   "name": "奥术法典",
    "type": "focus",
    "attack": 0,
    "defense": 25,
@@ -884,7 +884,7 @@
   },
   {
    "id": "focus_15000",
-   "name": "苍穹宝珠",
+   "name": "苍穹法典",
    "type": "focus",
    "attack": 0,
    "defense": 46,
@@ -898,7 +898,7 @@
   },
   {
    "id": "focus_45000",
-   "name": "神谕法器",
+   "name": "神谕法典",
    "type": "focus",
    "attack": 0,
    "defense": 74,
