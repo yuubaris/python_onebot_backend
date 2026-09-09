@@ -80,6 +80,8 @@ SCENARIOS = {
     "dungeon_status": ("B", lambda u: __import__("commands").cmd_dungeon(u, 12345, "状态")),
     "challenge_list": ("B", lambda u: __import__("commands").cmd_challenge(u, 12345, "列表")),
     "dungeon_exit":   ("B", lambda u: __import__("commands").cmd_dungeon(u, 12345, "退出")),
+    "checkin":        ("A", lambda u: __import__("commands").cmd_checkin(u, 12345, "")),
+    "balance":        ("A", lambda u: __import__("commands").cmd_balance(u, 12345, "")),
 }
 
 PLAYERS = {"A": build_player_a, "B": build_player_b, "C": build_player_c}

@@ -29,11 +29,18 @@ from dungeon_service.models import db as sdb, User  # noqa: E402
 
 def test_no_shell_import():
     """包内模块不得 import 外壳(循环依赖防线)。"""
-    for mod in (sd, sm, so, sa):
-        src = open(mod.__file__, encoding="utf-8").read()
-        for shell in ("import app", "import commands", "import bot", "import kick",
-                      "from app", "from commands", "from bot", "from kick"):
-            assert shell not in src, f"{mod.__file__} 引用外壳: {shell}"
+    import re as _re
+    pkg_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    shell_pat = _re.compile(r"^\s*(import|from)\s+(app|commands|bot|kick)\b", _re.M)
+    checked = 0
+    for fn in sorted(os.listdir(pkg_dir)):
+        if not fn.endswith(".py") or fn in ("__init__.py", "models.py"):
+            continue
+        src = open(os.path.join(pkg_dir, fn), encoding="utf-8").read()
+        m = shell_pat.search(src)
+        assert m is None, f"{fn} 引用外壳: {m.group(0).strip()}"
+        checked += 1
+    assert checked >= 15, f"扫描文件数异常: {checked}"
 
 
 def test_deterministic_functions_equal():

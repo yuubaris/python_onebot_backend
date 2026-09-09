@@ -1,7 +1,7 @@
 # dungeon_service（准新仓库 · 剥离中）
 
 地下城功能剥离的落地区：先建立无头回归基线，再逐步把游戏域搬入本目录。
-**当前进度：P2 命令层委托完成（GameCore 门面，单一实现源）。**
+**当前进度：P0~P3 全部完成，已合入 main（d301e60）。**
 
 - 根目录 `commands.py` 的 15 个地下城命令已迁移至 `dungeon_service/commands.py`（集中命令层，业务模块不依赖它，单向无环）；根文件仅保留转发 import + 非地下城命令；
 - `dungeon_service/game_core.py`：`GameCore` 门面 —— `settle`（保守：命令触发结算）/ `run_command`（地下城命令直调）/ `take_events`（取走战报队列）；
@@ -31,8 +31,8 @@ python3 dungeon_service/tests/regenerate.py          # 重生成 golden 基线�
 | B 阿法 | 魔法师 · tier5 · 地下城 1500 层推进中 · 矿石/草药资格 |
 | C 萌新 | 空号 |
 
-## 下一步（P3）
+## 状态
 
-- 消息端（bot/事件循环）切换为 `game.run_command` 直调（合并结算入口）；
-- README / bot_wiki.html / CHANGELOG.md 三件套同步剥离说明；
-- §4.3 HTTP 契约存档（未来拆独立进程用，当前单进程不需要 server.py）。
+- P0 回归基线 → P1 包搬移 → P2 命令委托 + GameCore → P3 消息端切换，全部完成并合入 main；
+- 20 个 golden 场景（含签到/余额）+ settle/等价/门面/dispatch 测试，39 用例全绿；
+- 未来拆独立进程：按 `docs/dungeon-extract-plan.md` §4.3 HTTP 契约起 server.py，游戏域零改动（当前单进程不启用）。

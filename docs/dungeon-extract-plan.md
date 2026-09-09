@@ -1,7 +1,7 @@
 # 地下城功能剥离评估文档（独立服务版）
 
 > 分支：`refactor/dungeon-extract`（基于 v2.11.86 / `57e55a2`）
-> 状态：**方案已定稿（评审通过）**，进入 P0 实施阶段
+> 状态：**P0~P3 已全部完成，已合入 main（d301e60）**；未来拆独立进程按 §4.3 契约起 server.py
 > 评审结论：① 独立服务（**单进程**，代码独立、运行时合一）；② 结算保守（命令触发，与现状一致）；③ 分支内独立组织（等同新仓库）；④ 并行维护
 
 ---
@@ -223,8 +223,8 @@ class GameCore:
 
 ## 8. 验收标准
 
-- [ ] `dungeon_service/tests/` 全绿；15 个地下城命令输出与剥离前逐字一致（golden diff）；
-- [ ] `dungeon_service/` 0 import 外壳模块；单进程跑通：/地下城 等命令经 GameCore 返回与现状一致；
-- [ ] 无 `database is locked` 风险（单进程单一写方）；
-- [ ] 线上 v2.11.x 行为无回归（矿石/材料/掉落/Boss/胜率口径不变）；
-- [ ] README / bot_wiki / CHANGELOG 同步；未来拆独立进程的 HTTP 契约已存档（§4.3）。
+- [x] `dungeon_service/tests/` 全绿；15 个地下城命令输出与剥离前逐字一致（golden diff）；
+- [x] `dungeon_service/` 0 import 外壳模块；单进程跑通：/地下城 等命令经 GameCore 返回与现状一致；
+- [x] 无 `database is locked` 风险（单进程单一写方）；
+- [x] 线上 v2.11.x 行为无回归（矿石/材料/掉落/Boss/胜率口径不变）；
+- [x] README / bot_wiki / CHANGELOG 同步；未来拆独立进程的 HTTP 契约已存档（§4.3）。
