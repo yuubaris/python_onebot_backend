@@ -939,9 +939,15 @@ def cmd_challenge(user, group_id, args, at_qqs=None):
     if not text:
         return ("用法：/挑战 @对方（玩家对战，每天 3 次）\n"
                 "/挑战 列表 - 查看 Boss 清单与今日剩余次数\n"
+                "/挑战 装备 [名称] - 查询专属装备属性与全服余量\n"
                 "/挑战 <Boss名|层数|称号>（如 挑战 裂风狼王 / 挑战 1000层 / 挑战 究极）")
     if text.lower() in ("列表", "list", "清单", "all", "全部"):
         return boss.boss_list_text(user)
+    low = text.lower()
+    if low == "装备" or low == "equip" or low.startswith("装备 ") or low.startswith("equip "):
+        # /挑战 装备 [名称]：专属装备属性 + 全服余量（v2.12.12）
+        rest = text[2:].strip() if low.startswith("装备") else text[5:].strip()
+        return boss.gear_list_text(user, rest or None)
     boss_obj = boss.find_boss(text)
     if boss_obj:
         return boss.challenge_boss(user, boss_obj)[0]

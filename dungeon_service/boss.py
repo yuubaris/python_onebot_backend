@@ -419,3 +419,71 @@ def boss_list_text(user):
                 out.append(f"· {b['layer']}层 {b['name']}（{b.get('tag','')}）[{first}] · 材料：{mname}{suffix}{gear_txt}")
     out.append("—— 用法：/挑战 <Boss名|层数|称号>（如 /挑战 裂风狼王 / 挑战 1000层）；/挑战 列表 查看 ——")
     return "\n".join(out)
+
+
+# —— 专属装备查询（/挑战 装备 [名称]，v2.12.12）——
+_GEAR_TYPE_CN = {"weapon": "主手", "staff": "法杖", "shield": "盾", "focus": "法器",
+                 "armor": "战甲", "robe": "法袍", "accessory": "饰品"}
+_GEAR_LINE_CN = {"physical": "战", "magic": "法", "any": "通用"}
+
+
+def _gear_attrs_txt(g):
+    parts = []
+    for k, cn in (("attack", "攻"), ("mp", "魔"), ("agility", "敏"),
+                  ("intelligence", "智"), ("hp", "命"), ("defense", "防")):
+        v = int(g.get(k, 0) or 0)
+        if v:
+            parts.append(f"{cn}{v}")
+    return " ".join(parts)
+
+
+def gear_list_text(user=None, gear_name=None):
+    """/挑战 装备 [名称]：查询命名 Boss 专属装备的属性与全服余量。
+
+    无名称 → 全部 35 件按 4 大 Boss / 其他命名 Boss 分组列出（属性 + 评分 + 余量）；
+    带名称 → 单件详情（含所属 Boss、掉率）。
+    """
+    from .boss_gear import load_gear
+    from .models import UserItem
+    gears = load_gear()
+    counts = dict(db.session.execute(
+        db.select(UserItem.item_id, db.func.count()).group_by(UserItem.item_id)
+    ).all())
+    layer_name = {int(b.get("layer", 0) or 0): b["name"] for b in all_bosses()}
+
+    def remain_txt(g):
+        produced = counts.get(g["id"], 0)
+        return f"{max(0, int(g.get('limit', 5)) - produced)}/{g.get('limit')}"
+
+    if gear_name:
+        key = gear_name.strip()
+        g = next((x for x in gears
+                  if x.get("name") == key or x.get("id", "").lower() == key.lower()), None)
+        if not g:
+            return f"没有找到专属装备「{gear_name}」，发送 /挑战 装备 查看全部"
+        layer = int(g.get("boss_layer", 0) or 0)
+        score = round(dungeon.item_score(g), 1)
+        rate = float(g.get("rate", 0.03)) * 100
+        return "\n".join([
+            f"👑 {g['name']}（{layer_name.get(layer, '?')} 专属 · "
+            f"{_GEAR_LINE_CN.get(g.get('line', ''), '')}·{_GEAR_TYPE_CN.get(g.get('type', ''), g.get('type', ''))}）",
+            f"  {_gear_attrs_txt(g)}",
+            f"  评分 {score} · 全服余量 {remain_txt(g)} · 掉率 {rate:.1f}% · 掉落层 {g.get('boss_layer')}",
+        ])
+
+    big = set(BIG_BOSS_LAYERS)
+    out = ["👑 命名 Boss 专属装备（全服限量 · 掉率极低）",
+           "—— 4 大 Boss（每件全服 3 件 · 掉率 0.1%）——"]
+    for g in gears:
+        if int(g.get("boss_layer", 0) or 0) in big:
+            out.append(f"· {g['name']}（{_GEAR_LINE_CN.get(g.get('line', ''), '')}·"
+                       f"{_GEAR_TYPE_CN.get(g.get('type', ''), g.get('type', ''))}）"
+                       f"{_gear_attrs_txt(g)} 评分{round(dungeon.item_score(g), 1)} 余量{remain_txt(g)}")
+    out.append("—— 其他命名 Boss（每件全服 5 件 · 掉率 3%）——")
+    for g in gears:
+        if int(g.get("boss_layer", 0) or 0) not in big:
+            out.append(f"· {g['name']}（{_GEAR_LINE_CN.get(g.get('line', ''), '')}·"
+                       f"{_GEAR_TYPE_CN.get(g.get('type', ''), g.get('type', ''))}）"
+                       f"{_gear_attrs_txt(g)} 评分{round(dungeon.item_score(g), 1)} 余量{remain_txt(g)}")
+    out.append("—— /挑战 装备 <名称> 查单件详情 ——")
+    return "\n".join(out)
