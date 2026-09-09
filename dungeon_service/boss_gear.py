@@ -51,6 +51,17 @@ def is_gear(item_id):
     return item_id in gear_ids()
 
 
+def gear_layer(item_id):
+    """返回专属装备对应的 Boss 层数（1000/2000/3000/3600/其他命名 Boss 层；非专属返回 0）。
+
+    供套装效果（v2.12.1）分类：三大 Boss（1000/2000/3000）×1.5、3600 ×2、其余命名 Boss ×1.2。
+    """
+    for g in load_gear():
+        if g["id"] == item_id:
+            return int(g.get("boss_layer", 0) or 0)
+    return 0
+
+
 def produced_count(item_id):
     """全服已产出数量（user_item 全局计数）。"""
     return db.session.execute(

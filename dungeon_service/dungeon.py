@@ -204,13 +204,8 @@ def _best_slot_combo(candidates_by_slot, base):
     return stats
 
 
-def _stats_for_line(owned, line, tier_max, best_layer):
-    """按「职业 line + 阶级/锻造解锁」过滤后计算有效属性（不乘称号加成）。
-
-    可用 = line 为该职业(或 any 通用) 且（商店/稀有：tier ≤ 当前阶级；锻造：Lv 已按历史层解锁）；
-    再按槽位（type）做「整体推进速度最优」贪心选件叠加（评分起步 + 迭代校正）。
-    """
-    stats = dict(BASE_STATS)
+def _slot_candidates(owned, line, tier_max, best_layer):
+    """可用装备按槽位分组（职业 line + 阶级/锻造解锁过滤）。供属性计算与套装判定共用。"""
     by_slot = {}
     for it in owned:
         if not _item_usable(it, tier_max, best_layer):
@@ -218,7 +213,61 @@ def _stats_for_line(owned, line, tier_max, best_layer):
         if item_line(it) not in (line, LINE_ANY):
             continue
         by_slot.setdefault(it.get("type", "other"), []).append(it)
+    return by_slot
+
+
+def _stats_for_line(owned, line, tier_max, best_layer):
+    """按「职业 line + 阶级/锻造解锁」过滤后计算有效属性（不乘称号加成）。
+
+    可用 = line 为该职业(或 any 通用) 且（商店/稀有：tier ≤ 当前阶级；锻造：Lv 已按历史层解锁）；
+    再按槽位（type）做「整体推进速度最优」贪心选件叠加（评分起步 + 迭代校正）。
+    """
+    stats = dict(BASE_STATS)
+    by_slot = _slot_candidates(owned, line, tier_max, best_layer)
     return _best_slot_combo(by_slot, stats)
+
+
+def _worn_items(user, owned, line, tier_max, best_layer):
+    """穿戴中的装备列表（套装判定用）：有「穿戴中」标记用标记件；未标记回退自动最优选件。"""
+    eq = equipped_item_ids(user.user_id)
+    if eq:
+        return [it for it in owned if it.get("id") in eq]
+    by_slot = _slot_candidates(owned, line, tier_max, best_layer)
+    return list(_best_slot_chosen(by_slot).values())
+
+
+def _set_bonus_multiplier(worn):
+    """套装效果（v2.12.1）：全属性倍率，作用于装备属性（与称号同层，药水点数不乘）。
+
+    - 穿戴 4 件稀有（rare_drops，无需同系列）：全属性 ×1.1；
+    - 穿戴命名 Boss 专属装备后：稀有四件套的 1.1 不再计算，按件累乘——
+      普通命名 Boss 专属 ×1.2/件、三大 Boss（1000/2000/3000）专属 ×1.5/件、3600 最终 Boss ×2/件。
+    """
+    if not worn:
+        return 1.0
+    from .boss_gear import is_gear, gear_layer
+    rare_ids = rare_item_ids()
+    boss_pieces = []
+    rare_count = 0
+    for it in worn:
+        iid = it.get("id", "")
+        if iid in rare_ids:
+            rare_count += 1
+        if is_gear(iid):
+            boss_pieces.append(it)
+    bonus = 1.0
+    if boss_pieces:
+        for it in boss_pieces:
+            layer = gear_layer(it.get("id", ""))
+            if layer == 3600:
+                bonus *= 2.0
+            elif layer in (1000, 2000, 3000):
+                bonus *= 1.5
+            else:
+                bonus *= 1.2
+    elif rare_count >= 4:
+        bonus *= 1.1
+    return bonus
 
 
 def effective_stats(user, owned):
@@ -233,6 +282,9 @@ def effective_stats(user, owned):
       只计算穿戴中的装备；从未标记过穿戴的用户回退为自动最优（兼容老玩家/新角色）。
     - 称号加成：全属性乘 TIER_ATTR_BONUS[user.tier]（每阶 +5%，T7=+35%）——
       同装备下，高阶称号实力更强。
+    - 套装效果（v2.12.1）：穿戴 4 件稀有（rare_drops，无需同系列）全属性 ×1.1；
+      穿戴命名 Boss 专属后稀有 1.1 取消，按件累乘——普通命名 Boss ×1.2/件、
+      三大 Boss（1000/2000/3000）×1.5/件、3600 ×2/件；与称号同层，药水点数不乘。
     """
     tier_max = 0
     prof = ""
@@ -249,14 +301,26 @@ def effective_stats(user, owned):
             owned = [it for it in owned if it.get("id") in eq]
     if prof and class_line(prof):
         stats = _stats_for_line(owned, class_line(prof), tier_max, best_layer)
+        _line = class_line(prof)
     else:
         # 未转职 → 自动择优（any 通用件两组都能用，按各自专属件收益定胜负）
         s_phy = _stats_for_line(owned, LINE_PHYSICAL, tier_max, best_layer)
         s_mag = _stats_for_line(owned, LINE_MAGIC, tier_max, best_layer)
-        stats = s_phy if dungeon_speed(s_phy) >= dungeon_speed(s_mag) else s_mag
+        if dungeon_speed(s_phy) >= dungeon_speed(s_mag):
+            stats = s_phy
+            _line = LINE_PHYSICAL
+        else:
+            stats = s_mag
+            _line = LINE_MAGIC
     if tier_bonus != 1.0:
         for k in stats:
             stats[k] *= tier_bonus
+    # 套装效果（v2.12.1）：全属性倍率，与称号同层（药水点数不乘，独立叠加）
+    if user is not None:
+        _sb = _set_bonus_multiplier(_worn_items(user, owned, _line, tier_max, best_layer))
+        if _sb != 1.0:
+            for k in stats:
+                stats[k] *= _sb
     # 属性药水 BUFF（v8）：生效中的 buff_stat 点数叠加到各属性（不乘称号，独立叠加）
     if user is not None:
         try:
