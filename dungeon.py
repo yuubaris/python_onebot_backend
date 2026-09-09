@@ -154,7 +154,7 @@ def _item_usable(it, tier_max, best_layer):
 _ATTR_KEYS = ("attack", "defense", "hp", "mp", "agility", "intelligence")
 
 
-def _best_slot_combo(candidates_by_slot, base):
+def _best_slot_chosen(candidates_by_slot):
     """同槽位最优穿法：从每槽评分最高件起步，反复单槽替换使整体 dungeon_speed 最大（收敛贪心）。
 
     修正（v2.11.69）：item_formula_score 的纯防御保底分会让「防肉装」评分虚高、
@@ -163,7 +163,7 @@ def _best_slot_combo(candidates_by_slot, base):
     每次替换 speed 严格上升，件数有限 ⇒ 有限步内收敛；槽间顺序仅影响收敛路径不影响最优值。
     """
     chosen = {}
-    stats = dict(base)
+    stats = dict(BASE_STATS)
     for t, items in candidates_by_slot.items():
         it = max(items, key=item_formula_score)
         chosen[t] = it
@@ -187,6 +187,15 @@ def _best_slot_combo(candidates_by_slot, base):
                     cur = dungeon_speed(trial)
                     improved = True
                     break
+    return chosen
+
+
+def _best_slot_combo(candidates_by_slot, base):
+    """按槽位最优穿法叠加属性（评分起步 + 迭代校正；返回属性字典）。"""
+    stats = dict(base)
+    for it in _best_slot_chosen(candidates_by_slot).values():
+        for k in _ATTR_KEYS:
+            stats[k] += it.get(k, 0)
     return stats
 
 
@@ -215,6 +224,8 @@ def effective_stats(user, owned):
     - 未转职：自动择优（分别按物理组/魔法组算速度，取高）；
     - 商店/稀有装备：只计入 tier ≤ 当前阶级 的装备；
       锻造装备：只计入「铁匠铺对应 Lv 已按历史最高层解锁」的装备（不卡当前阶级）；
+    - 穿戴中（v2.11.70）：若用户已有「穿戴中」标记（进入地下城时按最优组合刷新），
+      只计算穿戴中的装备；从未标记过穿戴的用户回退为自动最优（兼容老玩家/新角色）。
     - 称号加成：全属性乘 TIER_ATTR_BONUS[user.tier]（每阶 +5%，T7=+35%）——
       同装备下，高阶称号实力更强。
     """
@@ -228,6 +239,9 @@ def effective_stats(user, owned):
         best_layer = historical_best_layer(user)
         from tiers import TIER_ATTR_BONUS
         tier_bonus = TIER_ATTR_BONUS.get(tier_max, 1.0)
+        eq = equipped_item_ids(user.user_id)
+        if eq:
+            owned = [it for it in owned if it.get("id") in eq]
     if prof and class_line(prof):
         stats = _stats_for_line(owned, class_line(prof), tier_max, best_layer)
     else:
@@ -333,8 +347,65 @@ def owned_items(user):
     return [by_id[r.item_id] for r in rows if r.item_id in by_id]
 
 
+def equipped_item_ids(user_id):
+    """用户「穿戴中」的装备 id 集合（进入地下城时按最优组合刷新；空=从未标记）。"""
+    return set(db.session.execute(
+        db.select(UserItem.item_id).where(
+            UserItem.user_id == user_id, UserItem.equipped == 1)
+    ).scalars().all())
+
+
+def mark_best_equipped(user):
+    """进入地下城时刷新穿戴标记：清空全部，按「当前最优组合」标记每槽 1 件。
+
+    - 已转职：按职业 line 计算最优组合；未转职：物理/魔法两线取速度高者；
+    - 商店/稀有按 tier ≤ 当前阶级、锻造按历史层解锁过滤（与 effective_stats 同一口径）；
+    - 地下城中新获得的装备在重新进入前不会进入穿戴（掉落不自动标记）。
+    返回穿戴中的装备名列表。
+    """
+    owned = owned_items(user)
+    tier_max = getattr(user, "tier", 0) or 0
+    best_layer = historical_best_layer(user)
+    prof = getattr(user, "profession", "") or ""
+    cl = class_line(prof) if prof else None
+
+    def candidates(ln):
+        by = {}
+        for it in owned:
+            if not _item_usable(it, tier_max, best_layer):
+                continue
+            if item_line(it) not in (ln, LINE_ANY):
+                continue
+            by.setdefault(it.get("type", "other"), []).append(it)
+        return by
+
+    if cl:
+        by = candidates(cl)
+    else:
+        c_phy, c_mag = candidates(LINE_PHYSICAL), candidates(LINE_MAGIC)
+        s_phy = dungeon_speed(_best_slot_combo(c_phy, dict(BASE_STATS)))
+        s_mag = dungeon_speed(_best_slot_combo(c_mag, dict(BASE_STATS)))
+        by = c_phy if s_phy >= s_mag else c_mag
+    chosen = _best_slot_chosen(by)
+
+    rows = db.session.execute(
+        db.select(UserItem).where(UserItem.user_id == user.user_id)
+    ).scalars().all()
+    for r in rows:
+        r.equipped = 0
+    marked = []
+    for t, it in chosen.items():
+        for r in rows:
+            if r.item_id == it.get("id") and not r.equipped:
+                r.equipped = 1
+                marked.append(it.get("name", it.get("id")))
+                break
+    db.session.commit()
+    return marked
+
+
 def owned_item_rows(user):
-    """查询用户持有装备的 (meta, is_new) 列表（供背包展示 new! 与来源提示）。"""
+    """查询用户持有装备的 (meta, is_new, equipped) 列表（供背包展示 new!/穿戴中与来源提示）。"""
     rows = db.session.execute(
         db.select(UserItem).where(UserItem.user_id == user.user_id)
     ).scalars().all()
@@ -342,7 +413,7 @@ def owned_item_rows(user):
     out = []
     for r in rows:
         if r.item_id in by_id:
-            out.append((by_id[r.item_id], r.is_new or 0))
+            out.append((by_id[r.item_id], r.is_new or 0, r.equipped or 0))
     return out
 
 

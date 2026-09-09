@@ -728,6 +728,9 @@ def _migrate_schema():
         it_cols = {r[1] for r in conn.execute("PRAGMA table_info(user_item)")}
         if "is_new" not in it_cols:
             conn.execute("ALTER TABLE user_item ADD COLUMN is_new INTEGER DEFAULT 0")
+        # 穿戴中标记（v2.11.70）：进入地下城按最优组合刷新
+        if "equipped" not in it_cols:
+            conn.execute("ALTER TABLE user_item ADD COLUMN equipped INTEGER DEFAULT 0")
         conn.commit()
         if "dungeon_ore_last" not in cols:
             conn.execute("ALTER TABLE user ADD COLUMN dungeon_ore_last REAL")

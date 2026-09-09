@@ -173,23 +173,25 @@ def cmd_bag(user, group_id, args, at_qqs=None):
     rare_ids = rare_item_ids()
     lines = [f"🎒 我的背包（共 {len(rows)} 件） · {_user_title(user)}"]
     groups = {}
-    for it, is_new in rows:
-        groups.setdefault(it.get("type", "other"), []).append((it, is_new))
+    for it, is_new, eq in rows:
+        groups.setdefault(it.get("type", "other"), []).append((it, is_new, eq))
     for t in sorted(groups, key=lambda x: TYPE_NAMES.get(x, x) or x):
         lst = sorted(groups[t], key=lambda x: x[0]["price"])
         lines.append(f"—— {TYPE_NAMES.get(t, t)} ——")
-        # 同名合并计数（保留 is_new 只要有一个新即可标 new！）
+        # 同名合并计数（保留 is_new/equipped 只要有一个即可标）
         seen = {}
-        for it, is_new in lst:
+        for it, is_new, eq in lst:
             if it["name"] not in seen:
-                seen[it["name"]] = {"it": it, "cnt": 1, "new": bool(is_new)}
+                seen[it["name"]] = {"it": it, "cnt": 1, "new": bool(is_new), "eq": bool(eq)}
             else:
                 seen[it["name"]]["cnt"] += 1
                 seen[it["name"]]["new"] = seen[it["name"]]["new"] or bool(is_new)
+                seen[it["name"]]["eq"] = seen[it["name"]]["eq"] or bool(eq)
         for name, info in seen.items():
             it = info["it"]
             suffix = f" ×{info['cnt']}" if info["cnt"] > 1 else ""
             mark = " new！" if info["new"] else ""
+            wear = "（穿戴中）" if info["eq"] else ""
             # Boss 稀有装备：✦ 星号 + (稀有) 标注（D-B12）；命名 Boss 专属：👑 + (限定)
             rare = it.get("id") in rare_ids
             gear = boss_gear.is_gear(it.get("id"))
@@ -199,7 +201,7 @@ def cmd_bag(user, group_id, args, at_qqs=None):
             unusable = ""
             if cl_line and item_line(it) not in (LINE_ANY, cl_line):
                 unusable = "（另一职业·不生效）"
-            lines.append(f"· {disp}{suffix}{mark}{rare_tag}（{_item_desc(it)}）{unusable}")
+            lines.append(f"· {disp}{suffix}{mark}{rare_tag}{wear}（{_item_desc(it)}）{unusable}")
     # 矿石展示（稀有度前缀）
     ores = ore.owned_ores(user.user_id)
     if ores:
@@ -701,6 +703,13 @@ def _dungeon_enter(user):
     if count < 1:
         return "你还没有任何装备，无法进入地下城。先去 /武器库 购买一件装备吧！"
 
+    # 进入地下城：刷新「穿戴中」标记（清空后按当前最优组合标记每槽 1 件；
+    # 地下城中新获得的装备在重新进入前不会进入穿戴）
+    marked = mark_best_equipped(user)
+    wear_note = ""
+    if marked:
+        wear_note = "已穿戴：" + "、".join(marked) + "\n"
+
     stats = effective_stats(user, owned_items(user))
     speed = dungeon_speed(stats)
     prof = (user.profession or "") or ""
@@ -735,7 +744,7 @@ def _dungeon_enter(user):
         return (f"⚔️ 已从上次进度继续冒险！（{_user_title(user)}{boss_note}）\n"
                 f"你回到地下城第 {layer} 层（剩余进度 {progress:.0f} / 总计 {effective_layer_total(layer):.0f}）\n"
                 f"推进速度：{speed:.2f} 进度/秒；金币速度：约 {coin_per_5sec(layer):.4f} 铜币/5秒\n"
-                f"地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。{ore_note}{class_note}")
+                f"{wear_note}地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。{ore_note}{class_note}")
 
     # 新的地下城冒险（第 1 层）
     user.dungeon_layer = 1
@@ -749,7 +758,7 @@ def _dungeon_enter(user):
     return (f"⚔️ 你已进入地下城第 1 层！\n"
             f"推进速度：{speed:.2f} 进度/秒\n"
             f"通关本层进度：{effective_layer_total(1):.0f}；金币速度：约 {coin_per_5sec(1):.4f} 铜币/5秒\n"
-            f"地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。{class_note}")
+            f"{wear_note}地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。{class_note}")
 
 
 def _buff_status_block(user):
@@ -919,10 +928,12 @@ def cmd_dungeon(user, group_id, args, at_qqs=None):
                     or (user.saved_dungeon_layer and user.saved_dungeon_layer > 0)):
         return _dungeon_status(user)
     return ("地下城指令：\n"
-            "/地下城 进入 - 进入/继续地下城（退出后保留进度，可直达上次位置）\n"
+            "/地下城 进入 - 进入/继续地下城（自动穿戴当前最优 4 件；退出后保留进度，可直达上次位置）\n"
             "/地下城 状态 - 查看当前层数/进度/金币/生效中药水·道具(剩余层数/时间)\n"
             "/地下城 排名 - 本群战力 TOP10 + 自己的战力/进度层/专属装备拥有情况\n"
             "/地下城 退出 - 离开地下城（保存当前进度）\n"
+            "—— 穿戴中：进入时自动标记每部位收益最高的 1 件，推进值只算穿戴中的装备；"
+            "地下城中新获得的装备在重新进入前不会自动穿戴（/背包 可见「穿戴中」标记）——\n"
             "—— Boss 关：命名守关 Boss 打满进度后按战力判定胜负，失败重置本关进度但收益照常；"
             "精英/小Boss/无名字整百层进度跑完即通关 ——")
 
@@ -939,7 +950,7 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/出售 商品名 [商品名...] - 批量出售装备（购买价 60%）\n"
             "/转职 战士|魔法师 - 选择职业（切换职业）\n"
             "/晋升 - 按地下城进度+货币提升阶级\n"
-            "/地下城 进入/状态/排名/退出 - 地下城冒险（最高 3600 层；命名守关 Boss 需战力判定，失败重置进度收益照常；状态含生效中药水/道具；排名看本群战力 TOP10 与专属拥有）\n"
+            "/地下城 进入/状态/排名/退出 - 地下城冒险（最高 3600 层；进入自动穿戴最优 4 件、推进只算穿戴中装备；命名守关 Boss 需战力判定，失败重置进度收益照常；状态含生效中药水/道具；排名看本群战力 TOP10 与专属拥有）\n"
             "/铁匠铺 - 查看锻造配方；/铁匠铺 分解 <装备名> 分解锻造装回收矿石（普通返半、稀有返六成、传说/神话按50%概率）\n"
             "/锻造 装备名 - 消耗铜币+矿石制作装备（需职业/阶级符合）\n"
             "/boss 列表 - 查看守关 Boss（挑战统一走 /挑战 <Boss名|层数|称号>；普通每日共 3 次 / 1000·2000·3000·3600 每日各 1 次，首通必出 Boss 材料）\n"

@@ -92,6 +92,7 @@ class UserItem(db.Model):
     user_id = db.Column(db.BigInteger, index=True, nullable=False)
     item_id = db.Column(db.String(64), nullable=False)   # 对应 equipment.json 中的 id
     is_new = db.Column(db.Integer, default=0, nullable=False)  # Boss 掉落新装备标记(new!)
+    equipped = db.Column(db.Integer, default=0, nullable=False)  # 穿戴中标记(v2.11.70)：进入地下城时按最优组合刷新
     acquired_at = db.Column(db.DateTime, default=datetime.now)
 
 
