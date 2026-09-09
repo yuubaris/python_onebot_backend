@@ -588,24 +588,19 @@ def cmd_sell(user, group_id, args, at_qqs=None):
 def _cmd_sell_all(user):
     """一键出售：所有「可出售、未穿戴、非本部位最高评分」的非专属装备。
 
-    保留：① 穿戴中（equipped=1）；② 每个部位（type）内可出售装备中评分最高的一件；
+    保留：① 穿戴中（equipped=1）；② 每个部位（type）内可出售装备中评分最高的一件——
+    但仅当该部位**没有更高评分的不可售装备**（锻造/命名 Boss 专属）时才保留；
+    若已有更高分的锻造/专属（如裂渊空印），则可售最高件不保留、一并卖出；
     ③ 锻造装备（只能分解）与命名 Boss 专属装备（全服限量收藏）。
     售价与 /出售 一致：普通装备购买价 60%，掉落稀有装备按回收价 30%。
     """
     rows = db.session.execute(
         db.select(UserItem).where(UserItem.user_id == user.user_id)
     ).scalars().all()
-    meta = {m["id"]: m for m in load_equipment()}
-    # 补充稀有掉落装备（rare_drops.json）：否则稀有闲置（未穿戴、非本部位最高评分）
-    # 永远被跳过——v2.12.7 起 load_equipment() 只含商店装备，一键出售漏卖稀有。
-    try:
-        for m in dungeon._load_rare_pool():
-            meta.setdefault(m["id"], m)
-    except Exception:
-        pass
+    all_meta = dungeon._all_item_meta()   # 商店+锻造+稀有+专属 全量装备表
     sellable = []   # (row, item_meta, item_score)
     for r in rows:
-        it = meta.get(r.item_id)
+        it = all_meta.get(r.item_id)
         if it is None:
             continue
         if forge.is_forged_item(it["id"]) or boss_gear.is_gear(it["id"]):
@@ -613,14 +608,26 @@ def _cmd_sell_all(user):
         sellable.append((r, it, item_score(it)))
     if not sellable:
         return "没有可一键出售的装备（无可出售的非锻造/非专属装备）。"
+    # 每部位全量最高评分（含锻造/专属），用于判定可售最高件是否值得保留
+    max_all_by_type = {}
+    for r in rows:
+        it = all_meta.get(r.item_id)
+        if it is None:
+            continue
+        t = it.get("type", "other")
+        sc = item_score(it)
+        if t not in max_all_by_type or sc > max_all_by_type[t]:
+            max_all_by_type[t] = sc
     keep = {r.id for r, _, _ in sellable if r.equipped}
     best_by_type = {}
     for r, it, sc in sellable:
         t = it.get("type", "other")
         if t not in best_by_type or sc > best_by_type[t][2]:
             best_by_type[t] = (r, it, sc)
-    for r, _, _ in best_by_type.values():
-        keep.add(r.id)
+    for t, (r, it, sc) in best_by_type.items():
+        # 可售最高件只有在「它就是该部位全量最高（无更高分锻造/专属）」时才保留
+        if sc >= max_all_by_type.get(t, -1):
+            keep.add(r.id)
     to_sell = [(r, it) for r, it, _ in sellable if r.id not in keep]
     if not to_sell:
         return "没有可一键出售的装备：可出售装备均为穿戴中或本部位最高评分，已全部保留。"
