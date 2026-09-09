@@ -34,8 +34,11 @@ BOSSES_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 BIG_BOSS_LAYERS = (1000, 2000, 3000, 3600)
 GROUP_DAILY_LIMIT = {"normal": 3, "big": 1}
 GROUP_LABEL = {"normal": "守关 Boss", "big": "大 Boss（1000/2000/3000/3600）"}
-# 3600 最终 Boss 挑战成功额外掉落的特殊道具（用途暂空，占位收藏；独立 category=souvenir）
+# 四大 Boss 专属特殊道具（收藏级，独立 category=souvenir，v2.12.4 起统一极低掉率）：
+# 3600「万瓜圣契」原为挑战成功必掉，按用户「掉率极低」口径统一为 SOUVENIR_DROP_RATE。
 FINAL_BOSS_RELIC = "souvenir_wangua"
+SOUVENIR_LAYERS = {1000: "souvenir_final", 2000: "souvenir_abyss", 3000: "souvenir_rift", 3600: FINAL_BOSS_RELIC}
+SOUVENIR_DROP_RATE = 0.10    # 专属特殊道具掉率（极低，四大大 Boss 一致）
 # 究极大 Boss(1000/2000/3000) 挑战成功必掉的专属材料「万宝源晶」；3600 最终 Boss 在其外额外掉落（万宝符原料）
 MYRIAD_GEM = "boss_myriad"
 
@@ -335,11 +338,12 @@ def challenge_boss(user, boss):
         db.session.add(UserItem(user_id=user.user_id, item_id=rare["id"], is_new=1))
         lines.append(f"✦ {rare['name']}({tn}·稀有) new！")
 
-    # 3600 最终 Boss 额外掉落特殊道具（用途暂空，占位收藏）
-    if int(boss.get("layer", 0) or 0) == 3600:
-        material.grant_materials(user.user_id, {FINAL_BOSS_RELIC: 1})
-        rmeta = material.material_meta(FINAL_BOSS_RELIC)
-        lines.append(f"🌟 额外获得特殊道具：{rmeta['name'] if rmeta else FINAL_BOSS_RELIC} ×1")
+    # 四大 Boss 专属特殊道具（v2.12.4）：1000/2000/3000/3600 各自专属、收藏级，极低掉率（SOUVENIR_DROP_RATE）
+    _sou = SOUVENIR_LAYERS.get(int(boss.get("layer", 0) or 0))
+    if _sou and random.random() < SOUVENIR_DROP_RATE:
+        material.grant_materials(user.user_id, {_sou: 1})
+        _rmeta = material.material_meta(_sou)
+        lines.append(f"🌟 专属特殊道具：{_rmeta['name'] if _rmeta else _sou} ×1")
 
     # 究极大 Boss(1000/2000/3000/3600) 额外必掉「万宝源晶」（万宝符原料；3600 与万瓜圣契并列额外）
     if int(boss.get("layer", 0) or 0) in BIG_BOSS_LAYERS:

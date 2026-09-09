@@ -1,94 +1,115 @@
 {
-  "materials": [
-    {
-      "id": "herb_bloodgrass",
-      "name": "止血草",
-      "category": "herb",
-      "rarity": "common"
-    },
-    {
-      "id": "herb_wakeflower",
-      "name": "醒神花",
-      "category": "herb",
-      "rarity": "common"
-    },
-    {
-      "id": "herb_moonmushroom",
-      "name": "月光菇",
-      "category": "herb",
-      "rarity": "rare"
-    },
-    {
-      "id": "herb_dragonblood",
-      "name": "龙血草",
-      "category": "herb",
-      "rarity": "legendary"
-    },
-    {
-      "id": "special_beastsoul",
-      "name": "兽魂结晶",
-      "category": "special",
-      "rarity": "common"
-    },
-    {
-      "id": "special_element",
-      "name": "元素之心",
-      "category": "special",
-      "rarity": "rare"
-    },
-    {
-      "id": "special_relic",
-      "name": "古神残片",
-      "category": "special",
-      "rarity": "legendary"
-    },
-    {
-      "id": "boss_wolf",
-      "name": "狼王灰鬃",
-      "category": "boss",
-      "rarity": "rare"
-    },
-    {
-      "id": "boss_magma",
-      "name": "磐岩心核",
-      "category": "boss",
-      "rarity": "rare"
-    },
-    {
-      "id": "boss_bone",
-      "name": "尸皇骨匣",
-      "category": "boss",
-      "rarity": "legendary"
-    },
-    {
-      "id": "boss_frost",
-      "name": "霜语结晶",
-      "category": "boss",
-      "rarity": "legendary"
-    },
-    {
-      "id": "boss_ember",
-      "name": "烬鳞龙鳞",
-      "category": "boss",
-      "rarity": "legendary"
-    },
-    {
-      "id": "boss_wangua",
-      "name": "万瓜圣辉",
-      "category": "boss",
-      "rarity": "myth"
-    },
-    {
-      "id": "souvenir_wangua",
-      "name": "万瓜圣契",
-      "category": "souvenir",
-      "rarity": "myth"
-    },
-    {
-      "id": "boss_myriad",
-      "name": "万宝源晶",
-      "category": "boss",
-      "rarity": "myth"
-    }
-  ]
+ "materials": [
+  {
+   "id": "herb_bloodgrass",
+   "name": "止血草",
+   "category": "herb",
+   "rarity": "common"
+  },
+  {
+   "id": "herb_wakeflower",
+   "name": "醒神花",
+   "category": "herb",
+   "rarity": "common"
+  },
+  {
+   "id": "herb_moonmushroom",
+   "name": "月光菇",
+   "category": "herb",
+   "rarity": "rare"
+  },
+  {
+   "id": "herb_dragonblood",
+   "name": "龙血草",
+   "category": "herb",
+   "rarity": "legendary"
+  },
+  {
+   "id": "special_beastsoul",
+   "name": "兽魂结晶",
+   "category": "special",
+   "rarity": "common"
+  },
+  {
+   "id": "special_element",
+   "name": "元素之心",
+   "category": "special",
+   "rarity": "rare"
+  },
+  {
+   "id": "special_relic",
+   "name": "古神残片",
+   "category": "special",
+   "rarity": "legendary"
+  },
+  {
+   "id": "boss_wolf",
+   "name": "狼王灰鬃",
+   "category": "boss",
+   "rarity": "rare"
+  },
+  {
+   "id": "boss_magma",
+   "name": "磐岩心核",
+   "category": "boss",
+   "rarity": "rare"
+  },
+  {
+   "id": "boss_bone",
+   "name": "尸皇骨匣",
+   "category": "boss",
+   "rarity": "legendary"
+  },
+  {
+   "id": "boss_frost",
+   "name": "霜语结晶",
+   "category": "boss",
+   "rarity": "legendary"
+  },
+  {
+   "id": "boss_ember",
+   "name": "烬鳞龙鳞",
+   "category": "boss",
+   "rarity": "legendary"
+  },
+  {
+   "id": "boss_wangua",
+   "name": "万瓜圣辉",
+   "category": "boss",
+   "rarity": "myth"
+  },
+  {
+   "id": "souvenir_wangua",
+   "name": "万瓜圣契",
+   "category": "souvenir",
+   "rarity": "myth"
+  },
+  {
+   "id": "boss_myriad",
+   "name": "万宝源晶",
+   "category": "boss",
+   "rarity": "myth"
+  },
+  {
+   "id": "souvenir_final",
+   "name": "终焉圣契",
+   "category": "souvenir",
+   "rarity": "myth",
+   "desc": "万古魔主·终焉的收藏级战利品，与万瓜圣契同级的稀世之物。"
+  },
+  {
+   "id": "souvenir_abyss",
+   "name": "归墟魔契",
+   "category": "souvenir",
+   "rarity": "myth",
+   "desc": "万劫魔帝·归墟的收藏级战利品，与万瓜圣契同级的稀世之物。"
+  },
+  {
+   "id": "souvenir_rift",
+   "name": "裂界玄契",
+   "category": "souvenir",
+   "rarity": "myth",
+   "desc": "万渊魔尊·裂界的收藏级战利品，与万瓜圣契同级的稀世之物。"
+  }
+ ]
 }
