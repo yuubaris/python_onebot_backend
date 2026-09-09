@@ -5,7 +5,7 @@
       "name": "炼金·狂攻药水1",
       "kind": "potion",
       "level": 1,
-      "desc": "临时提升 attack +15（持续 100 层）",
+      "desc": "临时提升 攻 +15（持续 100 层）",
       "cost": {
         "materials": {
           "herb_bloodgrass": 4,
@@ -23,7 +23,7 @@
       "name": "炼金·狂攻药水2",
       "kind": "potion",
       "level": 2,
-      "desc": "临时提升 attack +40（持续 100 层）",
+      "desc": "临时提升 攻 +40（持续 100 层）",
       "cost": {
         "materials": {
           "boss_magma": 1,
@@ -43,7 +43,7 @@
       "name": "炼金·狂攻药水3",
       "kind": "potion",
       "level": 3,
-      "desc": "临时提升 attack +90（持续 100 层）",
+      "desc": "临时提升 攻 +90（持续 100 层）",
       "cost": {
         "materials": {
           "boss_bone": 1,
@@ -63,7 +63,7 @@
       "name": "炼金·狂攻药水4",
       "kind": "potion",
       "level": 4,
-      "desc": "临时提升 attack +160（持续 100 层）",
+      "desc": "临时提升 攻 +160（持续 100 层）",
       "cost": {
         "materials": {
           "boss_frost": 1,
@@ -82,7 +82,7 @@
       "name": "炼金·狂攻药水5",
       "kind": "potion",
       "level": 5,
-      "desc": "临时提升 attack +260（持续 100 层）",
+      "desc": "临时提升 攻 +260（持续 100 层）",
       "cost": {
         "materials": {
           "boss_ember": 1,
@@ -101,7 +101,7 @@
       "name": "炼金·魔涌药水1",
       "kind": "potion",
       "level": 1,
-      "desc": "临时提升 mp +15（持续 100 层）",
+      "desc": "临时提升 魔 +15（持续 100 层）",
       "cost": {
         "materials": {
           "herb_bloodgrass": 3,
@@ -120,7 +120,7 @@
       "name": "炼金·魔涌药水2",
       "kind": "potion",
       "level": 2,
-      "desc": "临时提升 mp +40（持续 100 层）",
+      "desc": "临时提升 魔 +40（持续 100 层）",
       "cost": {
         "materials": {
           "boss_magma": 1,
@@ -140,7 +140,7 @@
       "name": "炼金·魔涌药水3",
       "kind": "potion",
       "level": 3,
-      "desc": "临时提升 mp +90（持续 100 层）",
+      "desc": "临时提升 魔 +90（持续 100 层）",
       "cost": {
         "materials": {
           "boss_bone": 1,
@@ -160,7 +160,7 @@
       "name": "炼金·魔涌药水4",
       "kind": "potion",
       "level": 4,
-      "desc": "临时提升 mp +160（持续 100 层）",
+      "desc": "临时提升 魔 +160（持续 100 层）",
       "cost": {
         "materials": {
           "boss_frost": 1,
@@ -180,7 +180,7 @@
       "name": "炼金·魔涌药水5",
       "kind": "potion",
       "level": 5,
-      "desc": "临时提升 mp +260（持续 100 层）",
+      "desc": "临时提升 魔 +260（持续 100 层）",
       "cost": {
         "materials": {
           "boss_ember": 1,
@@ -199,7 +199,7 @@
       "name": "炼金·凝神药水1",
       "kind": "potion",
       "level": 1,
-      "desc": "临时提升 intelligence +20（持续 100 层）",
+      "desc": "临时提升 智 +20（持续 100 层）",
       "cost": {
         "materials": {
           "herb_wakeflower": 3,
@@ -218,7 +218,7 @@
       "name": "炼金·凝神药水2",
       "kind": "potion",
       "level": 2,
-      "desc": "临时提升 intelligence +53（持续 100 层）",
+      "desc": "临时提升 智 +53（持续 100 层）",
       "cost": {
         "materials": {
           "boss_magma": 1,
@@ -238,7 +238,7 @@
       "name": "炼金·凝神药水3",
       "kind": "potion",
       "level": 3,
-      "desc": "临时提升 intelligence +120（持续 100 层）",
+      "desc": "临时提升 智 +120（持续 100 层）",
       "cost": {
         "materials": {
           "boss_bone": 1,
@@ -257,7 +257,7 @@
       "name": "炼金·凝神药水4",
       "kind": "potion",
       "level": 4,
-      "desc": "临时提升 intelligence +213（持续 100 层）",
+      "desc": "临时提升 智 +213（持续 100 层）",
       "cost": {
         "materials": {
           "boss_frost": 1,
@@ -277,7 +277,7 @@
       "name": "炼金·凝神药水5",
       "kind": "potion",
       "level": 5,
-      "desc": "临时提升 intelligence +347（持续 100 层）",
+      "desc": "临时提升 智 +347（持续 100 层）",
       "cost": {
         "materials": {
           "boss_ember": 1,
@@ -297,7 +297,7 @@
       "name": "炼金·疾风药水1",
       "kind": "potion",
       "level": 1,
-      "desc": "临时提升 agility +20（持续 100 层）",
+      "desc": "临时提升 敏 +20（持续 100 层）",
       "cost": {
         "materials": {
           "herb_wakeflower": 4,
@@ -315,7 +315,7 @@
       "name": "炼金·疾风药水2",
       "kind": "potion",
       "level": 2,
-      "desc": "临时提升 agility +53（持续 100 层）",
+      "desc": "临时提升 敏 +53（持续 100 层）",
       "cost": {
         "materials": {
           "boss_magma": 1,
@@ -335,7 +335,7 @@
       "name": "炼金·疾风药水3",
       "kind": "potion",
       "level": 3,
-      "desc": "临时提升 agility +120（持续 100 层）",
+      "desc": "临时提升 敏 +120（持续 100 层）",
       "cost": {
         "materials": {
           "boss_bone": 1,
@@ -355,7 +355,7 @@
       "name": "炼金·疾风药水4",
       "kind": "potion",
       "level": 4,
-      "desc": "临时提升 agility +213（持续 100 层）",
+      "desc": "临时提升 敏 +213（持续 100 层）",
       "cost": {
         "materials": {
           "boss_frost": 1,
@@ -375,7 +375,7 @@
       "name": "炼金·疾风药水5",
       "kind": "potion",
       "level": 5,
-      "desc": "临时提升 agility +347（持续 100 层）",
+      "desc": "临时提升 敏 +347（持续 100 层）",
       "cost": {
         "materials": {
           "boss_ember": 1,
@@ -394,7 +394,7 @@
       "name": "炼金·坚壁药水1",
       "kind": "potion",
       "level": 1,
-      "desc": "临时提升 defense +20（持续 100 层）",
+      "desc": "临时提升 防 +20（持续 100 层）",
       "cost": {
         "materials": {
           "herb_bloodgrass": 2,
@@ -413,7 +413,7 @@
       "name": "炼金·坚壁药水2",
       "kind": "potion",
       "level": 2,
-      "desc": "临时提升 defense +50（持续 100 层）",
+      "desc": "临时提升 防 +50（持续 100 层）",
       "cost": {
         "materials": {
           "boss_magma": 1,
@@ -432,7 +432,7 @@
       "name": "炼金·坚壁药水3",
       "kind": "potion",
       "level": 3,
-      "desc": "临时提升 defense +110（持续 100 层）",
+      "desc": "临时提升 防 +110（持续 100 层）",
       "cost": {
         "materials": {
           "boss_bone": 1,
@@ -452,7 +452,7 @@
       "name": "炼金·坚壁药水4",
       "kind": "potion",
       "level": 4,
-      "desc": "临时提升 defense +190（持续 100 层）",
+      "desc": "临时提升 防 +190（持续 100 层）",
       "cost": {
         "materials": {
           "boss_frost": 1,
@@ -471,7 +471,7 @@
       "name": "炼金·坚壁药水5",
       "kind": "potion",
       "level": 5,
-      "desc": "临时提升 defense +300（持续 100 层）",
+      "desc": "临时提升 防 +300（持续 100 层）",
       "cost": {
         "materials": {
           "boss_ember": 1,
@@ -491,7 +491,7 @@
       "name": "炼金·血源药水1",
       "kind": "potion",
       "level": 1,
-      "desc": "临时提升 hp +25（持续 100 层）",
+      "desc": "临时提升 命 +25（持续 100 层）",
       "cost": {
         "materials": {
           "herb_bloodgrass": 2,
@@ -509,7 +509,7 @@
       "name": "炼金·血源药水2",
       "kind": "potion",
       "level": 2,
-      "desc": "临时提升 hp +60（持续 100 层）",
+      "desc": "临时提升 命 +60（持续 100 层）",
       "cost": {
         "materials": {
           "boss_magma": 1,
@@ -529,7 +529,7 @@
       "name": "炼金·血源药水3",
       "kind": "potion",
       "level": 3,
-      "desc": "临时提升 hp +130（持续 100 层）",
+      "desc": "临时提升 命 +130（持续 100 层）",
       "cost": {
         "materials": {
           "boss_bone": 1,
@@ -549,7 +549,7 @@
       "name": "炼金·血源药水4",
       "kind": "potion",
       "level": 4,
-      "desc": "临时提升 hp +220（持续 100 层）",
+      "desc": "临时提升 命 +220（持续 100 层）",
       "cost": {
         "materials": {
           "boss_frost": 1,
@@ -570,7 +570,7 @@
       "name": "炼金·血源药水5",
       "kind": "potion",
       "level": 5,
-      "desc": "临时提升 hp +350（持续 100 层）",
+      "desc": "临时提升 命 +350（持续 100 层）",
       "cost": {
         "materials": {
           "boss_ember": 1,
