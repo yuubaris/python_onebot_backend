@@ -67,6 +67,7 @@ SCENARIOS = {
     "shop":           ("A", lambda u: __import__("commands").cmd_shop(u, 12345, "")),
     "buy":            ("A", lambda u: __import__("commands").cmd_buy(u, 12345, "铁剑")),
     "sell":           ("A", lambda u: __import__("commands").cmd_sell(u, 12345, "铁剑")),
+    "sell_all":       ("A", lambda u: __import__("commands").cmd_sell(u, 12345, "全部")),
     "class_":         ("A", lambda u: __import__("commands").cmd_class(u, 12345, "战士")),
     "promote":        ("A", lambda u: __import__("commands").cmd_promote(u, 12345, "")),
     "alchemy_list":   ("A", lambda u: __import__("commands").cmd_alchemy(u, 12345, "配方")),

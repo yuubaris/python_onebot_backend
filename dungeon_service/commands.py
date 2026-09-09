@@ -22,7 +22,7 @@ from .tiers import (
 )
 from .dungeon import (
     BASE_STATS, LAYER1_TOTAL, layer_total, coin_rate_per_sec, coin_per_5sec,
-    effective_stats, dungeon_speed, owned_items, owned_item_rows, settle_dungeon,
+    effective_stats, dungeon_speed, item_score, owned_items, owned_item_rows, settle_dungeon,
     effective_layer_total, boss_type, historical_best_layer,
     take_boss_report, rare_item_ids, find_any_item,
 )
@@ -518,10 +518,17 @@ def cmd_buy(user, group_id, args, at_qqs=None):
 
 
 def cmd_sell(user, group_id, args, at_qqs=None):
-    """出售装备（购买价 60%），支持空格分隔批量出售（例：/出售 短剑 圆盾）。"""
-    names = [n for n in (args or "").split()]
+    """出售装备（购买价 60%），支持空格分隔批量出售（例：/出售 短剑 圆盾）。
+
+    一键出售：/出售 全部（或 一键/all）——一次性出售所有「可出售、未穿戴、
+    非本部位最高评分」的非专属装备；保留：穿戴中、每部位评分最高、锻造、专属。
+    """
+    args = (args or "").strip()
+    if args in ("全部", "一键", "一键出售", "all"):
+        return _cmd_sell_all(user)
+    names = [n for n in args.split()]
     if not names:
-        return "用法：/出售 商品名 [商品名 ...]（例如 /出售 短剑 圆盾）"
+        return "用法：/出售 商品名 [商品名 ...]（例如 /出售 短剑 圆盾）；/出售 全部 可一键出售全部可出售的闲置装备"
     sold, missing, not_owned, not_sellable = [], [], [], []
     total = 0
     for name in names:
@@ -576,6 +583,59 @@ def cmd_sell(user, group_id, args, at_qqs=None):
         return "你没有可出售的装备。"
     lines.append(f"当前资产：{format_currency(user.copper)}")
     return "\n".join(lines)
+
+
+def _cmd_sell_all(user):
+    """一键出售：所有「可出售、未穿戴、非本部位最高评分」的非专属装备。
+
+    保留：① 穿戴中（equipped=1）；② 每个部位（type）内可出售装备中评分最高的一件；
+    ③ 锻造装备（只能分解）与命名 Boss 专属装备（全服限量收藏）。
+    售价与 /出售 一致：普通装备购买价 60%，掉落稀有装备按回收价 30%。
+    """
+    rows = db.session.execute(
+        db.select(UserItem).where(UserItem.user_id == user.user_id)
+    ).scalars().all()
+    meta = {m["id"]: m for m in load_equipment()}
+    sellable = []   # (row, item_meta, item_score)
+    for r in rows:
+        it = meta.get(r.item_id)
+        if it is None:
+            continue
+        if forge.is_forged_item(it["id"]) or boss_gear.is_gear(it["id"]):
+            continue
+        sellable.append((r, it, item_score(it)))
+    if not sellable:
+        return "没有可一键出售的装备（无可出售的非锻造/非专属装备）。"
+    keep = {r.id for r, _, _ in sellable if r.equipped}
+    best_by_type = {}
+    for r, it, sc in sellable:
+        t = it.get("type", "other")
+        if t not in best_by_type or sc > best_by_type[t][2]:
+            best_by_type[t] = (r, it, sc)
+    for r, _, _ in best_by_type.values():
+        keep.add(r.id)
+    to_sell = [(r, it) for r, it, _ in sellable if r.id not in keep]
+    if not to_sell:
+        return "没有可一键出售的装备：可出售装备均为穿戴中或本部位最高评分，已全部保留。"
+    total = 0
+    cnt = {}
+    rare = rare_item_ids()
+    for r, it in to_sell:
+        is_rare = it["id"] in rare
+        sp = int(it["price"] * (0.3 if is_rare else 0.6))
+        total += sp
+        cnt[it["name"]] = cnt.get(it["name"], 0) + 1
+        user.copper += sp
+        db.session.delete(r)
+    db.session.commit()
+    detail = "、".join(f"{n}×{c}" for n, c in cnt.items())
+    kept = len(sellable) - len(to_sell)
+    return ("\n".join([
+        f"一键出售完成！卖出 {len(to_sell)} 件：{detail}",
+        f"共获得 {format_currency(total)}（稀有装备按回收价 30% 计）",
+        f"已保留 {kept} 件：穿戴中、每部位评分最高、锻造与 Boss 专属装备。",
+        f"当前资产：{format_currency(user.copper)}",
+    ]))
 
 
 def _set_ore_entry_state(user, layer):
