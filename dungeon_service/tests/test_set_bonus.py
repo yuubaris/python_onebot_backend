@@ -35,10 +35,18 @@ def _load(fn):
 
 RARE = _load("rare_drops.json")
 GEAR = _load("boss_gear.json")
+FORGE = _load("forge.json")
 
 
 def _rid(i):
     return {"id": RARE[i]["id"]}
+
+
+def _fid(lv, typ):
+    for r in FORGE:
+        if r.get("level") == lv and r.get("type") == typ:
+            return {"id": r["id"]}
+    raise KeyError((lv, typ))
 
 
 def _gid(layer):
@@ -63,9 +71,32 @@ def test_four_rare_11(app):
     assert dungeon._set_bonus_multiplier([_rid(i) for i in range(4)]) == pytest.approx(1.1)
 
 
+def test_four_forge_11(app):
+    # 4 件锻造（不同 Lv/系列）→ ×1.1，与稀有四件套同值
+    worn = [_fid(1, "weapon"), _fid(2, "shield"), _fid(3, "armor"), _fid(4, "accessory")]
+    assert dungeon._set_bonus_multiplier(worn) == pytest.approx(1.1)
+
+
+def test_mixed_rare_forge_no_bonus(app):
+    # 2 稀有 + 2 锻造：不足 4 件同源 → 不触发
+    worn = [_rid(0), _rid(2), _fid(1, "weapon"), _fid(1, "shield")]
+    assert dungeon._set_bonus_multiplier(worn) == pytest.approx(1.0)
+
+
+def test_three_forge_no_bonus(app):
+    worn = [_fid(1, "weapon"), _fid(1, "shield"), _fid(1, "armor")]
+    assert dungeon._set_bonus_multiplier(worn) == pytest.approx(1.0)
+
+
 def test_rare_plus_common_gear_cancels_rare(app):
     # 4 稀有 + 1 普通命名专属 → 稀有 1.1 取消，只按专属 ×1.2
     worn = [_rid(i) for i in range(4)] + [_gid(100)]
+    assert dungeon._set_bonus_multiplier(worn) == pytest.approx(1.2)
+
+
+def test_forge_plus_common_gear_cancels_forge(app):
+    # 4 锻造 + 1 普通命名专属 → 锻造 1.1 取消，只按专属 ×1.2
+    worn = [_fid(1, "weapon"), _fid(2, "shield"), _fid(3, "armor"), _fid(4, "accessory"), _gid(100)]
     assert dungeon._set_bonus_multiplier(worn) == pytest.approx(1.2)
 
 
@@ -104,8 +135,9 @@ def test_gear_layer_classification(app):
 
 
 # —— 集成：effective_stats 应用倍率 ——
-def _player(app, items):
-    u = User(user_id=91001, nickname="套装测试", profession="warrior", tier=0, copper=0)
+def _player(app, items, layer=0):
+    u = User(user_id=91001, nickname="套装测试", profession="warrior", tier=0, copper=0,
+             saved_dungeon_layer=layer)
     db.session.add(u)
     db.session.flush()
     for iid in items:
@@ -139,3 +171,18 @@ def test_effective_stats_one_big_boss_gear(app):
         base[k] += gitem.get(k, 0)
     for k in dungeon._ATTR_KEYS:
         assert stats[k] == pytest.approx(base[k] * 1.5)
+
+
+def test_effective_stats_four_forge(app):
+    items = [_fid(1, "weapon"), _fid(2, "shield"), _fid(3, "armor"), _fid(4, "accessory")]
+    u = _player(app, [i["id"] for i in items], layer=3300)  # 历史层 3300 ≥ 锻造 Lv4 解锁层 3200
+    owned = dungeon.owned_items(u)
+    stats = dungeon.effective_stats(u, owned)
+    # 期望 = (BASE_STATS + 4 件锻造词条) × 1.1（tier0 称号=1.0；战士物理线可用 weapon/shield/armor + 通用 accessory）
+    base = dict(dungeon.BASE_STATS)
+    for it in items:
+        gitem = next(r for r in FORGE if r["id"] == it["id"])
+        for k in dungeon._ATTR_KEYS:
+            base[k] += gitem.get(k, 0)
+    for k in dungeon._ATTR_KEYS:
+        assert stats[k] == pytest.approx(base[k] * 1.1)

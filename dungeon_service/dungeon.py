@@ -237,22 +237,27 @@ def _worn_items(user, owned, line, tier_max, best_layer):
 
 
 def _set_bonus_multiplier(worn):
-    """套装效果（v2.12.1）：全属性倍率，作用于装备属性（与称号同层，药水点数不乘）。
+    """套装效果（v2.12.2）：全属性倍率，作用于装备属性（与称号同层，药水点数不乘）。
 
-    - 穿戴 4 件稀有（rare_drops，无需同系列）：全属性 ×1.1；
-    - 穿戴命名 Boss 专属装备后：稀有四件套的 1.1 不再计算，按件累乘——
+    - 普通套装（×1.1）：穿戴 4 件同来源装备（无需同系列/Lv）——全稀有（rare_drops）或
+      全锻造（forge）各触发 ×1.1；混搭（稀有+锻造）不足 4 件同源则不触发；
+    - 穿戴命名 Boss 专属装备后：普通套装（稀有/锻造）的 1.1 一律不再计算，按件累乘——
       普通命名 Boss 专属 ×1.2/件、三大 Boss（1000/2000/3000）专属 ×1.5/件、3600 最终 Boss ×2/件。
     """
     if not worn:
         return 1.0
     from .boss_gear import is_gear, gear_layer
+    from .forge import is_forged_item
     rare_ids = rare_item_ids()
     boss_pieces = []
     rare_count = 0
+    forge_count = 0
     for it in worn:
         iid = it.get("id", "")
         if iid in rare_ids:
             rare_count += 1
+        elif is_forged_item(iid):
+            forge_count += 1
         if is_gear(iid):
             boss_pieces.append(it)
     bonus = 1.0
@@ -265,7 +270,7 @@ def _set_bonus_multiplier(worn):
                 bonus *= 1.5
             else:
                 bonus *= 1.2
-    elif rare_count >= 4:
+    elif rare_count >= 4 or forge_count >= 4:
         bonus *= 1.1
     return bonus
 
@@ -282,9 +287,10 @@ def effective_stats(user, owned):
       只计算穿戴中的装备；从未标记过穿戴的用户回退为自动最优（兼容老玩家/新角色）。
     - 称号加成：全属性乘 TIER_ATTR_BONUS[user.tier]（每阶 +5%，T7=+35%）——
       同装备下，高阶称号实力更强。
-    - 套装效果（v2.12.1）：穿戴 4 件稀有（rare_drops，无需同系列）全属性 ×1.1；
-      穿戴命名 Boss 专属后稀有 1.1 取消，按件累乘——普通命名 Boss ×1.2/件、
-      三大 Boss（1000/2000/3000）×1.5/件、3600 ×2/件；与称号同层，药水点数不乘。
+    - 套装效果（v2.12.2）：穿戴 4 件同来源装备（无需同系列/Lv）全属性 ×1.1——全稀有或全锻造；
+      混搭（稀有+锻造）不足 4 件同源不触发；穿戴命名 Boss 专属后普通套装 1.1 取消、
+      按件累乘——普通命名 Boss ×1.2/件、三大 Boss（1000/2000/3000）×1.5/件、3600 ×2/件；
+      与称号同层，药水点数不乘。
     """
     tier_max = 0
     prof = ""
