@@ -32,7 +32,7 @@
 **3. 数值平衡（已落地）**
 - **同价格档 物理武器 ≈ 魔法法杖 收益对齐**（14 档偏差 <3%，`docs/equipment_balance_check.py` 主检 0 异常）。
 - **方案A：推进公式输出权重对称化（2026-09-08 晚，306731e）**：
-  `dungeon_speed` / `item_formula_score` 输出权重由「攻×2+敏×1.5+智×1.25+魔×1.2」改为**对称**
+  `dungeon_speed` / `item_score`（v2.11.71 起统一为这一套评分，原名 item_formula_score）输出权重由「攻×2+敏×1.5+智×1.25+魔×1.2」改为**对称**
   「攻×2+魔×2+敏×1.5+智×1.5」（攻=魔=2、敏=智=1.5）——物理/魔法每点输出词条价值相等，法师无需再堆超高智/魔
   （此前虚高根源）；保留生存乘区 `(1+防/400)×(1+命/600)`（保守落地，降低对 boss/推进节奏破坏）。
   商店法师线数值下调（staff 逐档对齐 weapon + robe/focus 联动）：各 tier 法师 3+1≈战士 3+1（T0~T4 ±0%、T5 +6%）；
@@ -84,7 +84,7 @@ speed = (attack×2 + agility×1.5 + intelligence×1.25 + mp×1.2)
 ```
 
 > ⚠️ **2026-09-08 方案A已更新**：本节公式与权重为**历史推导**（旧口径 攻×2 / 敏×1.5 / 智×1.25 / 魔×1.2）。
-> **当前生效**为对称口径：`攻×2 + 魔×2 + 敏×1.5 + 智×1.5`（`dungeon.dungeon_speed` / `item_formula_score`，
+> **当前生效**为对称口径：`攻×2 + 魔×2 + 敏×1.5 + 智×1.5`（`dungeon.dungeon_speed` / `item_score`——评分与推进公式同一套，原名 item_formula_score，
 > 攻=魔=2、敏=智=1.5，保留生存乘区），见「〇、实施落地记录」§3 与 `docs/linear-score-rework-request.md`（已落地）。
 > 下方 §4 平衡计算均为旧口径下的历史推导记录。
 
@@ -117,7 +117,7 @@ speed = (attack×2 + agility×1.5 + intelligence×1.25 + mp×1.2)
 
 ### 1.3 现有关键机制（重做时需保留或改造）
 
-- **同类型只取公式收益最高 1 件**：`effective_stats()` 按 `type` 分组，每组取 `item_formula_score()` 最高分一件，再跨组叠加（武器取 1、防具取 1、法袍取 1……）。
+- **同槽位取整体推进速度最优穿法（v2.11.69/71 落地）**：`effective_stats()` 按 `type`（槽位）分组，评分起步（`item_score`=推进公式同套）+ 槽位迭代校正，按实际叠加后的 `dungeon_speed` 判定最终组合（每槽 1 件：主手/副手/防具/饰品），跨槽叠加；穿戴中系统（v2.11.70）下已标记玩家只算穿戴中的 4 件。
 - **数据库只存 id**（`user_item.item_id`），属性全部从 `equipment.json` / `forge.json` 读取，改 JSON 即生效（mtime 热重载）→ **数据迁移成本低**。
 - 出售 = 购买价 60%；铁匠铺装备不可出售。
 - 持有任意 1 件装备即可进地下城。
@@ -313,7 +313,7 @@ speed = (attack×2 + agility×1.5 + intelligence×1.25 + mp×1.2)
 
 设某价格档 P 的目标是“单件套入公式后的**收益分** = T”（T 含生存乘子）。
 
-> 收益分即 `item_formula_score()`：`输出主项 × (1+def/400) × (1+hp/600)`。
+> 收益分（v2.11.71 统一口径）即 `item_score()`：`dungeon_speed(基础属性 + 该件属性)`，与推进公式完全同一套（输出权重 攻=魔=2、敏=智=1.5，生存乘区 (1+防/400)(1+命/600)）。
 
 对**同一档位**分别设计物理件与魔法件，使二者 T 相等：
 
@@ -373,7 +373,7 @@ speed = (attack×2 + agility×1.5 + intelligence×1.25 + mp×1.2)
 
 ### 4.3 用公式校验（验收标准）
 
-每档任意战士/法师/通用件，套用 `item_formula_score()` 校验：
+每档任意战士/法师/通用件，套用 `item_score()`（统一评分）校验：
 
 ```
 同档战士武器收益 ≈ 同档法师法杖收益 ≈ 同档通用件收益（误差 < 3%），且同档多件间亦 <3%
@@ -385,7 +385,7 @@ speed = (attack×2 + agility×1.5 + intelligence×1.25 + mp×1.2)
 
 实施第一步对现 **38 件（武器库）+ 10 件（锻造）** 逐件审计：
 
-- 收益分 = `item_formula_score(item)`；再算“每铜币收益 = 收益分 ÷ 价格”用于同档横向比较。
+- 收益分 = `item_score(item)`（统一评分）；**性价比（独立口径）** = `item_value_ratio(item)` = 收益分 ÷ 价格，用于同档横向比较「花钱买什么划算」。
 - 判据：
   - **超模**：同档单位收益明显高于均值（>+15%）→ 削数值或提价；
   - **拉跨**：同档单位收益明显低于均值（<-15%）→ 增数值或降价；
@@ -533,7 +533,7 @@ speed = (attack×2 + agility×1.5 + intelligence×1.25 + mp×1.2)
 | `models.py` | `User` 增 `profession`（职业）与 `tier`（当前阶级，默认 0） |
 | （新增）`classes.py` | `CLASSES` 注册表 + 辅助函数；可扩展 |
 | （新增或并入）`tiers.py` | 阶级分层表（层数门槛/解锁档/晋升费/**晋级称号前缀**）+ 晋升判定辅助（可并入 dungeon.py） |
-| `dungeon.py` | `effective_stats()`：职业过滤（转职锁定 / 未转职自动择优）+ **tier 过滤（tier>当前阶级不生效）**；`item_formula_score()` 保留 armor 保底 |
+| `dungeon.py` | `effective_stats()`：职业过滤（转职锁定 / 未转职自动择优）+ **tier 过滤（tier>当前阶级不生效）**；`item_score()`（评分=推进公式同套，无保底 hack）；穿戴中（equipped）过滤（v2.11.70） |
 | `commands.py` | 新增 `/转职`、`/晋升`；`/武具店→/武器库`（改名+展示过滤 tier≥当前，高阶级加锁）；购买/锻造加 职业+tier 双重校验；引导提示；展示更新 |
 | `app.py` | `/api/equipment` 输出 `line`+`tier`；`/api/dungeon` 随 dungeon.py 生效 |
 | `templates/index.html` | 装备库表加“职业/阶级”列、TYPE_NAMES 补全 |
