@@ -957,26 +957,45 @@ def cmd_boss(user, group_id, args, at_qqs=None):
 
 
 def cmd_lottery(user, group_id, args, at_qqs=None):
-    """抽奖：消耗金钱抽取金钱/装备/材料/道具，共 3 档（5铜/5银/5金），各档中奖率与卡池稀有度不同。"""
+    """抽奖：消耗金钱抽取金钱/装备/材料/矿石/道具，共 3 档（5铜/5银/5金）。
+
+    支持批量（v2.11.92）：/抽奖 <档位> <次数>，次数为第二个参数，默认 1，最多 10 次。
+    """
     from . import lottery
-    name = (args or "").strip()
-    if not name:
+    raw = (args or "").strip()
+    if not raw:
         return lottery.rule_text()
+    parts = raw.split(maxsplit=1)
+    name = parts[0]
     tier_no = _LOTTERY_ALIAS.get(name.lower(), None)
     if tier_no is None:
-        return f"不认识「{name}」。\n用法：/抽奖 1|2|3（或 /抽奖 铜|银|金），/抽奖 查看规则"
+        return f"不认识「{name}」。\n用法：/抽奖 1|2|3（或 /抽奖 铜|银|金）[次数]，/抽奖 查看规则"
+    count = 1
+    if len(parts) == 2:
+        if not parts[1].isdigit():
+            return (f"抽奖次数无效：「{parts[1]}」。\n"
+                    f"用法：/抽奖 {name} <次数>（最多 10 次）")
+        count = max(1, min(int(parts[1]), 10))
     cost = lottery.TIERS[tier_no]["cost"]
-    if user.copper < cost:
-        return (f"余额不足！{lottery.TIERS[tier_no]['cost_txt']}/次，"
+    total = cost * count
+    if user.copper < total:
+        return (f"余额不足！{lottery.TIERS[tier_no]['cost_txt']}/次 ×{count} 共需 {format_currency(total)}，"
                 f"你只有 {format_currency(user.copper)}。")
-    user.copper -= cost
-    text, jackpot = lottery.roll(user, tier_no)
+    user.copper -= total
     from models import db
+    lines = [f"🎰 {lottery.TIERS[tier_no]['name']} ×{count} · 消耗 {format_currency(total)}"]
+    jackpot_count = 0
+    for _ in range(count):
+        text, jackpot = lottery.roll(user, tier_no)
+        if jackpot:
+            jackpot_count += 1
+            text += " ✨大奖！"
+        lines.append(text)
     db.session.commit()
-    head = f"🎰 {lottery.TIERS[tier_no]['name']} · 消耗 {lottery.TIERS[tier_no]['cost_txt']}"
-    if jackpot:
-        head += " ✨✨✨ 大奖！"
-    return f"{head}\n{text}\n剩余资产：{format_currency(user.copper)}"
+    if jackpot_count:
+        lines.append(f"✨ 中出 {jackpot_count} 次大奖！")
+    lines.append(f"剩余资产：{format_currency(user.copper)}")
+    return "\n".join(lines)
 
 
 def _turn_usable(user, item):
