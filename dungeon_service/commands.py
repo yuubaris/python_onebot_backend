@@ -88,6 +88,13 @@ def cmd_bag(user, group_id, args, at_qqs=None):
     cl_line = class_line(prof) if prof else None
     rare_ids = rare_item_ids()
     lines = [f"🎒 我的背包（共 {len(rows)} 件） · {_user_title(user)}"]
+    # 套装效果生效中（v2.12.3）：与推进速度同一选件口径
+    try:
+        _sb = dungeon.current_set_bonus(user, [it for it, _, _ in rows])
+        if _sb > 1.0:
+            lines.append(f"⚡ 套装效果生效中：全属性 ×{_sb:g}")
+    except Exception:
+        pass
     groups = {}
     for it, is_new, eq in rows:
         groups.setdefault(it.get("type", "other"), []).append((it, is_new, eq))

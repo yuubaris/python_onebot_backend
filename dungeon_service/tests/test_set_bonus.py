@@ -77,9 +77,21 @@ def test_four_forge_11(app):
     assert dungeon._set_bonus_multiplier(worn) == pytest.approx(1.1)
 
 
-def test_mixed_rare_forge_no_bonus(app):
-    # 2 稀有 + 2 锻造：不足 4 件同源 → 不触发
+def test_mixed_rare_forge_triggers(app):
+    # v2.12.3：2 稀有 + 2 锻造（混合来源）→ ×1.1
     worn = [_rid(0), _rid(2), _fid(1, "weapon"), _fid(1, "shield")]
+    assert dungeon._set_bonus_multiplier(worn) == pytest.approx(1.1)
+
+
+def test_mixed_rare_forge_1p3_triggers(app):
+    # 1 稀有 + 3 锻造 → ×1.1
+    worn = [_rid(0), _fid(1, "weapon"), _fid(2, "shield"), _fid(3, "armor")]
+    assert dungeon._set_bonus_multiplier(worn) == pytest.approx(1.1)
+
+
+def test_with_shop_item_no_bonus(app):
+    # 含商店装备（铁剑）→ 普通套装不触发（需 4 件都为稀有/锻造来源）
+    worn = [_rid(0), _rid(2), _fid(1, "weapon"), {"id": "iron_sword"}]
     assert dungeon._set_bonus_multiplier(worn) == pytest.approx(1.0)
 
 

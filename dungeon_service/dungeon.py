@@ -237,11 +237,11 @@ def _worn_items(user, owned, line, tier_max, best_layer):
 
 
 def _set_bonus_multiplier(worn):
-    """套装效果（v2.12.2）：全属性倍率，作用于装备属性（与称号同层，药水点数不乘）。
+    """套装效果（v2.12.3）：全属性倍率，作用于装备属性（与称号同层，药水点数不乘）。
 
-    - 普通套装（×1.1）：穿戴 4 件同来源装备（无需同系列/Lv）——全稀有（rare_drops）或
-      全锻造（forge）各触发 ×1.1；混搭（稀有+锻造）不足 4 件同源则不触发；
-    - 穿戴命名 Boss 专属装备后：普通套装（稀有/锻造）的 1.1 一律不再计算，按件累乘——
+    - 普通套装（×1.1）：穿戴 4 件稀有/锻造（任意混合、无需同系列/Lv）即触发——
+      全稀有、全锻造、2 稀有+2 锻造、1+3 等均生效；只要 4 件中没有商店/其他来源装备；
+    - 穿戴命名 Boss 专属装备后：普通套装的 1.1 一律不再计算，按件累乘——
       普通命名 Boss 专属 ×1.2/件、三大 Boss（1000/2000/3000）专属 ×1.5/件、3600 最终 Boss ×2/件。
     """
     if not worn:
@@ -270,9 +270,26 @@ def _set_bonus_multiplier(worn):
                 bonus *= 1.5
             else:
                 bonus *= 1.2
-    elif rare_count >= 4 or forge_count >= 4:
+    elif rare_count + forge_count >= 4:
         bonus *= 1.1
     return bonus
+
+
+def current_set_bonus(user, owned):
+    """当前生效的套装倍率（供背包展示；与 effective_stats 同一选件口径）。"""
+    if user is None:
+        return 1.0
+    tier_max = getattr(user, "tier", 0) or 0
+    prof = getattr(user, "profession", "") or ""
+    best_layer = historical_best_layer(user)
+    if prof and class_line(prof):
+        line = class_line(prof)
+    else:
+        # 未转职 → 与 effective_stats 一致：取自动择优组
+        s_phy = dungeon_speed(_stats_for_line(owned, LINE_PHYSICAL, tier_max, best_layer))
+        s_mag = dungeon_speed(_stats_for_line(owned, LINE_MAGIC, tier_max, best_layer))
+        line = LINE_PHYSICAL if s_phy >= s_mag else LINE_MAGIC
+    return _set_bonus_multiplier(_worn_items(user, owned, line, tier_max, best_layer))
 
 
 def effective_stats(user, owned):

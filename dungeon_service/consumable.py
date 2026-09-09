@@ -243,6 +243,22 @@ def drop_bonus(user_id, bonus_type, scope=None, now=None):
 
 # ---------- 使用 ----------
 
+# 属性键 → 中文（v2.12.3：使用/状态提示不再出现英文属性名）
+_ATTR_CN = {
+    "attack": "攻击",
+    "defense": "防御",
+    "hp": "生命",
+    "mp": "魔力",
+    "agility": "敏捷",
+    "intelligence": "智力",
+}
+
+
+def _stats_cn(eff):
+    """把 effect.stats（属性键）转成中文提示，如「智力+20」。"""
+    return "、".join(f"{_ATTR_CN.get(k, k)}+{v}" for k, v in (eff.get("stats") or {}).items())
+
+
 def use_item(user, item_id, now=None):
     """使用产物：先扣库存，成功再写入 UserBuff。返回 (ok, 提示文本)。
 
@@ -295,7 +311,7 @@ def use_item(user, item_id, now=None):
 
     rep_txt = f"（替换了原「{'、'.join(replaced)}」）" if replaced else ""
     if kind == "potion":
-        stat_txt = "、".join(f"{k}+{v}" for k, v in (eff.get("stats") or {}).items())
+        stat_txt = _stats_cn(eff)
         if dtype == "layers":
             return True, f"✨ 使用 {meta['name']}：临时提升 {stat_txt}（持续 {dval} 层）{rep_txt}"
         return True, f"✨ 使用 {meta['name']}：临时提升 {stat_txt}（持续 {dval} 秒）{rep_txt}"
@@ -318,7 +334,7 @@ def buffs_status_text(user_id, now=None):
         eff = meta.get("effect", {})
         name = meta.get("name", r.item_id)
         if meta.get("kind", "potion") == "potion":
-            stats = "、".join(f"{k}+{v}" for k, v in (eff.get("stats") or {}).items())
+            stats = _stats_cn(eff)
             remain = f"{r.remain_layers} 层" if r.remain_layers is not None else "?"
             potion_lines.append(f"🧪 {name}：{stats}（剩余 {remain}）")
         else:
