@@ -511,8 +511,8 @@
    "line": "physical",
    "tier": 6,
    "attack": 0,
-   "defense": 182,
-   "hp": 201,
+   "defense": 274,
+   "hp": 302,
    "mp": 0,
    "agility": 0,
    "intelligence": 0,
@@ -520,7 +520,7 @@
    "boss_layer": 3000,
    "limit": 3,
    "rate": 0.001,
-   "desc": "万渊魔尊·裂界专属(战士·防具)；属性高于同级稀有装备（t5稀有外推基准），全服限定3件，掉率0.1%"
+   "desc": "万渊魔尊·裂界专属(战士·防具)；属性=同级锻造(神鳞圣铠)×2，全服限定3件，掉率0.1%"
   },
   {
    "id": "gear_big_3000_robe",
@@ -529,16 +529,16 @@
    "line": "magic",
    "tier": 6,
    "attack": 0,
-   "defense": 53,
-   "hp": 116,
-   "mp": 52,
+   "defense": 82,
+   "hp": 180,
+   "mp": 81,
    "agility": 0,
-   "intelligence": 112,
+   "intelligence": 174,
    "price": 132000,
    "boss_layer": 3000,
    "limit": 3,
    "rate": 0.001,
-   "desc": "万渊魔尊·裂界专属(法师·防具)；属性高于同级稀有装备（t5稀有外推基准），全服限定3件，掉率0.1%"
+   "desc": "万渊魔尊·裂界专属(法师·防具)；属性=同级锻造(圣辉法袍)×2，全服限定3件，掉率0.1%"
   },
   {
    "id": "gear_xizhang_shengmian",
@@ -546,17 +546,17 @@
    "type": "accessory",
    "line": "any",
    "tier": 6,
-   "attack": 60,
-   "defense": 55,
-   "hp": 114,
-   "mp": 44,
-   "agility": 40,
-   "intelligence": 102,
+   "attack": 94,
+   "defense": 86,
+   "hp": 178,
+   "mp": 69,
+   "agility": 63,
+   "intelligence": 159,
    "price": 286000,
    "boss_layer": 3600,
    "limit": 3,
    "rate": 0.001,
-   "desc": "万瓜之主·夕张的专属掉落；属性高于同级稀有装备（t5稀有外推基准），全服限定 3 件"
+   "desc": "万瓜之主·夕张的专属掉落；属性=同级锻造(永恒王冠)×2，全服限定 3 件"
   },
   {
    "id": "gear_big_1000_weapon",
@@ -564,17 +564,17 @@
    "type": "weapon",
    "line": "physical",
    "tier": 5,
-   "attack": 139,
-   "defense": 30,
-   "hp": 79,
-   "agility": 35,
+   "attack": 155,
+   "defense": 34,
+   "hp": 88,
+   "agility": 39,
    "mp": 0,
    "intelligence": 0,
    "price": 66000,
    "boss_layer": 1000,
    "limit": 3,
    "rate": 0.001,
-   "desc": "万古魔主·终焉专属(战士·主手)；属性高于同级稀有装备（t5稀有外推基准），全服限定3件，掉率0.1%"
+   "desc": "万古魔主·终焉专属(战士·主手)；属性=同级锻造(裂空圣剑)×2，全服限定3件，掉率0.1%"
   },
   {
    "id": "gear_big_1000_staff",
@@ -583,16 +583,16 @@
    "line": "magic",
    "tier": 5,
    "attack": 0,
-   "defense": 61,
-   "hp": 132,
-   "mp": 55,
+   "defense": 67,
+   "hp": 144,
+   "mp": 60,
    "agility": 0,
-   "intelligence": 130,
+   "intelligence": 142,
    "price": 66000,
    "boss_layer": 1000,
    "limit": 3,
    "rate": 0.001,
-   "desc": "万古魔主·终焉专属(法师·主手)；属性高于同级稀有装备（t5稀有外推基准），全服限定3件，掉率0.1%"
+   "desc": "万古魔主·终焉专属(法师·主手)；属性=同级锻造(贤者权杖)×2，全服限定3件，掉率0.1%"
   },
   {
    "id": "gear_big_2000_shield",
@@ -600,17 +600,17 @@
    "type": "shield",
    "line": "physical",
    "tier": 6,
-   "attack": 62,
-   "defense": 139,
-   "hp": 160,
+   "attack": 78,
+   "defense": 174,
+   "hp": 200,
    "mp": 0,
-   "agility": 26,
+   "agility": 32,
    "intelligence": 0,
    "price": 132000,
    "boss_layer": 2000,
    "limit": 3,
    "rate": 0.001,
-   "desc": "万劫魔帝·归墟专属(战士·副手)；属性高于同级稀有装备（t5稀有外推基准），全服限定3件，掉率0.1%"
+   "desc": "万劫魔帝·归墟专属(战士·副手)；属性=同级锻造(神鳞重盾)×2，全服限定3件，掉率0.1%"
   },
   {
    "id": "gear_big_2000_focus",
@@ -619,16 +619,16 @@
    "line": "magic",
    "tier": 6,
    "attack": 0,
-   "defense": 112,
-   "hp": 112,
-   "mp": 30,
+   "defense": 171,
+   "hp": 171,
+   "mp": 46,
    "agility": 0,
-   "intelligence": 60,
+   "intelligence": 91,
    "price": 132000,
    "boss_layer": 2000,
    "limit": 3,
    "rate": 0.001,
-   "desc": "万劫魔帝·归墟专属(法师·副手)；属性高于同级稀有装备（t5稀有外推基准），全服限定3件，掉率0.1%"
+   "desc": "万劫魔帝·归墟专属(法师·副手)；属性=同级锻造(神火宝珠)×2，全服限定3件，掉率0.1%"
   }
  ]
 }
