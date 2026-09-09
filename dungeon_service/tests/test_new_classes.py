@@ -289,8 +289,8 @@ def test_gear_accessory_usable_by_line(app):
     """带归属线的专属饰品：按 line 判定、不受 types 白名单限制。"""
     from dungeon_service import dungeon as dg
     from dungeon_service.classes import item_usable_for
-    liyuan = {"type": "accessory", "line": "physical"}      # 裂渊空印
-    zhongyuan = {"type": "accessory", "line": "magic"}      # 终焉灵印
+    liyuan = {"type": "accessory", "line": "physical"}      # 历史归属线饰品
+    zhongyuan = {"type": "accessory", "line": "magic"}      # 历史归属线饰品
     # 战士（physical 线）：可穿裂渊空印，不可穿魔法线饰品
     assert item_usable_for(liyuan, "warrior")
     assert not item_usable_for(zhongyuan, "warrior")
@@ -308,24 +308,24 @@ def test_gear_accessory_usable_by_line(app):
 
 
 def test_boss_gear_drop_includes_accessory(app):
-    """专属饰品已合并为通用（line=any）：任意职业候选都含裂渊之印（v2.12.23）。"""
+    """专属饰品为通用（line=any）：任意职业候选都含噬星之印（v2.12.26 部位重排后 700 层为饰）。"""
     from dungeon_service.boss_gear import gear_for_layer
     from dungeon_service.classes import item_usable_for
     u = _mk_user(app, profession="warrior", tier=4, user_id=97031)
-    _roll_gear_many(u, 800)
-    liyuan = [g for g in gear_for_layer(800)
-              if g["id"] == "gear_other_800_accessory"][0]
-    assert liyuan.get("line") == "any"
+    _roll_gear_many(u, 700)
+    shixing = [g for g in gear_for_layer(700)
+               if g["id"] == "gear_other_700_armor"][0]
+    assert shixing.get("line") == "any"
     for prof in ("warrior", "mage", "spellblade", "battlemage"):
-        assert item_usable_for(liyuan, prof)
+        assert item_usable_for(shixing, prof)
 
 
 def test_bag_marks_gear_accessory_usable(app):
-    """背包：战士持 裂渊空印 不再标「本职业不生效」。"""
+    """背包：战士持 噬星之印 不再标「本职业不生效」。"""
     from dungeon_service.commands import cmd_bag
     u = _mk_user(app, profession="warrior", tier=4, user_id=97032)
     from models import UserItem as _UI
-    db.session.add(_UI(user_id=u.user_id, item_id="gear_other_800_accessory"))
+    db.session.add(_UI(user_id=u.user_id, item_id="gear_other_700_armor"))
     db.session.commit()
     reply = cmd_bag(u, 99999, "")
-    assert "裂渊之印" in reply and "本职业不生效" not in reply
+    assert "噬星之印" in reply and "本职业不生效" not in reply

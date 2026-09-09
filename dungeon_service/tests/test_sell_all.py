@@ -80,7 +80,7 @@ def _mk_user_rare_spares(app):
         ("rare_accessory_3", 0),     # 饰品：稀有，闲置 → 应卖
         ("rare_accessory_4", 0),     # 饰品：稀有，闲置（v2.12.10 曾保留 1 件）
         ("rare_accessory_4", 0),     # 饰品：稀有，闲置 → 应卖
-        ("gear_other_800_accessory", 1),  # 专属（限定）裂渊空印：更高分、不可售
+        ("gear_other_700_armor", 1),   # 专属（限定）噬星之印：更高分、不可售
     ):
         db.session.add(UserItem(user_id=u.user_id, item_id=iid, equipped=equipped))
     db.session.commit()
@@ -120,7 +120,7 @@ def test_sell_all_sells_rare_spares(app):
 
 def test_sell_all_dont_keep_best_sellable_when_gear_higher(app):
     """已有更高分专属装备时，可售最高件不保留（v2.12.11）：
-    饰品部位有裂渊空印（专属）> 星穹法印（可售最高），星穹法印×2 全部卖出。"""
+    饰品部位有噬星之印（专属）> 星穹法印（可售最高），星穹法印×2 全部卖出。"""
     u = _mk_user_rare_spares(app)
     reply = cmd_sell(u, 12345, "全部")
     assert "卖出 5 件" in reply
@@ -130,7 +130,7 @@ def test_sell_all_dont_keep_best_sellable_when_gear_higher(app):
     ).scalars().all()
     ids = {r.item_id for r in rows}
     assert ids == {"rare_weapon_4", "rare_shield_4", "rare_armor_4",
-                   "gear_other_800_accessory"}
+                   "gear_other_700_armor"}
 
 
 def test_sell_all_keeps_best_sellable_when_no_higher_gear(app):
