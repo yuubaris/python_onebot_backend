@@ -1,0 +1,102 @@
+<html style="margin:0;padding:0;">
+<div style="background-color:transparent;box-sizing:border-box;font-family:'Roboto','PingFang SC','Segoe UI',Arial,sans-serif;color:#1A1B1C;line-height:1.5;max-width:720px;">
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin:16px 0;">
+    <div style="flex:1 1 150px;min-width:0;padding:12px;background:linear-gradient(135deg,rgba(158,172,234,0.15),rgba(158,172,234,0.3));border-radius:12px;box-sizing:border-box;">
+      <div style="font-size:12px;color:#6B7280;">Boss 材料（通用）</div>
+      <div style="font-size:16px;font-weight:600;margin-top:4px;">首通 100% · 重复 60%</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">自动推进首通同样必掉 1 个</div>
+    </div>
+    <div style="flex:1 1 150px;min-width:0;padding:12px;background:linear-gradient(135deg,rgba(163,213,232,0.15),rgba(163,213,232,0.3));border-radius:12px;box-sizing:border-box;">
+      <div style="font-size:12px;color:#6B7280;">每日挑战次数</div>
+      <div style="font-size:16px;font-weight:600;margin-top:4px;">守关 3 次 · 大 Boss 1 次</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">按群维度计数</div>
+    </div>
+    <div style="flex:1 1 150px;min-width:0;padding:12px;background:linear-gradient(135deg,rgba(201,167,232,0.15),rgba(201,167,232,0.3));border-radius:12px;box-sizing:border-box;">
+      <div style="font-size:12px;color:#6B7280;">稀有装备掉落</div>
+      <div style="font-size:16px;font-weight:600;margin-top:4px;">首通 100% → 衰减</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">×0.8^n，下限 10%</div>
+    </div>
+    <div style="flex:1 1 150px;min-width:0;padding:12px;background:linear-gradient(135deg,rgba(148,216,195,0.15),rgba(148,216,195,0.3));border-radius:12px;box-sizing:border-box;">
+      <div style="font-size:12px;color:#6B7280;">万宝源晶（4 大 Boss）</div>
+      <div style="font-size:16px;font-weight:600;margin-top:4px;">必掉 100%</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">万宝符原料</div>
+    </div>
+  </div>
+
+  <div style="padding:12px;background:rgba(0,0,0,0.025);border:1px solid rgba(0,0,0,0.08);border-radius:12px;box-sizing:border-box;margin:16px 0;">
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px;">专属装备与专属道具（挑战成功时判定）</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <div style="flex:1 1 200px;min-width:0;padding:10px;background:#fff;border-radius:10px;box-sizing:border-box;border:1px solid rgba(0,0,0,0.06);">
+        <div style="font-size:12px;color:#6B7280;">其他 14 个命名 Boss</div>
+        <div style="font-size:15px;font-weight:600;margin-top:4px;">专属装备 3%</div>
+        <div style="font-size:11px;color:#6B7280;margin-top:2px;">每 Boss 战/法各 1 件 · 限量 5 · 四部位轮换</div>
+      </div>
+      <div style="flex:1 1 200px;min-width:0;padding:10px;background:#fff;border-radius:10px;box-sizing:border-box;border:1px solid rgba(0,0,0,0.06);">
+        <div style="font-size:12px;color:#6B7280;">4 大 Boss（1000/2000/3000/3600）</div>
+        <div style="font-size:15px;font-weight:600;margin-top:4px;">专属装备 0.1%</div>
+        <div style="font-size:11px;color:#6B7280;margin-top:2px;">前三大各 2 件·3600 饰品 1 件 · 限量 3</div>
+      </div>
+      <div style="flex:1 1 200px;min-width:0;padding:10px;background:#fff;border-radius:10px;box-sizing:border-box;border:1px solid rgba(0,0,0,0.06);">
+        <div style="font-size:12px;color:#6B7280;">专属特殊道具（收藏）</div>
+        <div style="font-size:15px;font-weight:600;margin-top:4px;">0.1%</div>
+        <div style="font-size:11px;color:#6B7280;margin-top:2px;">终焉刻印/归墟之心/裂界残片/万瓜圣契</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size:14px;font-weight:600;margin:16px 0 8px;">全部命名 Boss 材料掉落一览</div>
+  <div style="border:1px solid rgba(0,0,0,0.08);border-radius:12px;overflow:hidden;box-sizing:border-box;background:#fff;">
+    <div style="display:flex;background:#9EACEA;color:#fff;font-size:12px;font-weight:600;padding:8px 10px;">
+      <div style="flex:0 0 56px;">层数</div>
+      <div style="flex:1 1 150px;min-width:0;">Boss</div>
+      <div style="flex:1 1 90px;min-width:0;">Boss 材料</div>
+      <div style="flex:0 0 84px;text-align:right;">材料掉率</div>
+      <div style="flex:0 0 96px;text-align:right;">专属装备</div>
+    </div>
+    <div id="rows" style="box-sizing:border-box;"></div>
+  </div>
+  <script>
+  (function(){
+    try{
+      var data=[
+        [100,'裂风狼王·灰鬃','狼王灰鬃','守关'],
+        [200,'黑铁魔像·磐岩','磐岩心核','守关'],
+        [300,'幽魂尸皇·枯骨','磐岩心核','守关'],
+        [400,'霜语巫后·寒霜','尸皇骨匣','守关'],
+        [500,'赤炎魔龙·烬鳞','尸皇骨匣','守关'],
+        [600,'白骨圣主·冥渊','尸皇骨匣','守关'],
+        [700,'暗夜霸主·噬星','尸皇骨匣','守关'],
+        [800,'虚空大君·裂渊','霜语结晶','守关'],
+        [900,'混沌魔尊·灭世','霜语结晶','守关'],
+        [1000,'十方魔主·终焉','霜语结晶','大Boss'],
+        [1200,'荒潮龙王·吞海','霜语结晶','守关'],
+        [1400,'星陨泰坦·裂空','霜语结晶','守关'],
+        [1600,'焚世炎魔·赤渊','烬鳞龙鳞','守关'],
+        [1800,'天启神官·净世','烬鳞龙鳞','守关'],
+        [2000,'百劫魔帝·归墟','烬鳞龙鳞','大Boss'],
+        [2500,'噬界古神·渊灭','烬鳞龙鳞','守关'],
+        [3000,'千界魔尊·裂界','烬鳞龙鳞','大Boss'],
+        [3600,'万瓜之主·夕张','万瓜圣辉','大Boss']
+      ];
+      var box=document.getElementById('rows');
+      if(!box) return;
+      var html='';
+      for(var i=0;i<data.length;i++){
+        var r=data[i],big=(r[3]==='大Boss');
+        var isBig4=(r[0]===1000||r[0]===2000||r[0]===3000||r[0]===3600);
+        var gear=big?(isBig4?'0.1%':'3%'):'3%';
+        html+='<div style="display:flex;align-items:center;padding:7px 10px;font-size:12px;box-sizing:border-box;'+(i%2?'background:rgba(158,172,234,0.06);':'')+(big?'border-left:3px solid #7C5CBF;':'')+'"'+'>';
+        html+='<div style="flex:0 0 56px;font-weight:600;color:'+(isBig4?'#7C5CBF':'#1A1B1C')+';">'+r[0]+'</div>';
+        html+='<div style="flex:1 1 150px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+r[1]+(big?' <span style="color:#7C5CBF;font-size:11px;">大Boss</span>':'')+'</div>';
+        html+='<div style="flex:1 1 90px;min-width:0;color:#6B7280;">'+r[2]+'</div>';
+        html+='<div style="flex:0 0 84px;text-align:right;color:#6B7280;">首通100%<br/>重复60%</div>';
+        html+='<div style="flex:0 0 96px;text-align:right;color:'+(isBig4?'#7C5CBF':'#2F6B5E')+';font-weight:600;">'+gear+'</div>';
+        html+='</div>';
+      }
+      box.innerHTML=html;
+    }catch(e){console.error(e);}
+  })();
+  </script>
+  <div style="font-size:11px;color:#6B7280;margin-top:8px;">口径：数据来自 bosses.json / boss.py / boss_gear.json（v2.12.7）。专属装备掉率：大 Boss 专属 0.1%（限量 3）、其他命名 Boss 专属 3%（限量 5）；专属特殊道具（终焉刻印/归墟之心/裂界残片/万瓜圣契）0.1%；万宝源晶 4 大 Boss 每次挑战成功必掉。</div>
+</div>
+</html>
