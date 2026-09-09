@@ -43,6 +43,32 @@ def _rand_item(pool, rnd=random.choice):
     return rnd(pool)
 
 
+_RARITY_ORDER = {"common": 0, "rare": 1, "legendary": 2, "myth": 3}
+
+
+def _award_mark(kind, tier_no, it=None, rarity=None, jackpot=False):
+    """抽奖奖等（v2.11.78）：按奖品本身稀有度/价值分等，跨档一致。
+    🥉铜奖(低级) / 🥈银奖(中级) / 🥇金奖(高级) / 👑特等奖(稀有大奖)。
+    """
+    if kind == "money":
+        return ("🥉", "铜奖") if tier_no == 1 else (("🥈", "银奖") if tier_no == 2 else ("🥇", "金奖"))
+    if kind == "equip":
+        if jackpot:
+            return ("👑", "特等奖")
+        t = int(it.get("tier", 0) or 0)
+        if t <= 1:
+            return ("🥉", "铜奖")
+        if t <= 3:
+            return ("🥈", "银奖")
+        return ("🥇", "金奖")
+    if kind == "material":
+        r = _RARITY_ORDER.get((rarity or "common"), 0)
+        return ("🥉", "铜奖") if r <= 1 else (("🥈", "银奖") if r == 2 else ("🥇", "金奖"))
+    # consumable
+    lv = int(it.get("level", 1) or 1)
+    return ("🥉", "铜奖") if lv <= 2 else (("🥈", "银奖") if lv == 3 else ("🥇", "金奖"))
+
+
 def _equip_pool(min_tier, max_tier, include_rare=False):
     """商店装备池（tier 区间）；include_rare 时附加大奖池信息返回 (商店池, 稀有池或None)。"""
     shop = [it for it in equipment.load_equipment()
@@ -111,7 +137,8 @@ def roll(user, tier_no, rnd=None):
         else:
             amt = random.randint(10000, 70000)
         user.copper += amt
-        text = f"💰 幸运金钱！获得 {format_currency(amt)}"
+        mark, aword = _award_mark("money", tier_no)
+        text = f"{mark} {aword} · 幸运金钱！获得 {format_currency(amt)}"
     elif kind == "equip":
         if tier_no == 1:
             shop, _ = _equip_pool(0, 1)
@@ -127,8 +154,9 @@ def roll(user, tier_no, rnd=None):
             else:
                 it = _rand_item(shop)
         db.session.add(UserItem(user_id=user.user_id, item_id=it["id"], is_new=0))
+        mark, aword = _award_mark("equip", tier_no, it, rarity=None, jackpot=jackpot)
         tag = "（稀有掉落！）" if jackpot else ""
-        text = f"🎁 获得装备「{it['name']}」{tag}"
+        text = f"{mark} {aword} · 获得装备「{it['name']}」{tag}"
     elif kind == "material":
         if tier_no == 1:
             pool = _material_pool("common", "rare")
@@ -142,7 +170,8 @@ def roll(user, tier_no, rnd=None):
         if pool:
             it = _rand_item(pool)
             grant_materials(user.user_id, {it["id"]: cnt})
-            text = f"🌿 获得材料「{it['name']}」×{cnt}"
+            mark, aword = _award_mark("material", tier_no, it, rarity=it.get("rarity"))
+            text = f"{mark} {aword} · 获得材料「{it['name']}」×{cnt}"
         else:
             user.copper += tier["cost"]
             text = f"（材料池暂空，退回 {tier['cost_txt']}）"
@@ -157,7 +186,8 @@ def roll(user, tier_no, rnd=None):
             it = _rand_item(pool)
             grant_consumables(user.user_id, {it["id"]: 1})
             kind_txt = "药水" if it.get("kind") == "potion" else "道具"
-            text = f"🧪 获得{kind_txt}「{it['name']}」×1"
+            mark, aword = _award_mark("consumable", tier_no, it)
+            text = f"{mark} {aword} · 获得{kind_txt}「{it['name']}」×1"
         else:
             user.copper += tier["cost"]
             text = f"（消耗品池暂空，退回 {tier['cost_txt']}）"
@@ -166,7 +196,8 @@ def roll(user, tier_no, rnd=None):
 
 def rule_text():
     """抽奖规则说明（三档成本 + 概率/稀有度概览）。"""
-    lines = ["🎰 抽奖（/抽奖 1|2|3 或 /抽奖 铜|银|金）"]
+    lines = ["🎰 抽奖（/抽奖 1|2|3 或 /抽奖 铜|银|金）",
+             "奖等（按奖品稀有度/价值，跨档一致）：🥉铜奖·低级 | 🥈银奖·中级 | 🥇金奖·高级 | 👑特等奖·稀有大奖"]
     for no in (1, 2, 3):
         t = TIERS[no]
         if no == 1:

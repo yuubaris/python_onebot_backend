@@ -197,11 +197,16 @@ def cmd_bag(user, group_id, args, at_qqs=None):
             gear = boss_gear.is_gear(it.get("id"))
             disp = f"👑 {name}" if gear else (f"✦ {name}" if rare else name)
             rare_tag = "(限定)" if gear else ("(稀有)" if rare else "")
+            # 未到穿戴等级：商店/稀有 tier 超阶级、锻造 Lv 未按历史层解锁（Boss 专属免等级不标）
+            lvl_note = ""
+            if not dungeon._item_usable(it, user.tier or 0, historical_best_layer(user)):
+                f_lv = dungeon._forge_lv(it)
+                lvl_note = f"（需锻造Lv{f_lv}）" if f_lv is not None else f"（需T{dungeon._item_tier(it)}）"
             # 转职后另一职业专属装备标注“暂不生效”
             unusable = ""
             if cl_line and item_line(it) not in (LINE_ANY, cl_line):
                 unusable = "（另一职业·不生效）"
-            lines.append(f"· {disp}{suffix}{mark}{rare_tag}{wear}（{_item_desc(it)}）{unusable}")
+            lines.append(f"· {disp}{suffix}{mark}{rare_tag}{wear}{lvl_note}（{_item_desc(it)}）{unusable}")
     # 矿石展示（稀有度前缀）
     ores = ore.owned_ores(user.user_id)
     if ores:
