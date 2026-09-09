@@ -462,7 +462,10 @@ def cmd_forge(user, group_id, args, at_qqs=None):
 
 def cmd_buy(user, group_id, args, at_qqs=None):
     """购买装备（/购买），职业+阶级双重校验。"""
-    names = [n for n in (args or "").split()]
+    raw = (args or "").strip()
+    if raw in ("全部", "一键", "一键购买", "all", "顶级"):
+        return _cmd_buy_best(user)
+    names = [n for n in raw.split()]
     if not names:
         return "用法：/购买 商品名 [商品名 ...]（例如 /购买 短剑 圆盾）"
     items, missing = [], []
@@ -516,6 +519,65 @@ def cmd_buy(user, group_id, args, at_qqs=None):
     detail = "、".join(f"{n}×{c}" for n, c in cnt.items())
     return (f"购买成功！获得：{detail}\n"
             f"消耗 {format_currency(total)}，剩余资产：{format_currency(user.copper)}。")
+
+
+def _cmd_buy_best(user):
+    """/购买 全部（一键购买）：购入商店可购买最高档的「每部位评分最好」装备各 1 件。
+
+    - 最高档 = 商店装备中 tier ≤ 当前阶级的最大档（仅商店来源，不含锻造）；
+    - 部位 = 本职业可用类型 + 饰品（如魔剑士=武器/法器/法袍/饰品）；
+    - 该部位已持有评分 ≥ 目标件的装备 → 跳过（不重复购入）；
+    - 不能赊账；未转职先引导转职。
+    """
+    prof = (user.profession or "") or ""
+    usage = dungeon._usage_for(prof)
+    if not usage:
+        return ("💡 一键购买需要先选择职业：\n"
+                "/转职 战士（物理近战）/ 转职 魔法师（魔法施法）/ 转职 魔剑士（物主手+法施法）/ 转职 近战法师（法主手+物防护）。")
+    lines, types = usage
+    tier_max = user.tier or 0
+    items = load_equipment()
+    avail = [it for it in items
+             if dungeon._usable_line_type(it, lines, types)
+             and _item_tier(it) <= tier_max]
+    if not avail:
+        return "当前没有可购买的装备（请先 /晋升 提升阶级）。"
+    top_tier = max(_item_tier(it) for it in avail)
+    top = [it for it in avail if _item_tier(it) == top_tier]
+    best_by_type = {}
+    for it in top:
+        t = it.get("type", "other")
+        if t not in best_by_type or item_score(it) > item_score(best_by_type[t]):
+            best_by_type[t] = it
+    # 该部位已有更高分装备 → 跳过
+    owned_best = {}
+    for it in dungeon.owned_items(user):
+        t = it.get("type", "other")
+        sc = item_score(it)
+        if t not in owned_best or sc > owned_best[t]:
+            owned_best[t] = sc
+    buys, skipped = [], []
+    for t, it in best_by_type.items():
+        if owned_best.get(t, -1) >= item_score(it):
+            skipped.append(it)
+        else:
+            buys.append(it)
+    if not buys:
+        names = "、".join(it["name"] for it in best_by_type.values())
+        return f"已拥有 T{top_tier} 档每部位最好装备（{names}），无需重复购买。"
+    total = sum(it["price"] for it in buys)
+    if user.copper < total:
+        need = "、".join(f"{it['name']}({format_currency(it['price'])})" for it in buys)
+        return (f"铜币不足，不能赊账！一键购买 {len(buys)} 件（T{top_tier} 档每部位最好）共需 {format_currency(total)}，"
+                f"你只有 {format_currency(user.copper)}。\n{need}")
+    for it in buys:
+        user.copper -= it["price"]
+        db.session.add(UserItem(user_id=user.user_id, item_id=it["id"]))
+    db.session.commit()
+    names = "、".join(f"{it['name']}×1" for it in buys)
+    skip_note = f"\n已跳过 {len(skipped)} 件（持有更好）：{'、'.join(it['name'] for it in skipped)}" if skipped else ""
+    return (f"🛒 一键购买成功！已购入 T{top_tier} 档每部位最好装备：{names}\n"
+            f"消耗 {format_currency(total)}，剩余资产：{format_currency(user.copper)}。{skip_note}")
 
 
 def cmd_sell(user, group_id, args, at_qqs=None):

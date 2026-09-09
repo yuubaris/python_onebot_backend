@@ -245,3 +245,39 @@ def test_boss_gear_drop_unclassed_keeps_all(app):
     """未转职：专属掉落候选不限制（与旧行为一致）。"""
     u = _mk_user(app, profession=None, tier=4, user_id=97025)
     _roll_gear_many(u, 1000)
+
+
+# —— 一键购买（/购买 全部，v2.12.16）——
+
+def test_buy_all_buys_best_per_slot(app):
+    from dungeon_service.commands import cmd_buy
+    from dungeon_service import dungeon as dg
+    from models import UserItem as _UI
+    u = _mk_user(app, profession="spellblade", tier=4)
+    u.copper = 10_000_000
+    db.session.commit()
+    reply = cmd_buy(u, 99999, "全部")
+    assert "一键购买成功" in reply and "T4" in reply
+    # 应购入 4 件：weapon/focus/robe/accessory 各 1
+    rows = db.session.execute(db.select(_UI).where(_UI.user_id == u.user_id)).scalars().all()
+    types = [dg._all_item_meta()[r.item_id]["type"] for r in rows]
+    assert set(types) == {"weapon", "focus", "robe", "accessory"}
+    # 重复执行 → 已拥有更好，跳过
+    reply2 = cmd_buy(u, 99999, "全部")
+    assert "无需重复购买" in reply2
+
+
+def test_buy_all_requires_class(app):
+    from dungeon_service.commands import cmd_buy
+    u = _mk_user(app, profession=None, tier=4)
+    reply = cmd_buy(u, 99999, "全部")
+    assert "需要先选择职业" in reply
+
+
+def test_buy_all_insufficient(app):
+    from dungeon_service.commands import cmd_buy
+    u = _mk_user(app, profession="warrior", tier=4)
+    u.copper = 100
+    db.session.commit()
+    reply = cmd_buy(u, 99999, "全部")
+    assert "铜币不足" in reply
