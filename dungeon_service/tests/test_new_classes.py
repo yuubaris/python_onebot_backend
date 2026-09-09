@@ -308,16 +308,16 @@ def test_gear_accessory_usable_by_line(app):
 
 
 def test_boss_gear_drop_includes_accessory(app):
-    """战士候选应含物理线专属饰品（裂渊空印），魔法线版本（裂渊虚核）被过滤。"""
+    """专属饰品已合并为通用（line=any）：任意职业候选都含裂渊之印（v2.12.23）。"""
     from dungeon_service.boss_gear import gear_for_layer
     from dungeon_service.classes import item_usable_for
     u = _mk_user(app, profession="warrior", tier=4, user_id=97031)
     _roll_gear_many(u, 800)
-    gear_800 = gear_for_layer(800)
-    liyuan = [g for g in gear_800 if g["id"] == "gear_other_800_accessory" and g.get("line") == "physical"][0]
-    xuh = [g for g in gear_800 if g["id"] == "gear_other_800_accessory" and g.get("line") == "magic"][0]
-    assert item_usable_for(liyuan, "warrior")      # 物理版可掉
-    assert not item_usable_for(xuh, "warrior")     # 魔法版被过滤
+    liyuan = [g for g in gear_for_layer(800)
+              if g["id"] == "gear_other_800_accessory"][0]
+    assert liyuan.get("line") == "any"
+    for prof in ("warrior", "mage", "spellblade", "battlemage"):
+        assert item_usable_for(liyuan, prof)
 
 
 def test_bag_marks_gear_accessory_usable(app):
@@ -328,4 +328,4 @@ def test_bag_marks_gear_accessory_usable(app):
     db.session.add(_UI(user_id=u.user_id, item_id="gear_other_800_accessory"))
     db.session.commit()
     reply = cmd_bag(u, 99999, "")
-    assert "裂渊空印" in reply and "本职业不生效" not in reply
+    assert "裂渊之印" in reply and "本职业不生效" not in reply

@@ -48,7 +48,7 @@ def _usable_line_type(it, lines, types):
     """装备对某 (lines, types) 是否可用：any 恒可用；否则 line ∈ lines 且 type ∈ types。
 
     饰品（accessory）为通用部位：不受职业 types 白名单限制（仅按 line 归属判定），
-    故带物理/魔法归属线的 Boss 专属饰品（如 裂渊空印/终焉灵印）各职业线均可穿。
+    故带物理/魔法归属线的 Boss 专属饰品各职业线均可穿（v2.12.23 起专属饰品已合并为 line=any 中立件，如 裂渊之印）。
     """
     ln = item_line(it)
     if ln == LINE_ANY:
