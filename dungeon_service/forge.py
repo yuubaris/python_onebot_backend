@@ -81,6 +81,67 @@ def suggest_forges(keyword, limit=5):
     return hits[:limit]
 
 
+def recommend_text(user):
+    """/锻造 推荐：按背包矿石/铜币计算可锻造的配方及数量。
+
+    - 只列当前职业可用的配方（physical/magic 匹配，any 通用）；
+    - 可锻造数 = min(各矿石持有÷需求、铜币÷价格) 向下取整；
+    - 历史最高层不足解锁的列出但标 🔒（材料已够只差层数）；
+    - 矿石不够的配方不列出。
+    """
+    load_forges()
+    from .dungeon import historical_best_layer
+    from . import classes as _cls
+    ores = {o["id"]: o["count"] for o in _load_ores_owned(user.user_id)}
+    prof = (user.profession or "") or ""
+    my_line = _cls.class_line(prof)
+    best = historical_best_layer(user)
+
+    ok = []
+    for r in load_forges():
+        line = r.get("line") or _cls.item_line(r)
+        if my_line and line != _cls.LINE_ANY and line != my_line:
+            continue  # 非本职业配方不推荐
+        cost = r.get("cost") or {}
+        price = int(r.get("price", 0) or 0)
+        can = None
+        for oid, n in cost.items():
+            c = ores.get(oid, 0) // n
+            can = c if can is None else min(can, c)
+        if price:
+            c = user.copper // price
+            can = c if can is None else min(can, c)
+        if can is None or can < 1:
+            continue
+        lv = int(r.get("level", 1))
+        ok.append((lv, r, can, best < FORGE_LV_LAYER.get(lv, 10 ** 9)))
+    if not ok:
+        return ("当前矿石与铜币不足以锻造任何装备。\n"
+                "发送 /铁匠铺 查看配方及需求。")
+    # 未解锁排后，同组按等级、价格升序
+    ok.sort(key=lambda x: (x[3], x[0], x[1].get("price", 0)))
+    lines = ["🔨 锻造推荐（按当前背包可制作）："]
+    for lv, r, can, locked in ok:
+        cost = format_cost(r.get("cost", {}))
+        line = f"· {r['name']}（{_cls.TYPE_NAMES.get(r.get('type'), r.get('type', ''))}）×{can} —— {cost} + {price_txt(r.get('price', 0))}"
+        if locked:
+            line += f"（🔒 需到地下城第 {FORGE_LV_LAYER.get(lv)} 层）"
+        lines.append(line)
+    lines.append("—— 用法：/锻造 <装备名> 制作；/铁匠铺 查看全部配方 ——")
+    return "\n".join(lines)
+
+
+def _load_ores_owned(user_id):
+    """查询用户持有的矿石（延迟导入 ore，避免循环）。"""
+    from .ore import owned_ores
+    return owned_ores(user_id)
+
+
+def price_txt(copper):
+    from .currency import format_currency
+    return format_currency(int(copper or 0))
+
+
 def all_forges():
     """返回全部配方（按等级、价格排序）。"""
     recs = load_forges()

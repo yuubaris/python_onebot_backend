@@ -403,7 +403,9 @@ def cmd_forge(user, group_id, args, at_qqs=None):
     """锻造装备：消耗铜币 + 矿石（不能赊账），成功后入背包。"""
     name = (args or "").strip()
     if not name:
-        return "用法：/锻造 装备名（/铁匠铺 查看配方）"
+        return "用法：/锻造 装备名（/铁匠铺 查看配方；/锻造 推荐 按背包算可锻）"
+    if name.lower() in ("推荐", "tuijian", "recommend"):
+        return forge.recommend_text(user)
     if not _forge_unlocked(user):
         return (f"🔨 铁匠铺尚未开放。到达地下城第 {forge.FORGE_LV_LAYER[1]} 层后开启 Lv1，"
                 f"可锻造超越武器库顶级的装备！")
