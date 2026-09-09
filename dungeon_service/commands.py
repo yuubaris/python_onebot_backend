@@ -782,7 +782,8 @@ def _dungeon_enter(user):
                 pass
         return (f"⚔️ 已从上次进度继续冒险！（{_user_title(user)}{boss_note}）\n"
                 f"你回到地下城第 {layer} 层（剩余进度 {progress:.0f} / 总计 {effective_layer_total(layer):.0f}）\n"
-                f"推进速度：{speed:.2f} 进度/秒；金币速度：约 {coin_per_5sec(layer):.4f} 铜币/5秒\n"
+                f"推进速度：{speed:.2f} 进度/秒\n"
+                f"金币速度：约 {coin_per_5sec(layer):.4f} 铜币/5秒\n"
                 f"{wear_note}地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。{ore_note}{class_note}")
 
     # 新的地下城冒险（第 1 层）
@@ -796,7 +797,8 @@ def _dungeon_enter(user):
 
     return (f"⚔️ 你已进入地下城第 1 层！\n"
             f"推进速度：{speed:.2f} 进度/秒\n"
-            f"通关本层进度：{effective_layer_total(1):.0f}；金币速度：约 {coin_per_5sec(1):.4f} 铜币/5秒\n"
+            f"通关本层进度：{effective_layer_total(1):.0f}\n"
+            f"金币速度：约 {coin_per_5sec(1):.4f} 铜币/5秒\n"
             f"{wear_note}地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。{class_note}")
 
 
