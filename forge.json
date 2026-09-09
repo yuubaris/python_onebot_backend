@@ -40,7 +40,7 @@
     },
     {
       "id": "forge_iron_staff",
-      "name": "奥术秘杖",
+      "name": "星芒秘杖",
       "type": "staff",
       "level": 1,
       "attack": 0,
@@ -79,7 +79,7 @@
     },
     {
       "id": "forge_silver_armor",
-      "name": "镇岳重甲",
+      "name": "苍岳重甲",
       "type": "armor",
       "level": 2,
       "attack": 70,
@@ -99,7 +99,7 @@
     },
     {
       "id": "forge_silver_staff",
-      "name": "贤者权杖",
+      "name": "凌霜权杖",
       "type": "staff",
       "level": 2,
       "attack": 0,
@@ -318,7 +318,7 @@
     },
     {
       "id": "forge_robe_2",
-      "name": "星辉法袍",
+      "name": "月华法袍",
       "type": "robe",
       "level": 2,
       "attack": 0,
@@ -378,7 +378,7 @@
     },
     {
       "id": "forge_accessory_2",
-      "name": "贤者指环",
+      "name": "灵犀指环",
       "type": "accessory",
       "level": 2,
       "attack": 37,
@@ -548,7 +548,7 @@
     },
     {
       "id": "forge_accessory_4",
-      "name": "永恒王冠",
+      "name": "万古王冠",
       "type": "accessory",
       "level": 4,
       "attack": 57,
