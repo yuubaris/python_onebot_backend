@@ -41,6 +41,13 @@ DEFAULT_CONFIG = {
     "rate_limit_max": "15",        # 统计窗口内最多消息条数
     "rate_limit_window": "60",     # 统计窗口（秒）
     "rate_limit_cooldown": "60",   # 超出限制后的提示冷却时长（秒），冷却期内静默过滤
+    # QQ 官方机器人（开放平台）接入
+    # 说明：AppSecret 为密钥，仅保存在本地数据库（onebot_bot.db，已被 .gitignore 忽略），
+    #       切勿写入代码或提交到仓库；如需更换请在管理页重新填写。
+    "qq_official_enable": "false",  # 是否启用 QQ 官方机器人接入（true 时与 OneBot 可并存）
+    "qq_appid": "",                 # 官方机器人 AppID
+    "qq_appsecret": "",             # 官方机器人 AppSecret（密钥）
+    "qq_sandbox": "false",          # 是否使用沙箱环境
 }
 
 
