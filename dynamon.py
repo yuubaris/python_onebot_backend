@@ -331,20 +331,28 @@ class DynamicMonitorThread:
         self.sender = sender
         self._thread = None
         self._running = False
+        self._wake = threading.Event()  # 用于打断等待，便于 stop() 立即退出
 
     def start(self):
         if self._thread and self._thread.is_alive():
             return
         self._running = True
+        self._wake.clear()
         self._thread = threading.Thread(target=self._run, daemon=True, name="dynamon")
         self._thread.start()
 
     def stop(self):
         self._running = False
+        self._wake.set()  # 唤醒正在等待的轮询，避免最长等 POLL_INTERVAL 才能退出
         if self._thread and self._thread.is_alive() \
                 and self._thread is not threading.current_thread():
             self._thread.join(timeout=5)
         self._thread = None
+
+    def _sleep(self, seconds):
+        """可被 stop() 立即打断的等待。"""
+        self._wake.clear()
+        self._wake.wait(timeout=seconds)
 
     def _run(self):
         while self._running:
@@ -364,7 +372,9 @@ class DynamicMonitorThread:
         """队列式串行轮询一轮（可能跨多个 POLL_INTERVAL）。"""
         by_uid = _enabled_by_uid()
         if not by_uid:
+            # 无启用监控时也必须等待，否则外层 while 会变成死循环刷日志
             log(f"队列：暂无启用的动态监控，{POLL_INTERVAL}s 后重试")
+            self._sleep(POLL_INTERVAL)
             return
         now = datetime.now()
         for uid, ms in by_uid.items():
@@ -373,4 +383,4 @@ class DynamicMonitorThread:
             if not self._running:
                 return
             log(f"队列：已轮询 UP 主 {uid}，{POLL_INTERVAL}s 后轮询下一项")
-            time.sleep(POLL_INTERVAL)
+            self._sleep(POLL_INTERVAL)
