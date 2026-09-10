@@ -80,7 +80,7 @@ def _mk_user_rare_spares(app):
         ("rare_accessory_3", 0),     # 饰品：稀有，闲置 → 应卖
         ("rare_accessory_4", 0),     # 饰品：稀有，闲置（v2.12.10 曾保留 1 件）
         ("rare_accessory_4", 0),     # 饰品：稀有，闲置 → 应卖
-        ("gear_other_700_armor", 1),   # 专属（限定）噬星之印：更高分、不可售
+        ("gear_other_700_armor", 1),   # 专属（限定）噬星手镯：更高分、不可售
     ):
         db.session.add(UserItem(user_id=u.user_id, item_id=iid, equipped=equipped))
     db.session.commit()
@@ -89,7 +89,7 @@ def _mk_user_rare_spares(app):
 
 def test_sell_all_sells_rare_spares(app):
     """稀有掉落闲置件可被一键出售（v2.12.9 修复：meta 合并 rare_drops.json）；
-    无更高分专属时，可售最高件（星穹法印×1）仍保留。"""
+    无更高分专属时，可售最高件（星穹戒指×1）仍保留。"""
     u = User(user_id=95003, nickname="测试", profession="warrior", tier=4,
              copper=100000, saved_dungeon_layer=1200)
     db.session.add(u)
@@ -108,7 +108,7 @@ def test_sell_all_sells_rare_spares(app):
     db.session.commit()
     reply = cmd_sell(u, 12345, "全部")
     assert "卖出 4 件" in reply
-    for nm in ("星辉圣盾", "星穹战铠×1", "月蚀吊坠×1", "星穹法印×1"):
+    for nm in ("星辉圣盾", "星穹战铠×1", "月蚀吊坠×1", "星穹戒指×1"):
         assert nm in reply
     rows = db.session.execute(
         db.select(UserItem).where(UserItem.user_id == u.user_id)
@@ -120,11 +120,11 @@ def test_sell_all_sells_rare_spares(app):
 
 def test_sell_all_dont_keep_best_sellable_when_gear_higher(app):
     """已有更高分专属装备时，可售最高件不保留（v2.12.11）：
-    饰品部位有噬星之印（专属）> 星穹法印（可售最高），星穹法印×2 全部卖出。"""
+    饰品部位有噬星手镯（专属）> 星穹戒指（可售最高），星穹戒指×2 全部卖出。"""
     u = _mk_user_rare_spares(app)
     reply = cmd_sell(u, 12345, "全部")
     assert "卖出 5 件" in reply
-    assert "星穹法印×2" in reply
+    assert "星穹戒指×2" in reply
     rows = db.session.execute(
         db.select(UserItem).where(UserItem.user_id == u.user_id)
     ).scalars().all()

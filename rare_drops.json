@@ -281,7 +281,7 @@
  },
  {
   "id": "rare_accessory_2",
-  "name": "熔岩护印",
+  "name": "熔岩手镯",
   "type": "accessory",
   "attack": 11,
   "defense": 7,
@@ -477,7 +477,7 @@
  },
  {
   "id": "rare_accessory_4",
-  "name": "星穹法印",
+  "name": "星穹戒指",
   "type": "accessory",
   "attack": 22,
   "defense": 12,
@@ -561,7 +561,7 @@
  },
  {
   "id": "rare_accessory_5",
-  "name": "神陨圣印",
+  "name": "神陨耳环",
   "type": "accessory",
   "attack": 26,
   "defense": 16,

@@ -308,7 +308,7 @@ def test_gear_accessory_usable_by_line(app):
 
 
 def test_boss_gear_drop_includes_accessory(app):
-    """专属饰品为通用（line=any）：任意职业候选都含噬星之印（v2.12.26 部位重排后 700 层为饰）。"""
+    """专属饰品为通用（line=any）：任意职业候选都含噬星手镯（v2.12.26 部位重排后 700 层为饰）。"""
     from dungeon_service.boss_gear import gear_for_layer
     from dungeon_service.classes import item_usable_for
     u = _mk_user(app, profession="warrior", tier=4, user_id=97031)
@@ -321,11 +321,11 @@ def test_boss_gear_drop_includes_accessory(app):
 
 
 def test_bag_marks_gear_accessory_usable(app):
-    """背包：战士持 噬星之印 不再标「本职业不生效」。"""
+    """背包：战士持 噬星手镯 不再标「本职业不生效」。"""
     from dungeon_service.commands import cmd_bag
     u = _mk_user(app, profession="warrior", tier=4, user_id=97032)
     from models import UserItem as _UI
     db.session.add(_UI(user_id=u.user_id, item_id="gear_other_700_armor"))
     db.session.commit()
     reply = cmd_bag(u, 99999, "")
-    assert "噬星之印" in reply and "本职业不生效" not in reply
+    assert "噬星手镯" in reply and "本职业不生效" not in reply

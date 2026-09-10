@@ -2,7 +2,7 @@
  "items": [
   {
    "id": "gear_other_100_accessory",
-   "name": "灰鬃之印",
+   "name": "灰鬃戒指",
    "type": "accessory",
    "line": "any",
    "tier": 2,
@@ -92,7 +92,7 @@
   },
   {
    "id": "gear_other_400_accessory",
-   "name": "霜语之印",
+   "name": "霜语项链",
    "type": "accessory",
    "line": "any",
    "tier": 4,
@@ -182,7 +182,7 @@
   },
   {
    "id": "gear_other_700_armor",
-   "name": "噬星之印",
+   "name": "噬星手镯",
    "type": "accessory",
    "line": "any",
    "tier": 4,
@@ -344,7 +344,7 @@
   },
   {
    "id": "gear_other_1400_armor",
-   "name": "裂空之印",
+   "name": "裂空耳环",
    "type": "accessory",
    "line": "any",
    "tier": 5,
@@ -398,7 +398,7 @@
   },
   {
    "id": "gear_other_1800_weapon",
-   "name": "净世之印",
+   "name": "净世吊坠",
    "type": "accessory",
    "line": "any",
    "tier": 5,
