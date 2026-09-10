@@ -34,7 +34,7 @@ _DUNGEON_COMMANDS = {
     "炼金": cmd_alchemy, "alchemy": cmd_alchemy, "lianjin": cmd_alchemy,
     "使用": cmd_use, "use": cmd_use, "shiyong": cmd_use,
     "转转": cmd_turn, "zhuanzhuan": cmd_turn, "zhuan": cmd_turn, "turn": cmd_turn,
-    "抽奖": cmd_lottery, "lottery": cmd_lottery, "choujiang": cmd_lottery, "lucky": cmd_lottery,
+    "祈愿": cmd_lottery, "抽奖": cmd_lottery, "lottery": cmd_lottery, "choujiang": cmd_lottery, "lucky": cmd_lottery,
 }
 
 

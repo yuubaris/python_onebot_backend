@@ -1113,9 +1113,9 @@ def cmd_boss(user, group_id, args, at_qqs=None):
 
 
 def cmd_lottery(user, group_id, args, at_qqs=None):
-    """抽奖：消耗金钱抽取金钱/装备/材料/矿石/道具，共 3 档（5铜/5银/5金）。
+    """祈愿：消耗金钱抽取金钱/装备/材料/矿石/道具，共 3 档（5铜/5银/5金）。
 
-    支持批量（v2.11.92）：/抽奖 <档位> <次数>，次数为第二个参数，默认 1，最多 10 次。
+    支持批量（v2.11.92）：/祈愿 <档位> <次数>，次数为第二个参数，默认 1，最多 10 次。
     """
     from . import lottery
     raw = (args or "").strip()
@@ -1125,12 +1125,12 @@ def cmd_lottery(user, group_id, args, at_qqs=None):
     name = parts[0]
     tier_no = _LOTTERY_ALIAS.get(name.lower(), None)
     if tier_no is None:
-        return f"不认识「{name}」。\n用法：/抽奖 1|2|3（或 /抽奖 铜|银|金）[次数]，/抽奖 查看规则"
+        return f"不认识「{name}」。\n用法：/祈愿 1|2|3（或 /祈愿 铜|银|金）[次数]，/祈愿 查看规则"
     count = 1
     if len(parts) == 2:
         if not parts[1].isdigit():
-            return (f"抽奖次数无效：「{parts[1]}」。\n"
-                    f"用法：/抽奖 {name} <次数>（最多 10 次）")
+            return (f"祈愿次数无效：「{parts[1]}」。\n"
+                    f"用法：/祈愿 {name} <次数>（最多 10 次）")
         count = max(1, min(int(parts[1]), 10))
     cost = lottery.TIERS[tier_no]["cost"]
     total = cost * count

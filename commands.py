@@ -179,7 +179,7 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "/使用 物品名 - 使用药水/道具(药水/道具各同时仅一种, 新用替换并刷新时长)\n"
             "/挑战 @对方 / 列表 / <Boss名|层数|称号> - 玩家对战 · Boss 清单 · Boss 挑战（如 挑战 1000层）\n"
             "/转转 捐赠 <装备名> / 乞讨 - 装备互助：捐赠入公共库，乞讨一件符合自己等级的装备（每天 3 次）\n"
-            "/抽奖 1|2|3 [次数] - 抽奖：消耗金钱抽装备/材料/矿石/道具/金钱（5铜/5银/5金，各档概率与稀有度不同；第二参数为次数，最多 10）\n"
+            "/祈愿 1|2|3 [次数] - 祈愿：消耗金钱抽装备/材料/矿石/道具/金钱（5铜/5银/5金，各档概率与稀有度不同；第二参数为次数，最多 10；原「抽奖」仍可用）\n"
             "\n"
             "🎮 娱乐\n"
             "/踢 @对方 - 生成踢人图（30 秒冷却）\n"
@@ -312,7 +312,7 @@ def cmd_lao(user, group_id, args, at_qqs=None):
 
 
 
-# ---------- 抽奖（/抽奖 1|2|3） ----------
+# ---------- 祈愿（/祈愿 1|2|3，原抽奖） ----------
 
 _LOTTERY_ALIAS = {
     "1": 1, "一": 1, "铜": 1, "5铜": 1, "铜签": 1, "low": 1, "basic": 1,
@@ -363,7 +363,7 @@ COMMANDS = {
     "炼金": cmd_alchemy, "alchemy": cmd_alchemy, "lianjin": cmd_alchemy,
     "使用": cmd_use, "use": cmd_use, "shiyong": cmd_use,
     "转转": cmd_turn, "zhuanzhuan": cmd_turn, "zhuan": cmd_turn, "turn": cmd_turn,
-    "抽奖": cmd_lottery, "lottery": cmd_lottery, "choujiang": cmd_lottery, "lucky": cmd_lottery,
+    "祈愿": cmd_lottery, "抽奖": cmd_lottery, "lottery": cmd_lottery, "choujiang": cmd_lottery, "lucky": cmd_lottery,
     "帮助": cmd_help, "help": cmd_help, "bangzhu": cmd_help,
 }
 
@@ -376,7 +376,7 @@ DUNGEON_ALLOWED = {"签到", "checkin", "qiandao",
                    "转职", "class", "zhuanzhi",
                    "晋升", "promote", "jinsheng",
                    "帮助", "help", "bangzhu",
-                   "抽奖", "lottery", "choujiang", "lucky",
+                   "祈愿", "抽奖", "lottery", "choujiang", "lucky",
                    "踢", "kick", "ti",
                    "撅", "jue",
                    "佬", "lao",
@@ -429,7 +429,7 @@ def dispatch_command(text, user, group_id, at_qqs=None):
         _game.settle(user)  # GameCore 门面结算（等价原 settle_dungeon）
         if handler is None or name not in DUNGEON_ALLOWED:
             return (f"⚠️ 你正在地下城第 {user.dungeon_layer} 层中。\n"
-                    f"地下城内可使用 /签到、/余额、/背包、/抽奖、/帮助、/踢、/撅、/佬、/挑战 或 /地下城 退出。")
+                    f"地下城内可使用 /签到、/余额、/背包、/祈愿、/帮助、/踢、/撅、/佬、/挑战 或 /地下城 退出。")
 
     if handler is None:
         # 未知指令计数：达到阈值（第 3 次）发 beat.jpg+头像合成图并停止响应
