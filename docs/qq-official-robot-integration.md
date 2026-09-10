@@ -156,22 +156,140 @@ CREATE INDEX idx_gw_openid ON group_whitelist(group_openid);
 - **新用户**：第一次发言时按 `openid` 自动建号。
 - **老用户**：加一个 `/绑定 QQ号` 命令，把 openid 和已有账号对上，**历史进度不丢**（强烈建议）。
 
-### 3.3 各文件改动一览
+### 3.3 各文件改动一览（截至当前分支的实际状态）
 
-| 文件 | 改什么 | 量 |
+| 文件 | 改了什么 | 状态 |
 |---|---|---|
-| `qq_official.py` | **新增**：拿 Token + 连网关 + 收事件 + 调接口发消息 | 大（核心） |
-| `models.py` | `User.openid`、`GroupWhitelist.group_openid` 字段+索引 | 小 |
-| `commands.py` | 建号时支持 openid；加 `/绑定` 命令 | 小 |
-| `app.py` | 启动时选择用 OneBot 还是官方（或两个一起跑）；管理页填 AppID/AppSecret | 中 |
-| `bot.py` | 抽出一个通用发消息函数 `send_group_message(group, text)` | 小 |
-| `ratelimit.py` | 限流的用户标识从 QQ 号改成 openid | 小 |
-| 头像合成图（`kick.py` 等） | 图片改成"先上传拿 file_info，再按富媒体发" | 中 |
+| `qq_official.py` | **新增**：换 Token + 连网关 + Identify + 心跳/Resume + 收事件 + 发消息 | ✅ 已完成 |
+| `app.py` | `qq_official_enable=true` 时**与 OneBot 并存**启动官方客户端；群消息走 `dispatch_command`；自动登记群白名单；新增 `/api/qq/status` | ✅ 已完成 |
+| `commands.py` | `ensure_qq_user()`（按 openid 建号）；`normalize_command()`（**免打 `/`**，直接发「签到」） | ✅ 已完成 |
+| `models.py` | `User.openid`、`GroupWhitelist.group_openid`（配 `_migrate_schema()` 在线补列，存量库不丢数据） | ✅ 已完成 |
+| `dynamon.py` | 顺带修复：无启用监控时死循环刷日志 | ✅ 已完成 |
+| `ratelimit.py` | 无需改动：限流键用的是通用用户标识，官方通道直接传 openid | ✅ 无需改 |
+| `bot.py` | 无需改动：官方通道自带发送逻辑（`POST /v2/groups/.../messages`），不复用 OneBot 发送 | ✅ 无需改 |
+| 合成图（`kick.py` 等） | 改走富媒体上传（`file_info`）再发送 | ⬜ 待做，当前**降级为纯文本**（图片文案仍会发出，只是没图） |
+| 老账号 `/绑定 <QQ号>` | 把官方 openid 与既有 `user_id` 合并，保留历史进度 | ⬜ 待做 |
 
-### 3.4 怎么验证接入成功
-1. 本地写个小脚本：能换到 AccessToken、能连上网关收到 `READY` → 说明连接 OK。
-2. 沙箱群里 @机器人 发 `/帮助` → 能收到回复 → 说明收发通了。
-3. 沙箱群里跑一遍 `/地下城 进入` → `/签到` → `/背包` → `/抽奖 铜` → 挑战对战（3 条消息）→ 全通即达标。
+> 官方**不返回真实 QQ 号**，所以官方用户用**负数 `user_id`**（`-1`、`-2`…）建号，与真实 QQ 号（正数）不冲突。
+
+### 3.4 怎么验证接入成功（已实测通过）
+
+1. 启动后日志出现 `已鉴权上线（机器人：xxx）` → 连接 OK。
+2. 在群里**直接发「签到」**（不用 @、不用斜杠）→ 能收到回复 → 收发通了。
+3. 检查数据库：`user` 表出现 `openid` 非空的记录、`group_whitelist` 自动多了该群 → 数据层 OK。
+4. 沙箱群跑一遍 `/地下城 进入`、`/背包`、`/抽奖 铜`、挑战对战（3 条消息）→ 全通即达标。
+
+---
+
+### 3.5 服务器部署要求
+
+**一句话结论：一台能上网的普通 Linux 小机器就够 —— 不需要公网 IP、不用开任何入站端口、不用域名和备案。**
+
+原因：官方通道是**本机主动外连**（WebSocket 客户端），不是等 QQ 来连你。所以防火墙只管出站，入站全关也照样收发消息。
+
+#### 硬性要求
+
+| 项目 | 要求 | 说明 |
+|---|---|---|
+| **出网** | 能访问 `api.bot.qq.com:443`、`api.sgroup.qq.com:443` | 唯一必须的网络条件（HTTPS / WSS 出站） |
+| **Python** | 3.10 ~ 3.12（开发机 3.12 已验证） | `python3 --version`；无 3.10+ 专属语法，但未做低版本回归 |
+| **依赖** | `pip install -r requirements.txt` | flask / flask-sqlalchemy / websocket-client / Pillow |
+| **时区** | **Asia/Shanghai** | 签到、挑战次数、Boss 额度都按「当天」结算，时区错会跨天算错 |
+| **磁盘** | ≥ 2 GB 可用，且项目目录**可写** | SQLite 库 `onebot_bot.db`、合成图缓存 `tmp/` 都写在项目目录 |
+| **常驻** | 进程守护（systemd / supervisor / nohup+screen） | 长连接需 7×24 在线 |
+| **实例数** | **只能跑 1 个进程** | 同一 AppID 只允许一条 WebSocket 连接，多开会互相踢下线 |
+| **资源文件** | 完整 `git clone`（别只拷 `.py`） | `images.jpg`、`beat.jpeg`、`dalao.png`、`2886735798_frames/` 是合成图素材，已入库 |
+
+#### 不需要的东西（容易误以为要）
+
+- ❌ 公网 IP / 弹性 IP
+- ❌ 开放任何入站端口（安全组只放进站反而更安全）
+- ❌ 域名、备案、HTTPS 证书、nginx 反代
+- ❌ 独立数据库（自带 SQLite 足够）
+- ❌ Windows（Linux 即可；`dynamon.py` 里的 `curl.exe` 会自动回退到 `curl`）
+
+> 管理页 `http://127.0.0.1:5000` **只监听本机**。远程要看得用 SSH 隧道：
+> `ssh -L 5000:127.0.0.1:5000 user@server`，再在本地浏览器开 `http://127.0.0.1:5000`。
+> **不要把 5000 端口直接暴露到公网**（管理页可改配置、看日志）。
+
+#### 资源占用（实测）
+
+| 指标 | 实测值 |
+|---|---|
+| 内存 | 约 **60 MB**（含 OneBot + 官方双通道 + 两个监控线程） |
+| 项目目录 | 约 **12 MB**（不含数据库增长） |
+| CPU | 空闲接近 0，命令触发时短暂占用 |
+
+→ **1 核 1 G 的最低配 VPS / 轻量服务器完全够用。**
+
+#### 时区（务必检查）
+
+```bash
+timedatectl set-timezone Asia/Shanghai   # 需 sudo
+date                                     # 应显示 CST +0800
+```
+
+#### 开机自启（systemd 示例）
+
+```ini
+# /etc/systemd/system/qqbot.service
+[Unit]
+Description=QQ dungeon bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=youruser
+WorkingDirectory=/home/youruser/python_onebot_backend
+ExecStart=/usr/bin/python3 app.py
+Restart=always
+RestartSec=5
+Environment=TZ=Asia/Shanghai
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now qqbot
+journalctl -u qqbot -f      # 实时看日志
+```
+
+> 若用虚拟环境，`ExecStart` 要写 venv 里的 python：`/path/to/venv/bin/python app.py`。
+
+#### 首次部署要填的配置
+
+AppID / AppSecret **不写在代码里**，存在数据库 `config` 表（`onebot_bot.db` 已被 `.gitignore` 忽略，不会提交）：
+
+| 键 | 值 |
+|---|---|
+| `qq_official_enable` | `true` 才启动官方通道（默认 `false`） |
+| `qq_appid` | 开放平台 AppID |
+| `qq_appsecret` | 开放平台 AppSecret |
+| `qq_sandbox` | **目前仅占位、代码未实际使用**（沙箱/正式域名由网关返回决定） |
+
+写入方式（先启动一次让程序 `db.create_all()` 建好 `config` 表，或确认表已存在）：
+
+```bash
+cd /home/youruser/python_onebot_backend
+python3 - <<'PY'
+import sqlite3
+c = sqlite3.connect('onebot_bot.db')
+for k, v in [('qq_official_enable', 'true'),
+             ('qq_appid', '你的AppID'),
+             ('qq_appsecret', '你的AppSecret')]:
+    c.execute("insert into config(key,value) values(?,?)"
+              " on conflict(key) do update set value=excluded.value", (k, v))
+c.commit()
+PY
+```
+
+#### 两个容易踩的坑
+
+1. **别同时开两台**：同一 AppID 只允许一条 WebSocket 连接。本地测试实例没停、服务器又起一个，两边会不停互踢（日志反复 `已鉴权上线` + 断线重连）。部署前先停本地进程。
+2. **没有 OneBot 服务端时会刷重连日志**：目前启动时 OneBot 客户端**总会启动**（无独立开关）。若服务器上不跑 OneBot，日志会每 3 秒出现一次 `连接错误: Connection refused` —— 纯噪音，不影响官方通道，可用 `journalctl -u qqbot | grep -v "连接错误"` 过滤。
 
 ---
 
@@ -219,7 +337,7 @@ CREATE INDEX idx_gw_openid ON group_whitelist(group_openid);
 |---|---|
 | 换 AccessToken | `POST https://api.bot.qq.com/app/getAppAccessToken` |
 | 取网关地址 | `GET https://api.bot.qq.com/gateway/bot` |
-| 网关 WebSocket | `wss://api.bot.qq.com/websocket/` |
+| 网关 WebSocket | `wss://api.sgroup.qq.com/websocket`（由 `GET /gateway/bot` **动态返回**，代码里不要写死） |
 | 发群消息 | `POST https://api.bot.qq.com/v2/groups/{group_openid}/messages` |
 | 鉴权请求头 | `Authorization: QQBot {access_token}` |
 
