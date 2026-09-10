@@ -37,7 +37,7 @@ def test_gear_list_shows_all_groups_and_remaining(app):
     txt = gear_list_text()
     assert "命名 Boss 专属装备" in txt
     assert "十方魔主·终焉（1000 层" in txt and "虚空大君·裂渊（800 层" in txt  # 按 Boss 名分组
-    assert "终焉魔铠" in txt and "裂渊断刃" in txt
+    assert "终焉魔铠" in txt and "裂渊断戟" in txt
     assert "余量3/3" in txt      # 4 大 Boss 限量 3，未产出
     assert "余量5/5" in txt      # 其他命名 Boss 限量 5，未产出
 

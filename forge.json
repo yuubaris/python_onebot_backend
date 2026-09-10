@@ -179,7 +179,7 @@
     },
     {
       "id": "forge_dragon_blade",
-      "name": "龙神之刃",
+      "name": "龙神战戟",
       "type": "weapon",
       "level": 4,
       "attack": 152,
@@ -199,7 +199,7 @@
     },
     {
       "id": "forge_destroy_staff",
-      "name": "灭世法杖",
+      "name": "灭世魔杖",
       "type": "staff",
       "level": 3,
       "attack": 0,
@@ -219,7 +219,7 @@
     },
     {
       "id": "forge_creation_staff",
-      "name": "创世法杖",
+      "name": "创世圣杖",
       "type": "staff",
       "level": 4,
       "attack": 0,

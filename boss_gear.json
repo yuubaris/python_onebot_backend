@@ -218,7 +218,7 @@
   },
   {
    "id": "gear_other_800_accessory",
-   "name": "裂渊断刃",
+   "name": "裂渊断戟",
    "type": "weapon",
    "line": "physical",
    "tier": 5,
@@ -380,7 +380,7 @@
   },
   {
    "id": "gear_other_1600_accessory",
-   "name": "赤渊炽刃",
+   "name": "赤渊炽斧",
    "type": "weapon",
    "line": "physical",
    "tier": 5,
@@ -470,7 +470,7 @@
   },
   {
    "id": "gear_other_2500_accessory",
-   "name": "渊灭神刃",
+   "name": "渊灭神剑",
    "type": "weapon",
    "line": "physical",
    "tier": 5,
@@ -488,7 +488,7 @@
   },
   {
    "id": "gear_big_3000_robe",
-   "name": "裂界法杖",
+   "name": "裂界法剑",
    "type": "staff",
    "line": "magic",
    "tier": 6,
@@ -506,7 +506,7 @@
   },
   {
    "id": "gear_big_3000_armor",
-   "name": "裂界斩刃",
+   "name": "裂界斩刀",
    "type": "weapon",
    "line": "physical",
    "tier": 6,

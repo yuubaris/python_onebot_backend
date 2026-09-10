@@ -534,7 +534,7 @@
   },
   {
    "id": "blade_5200",
-   "name": "破阵战刃",
+   "name": "破阵战戟",
    "type": "weapon",
    "attack": 41,
    "defense": 14,
@@ -548,7 +548,7 @@
   },
   {
    "id": "blade_15000",
-   "name": "裂穹大剑",
+   "name": "裂穹重剑",
    "type": "weapon",
    "attack": 49,
    "defense": 18,
@@ -562,7 +562,7 @@
   },
   {
    "id": "blade_26000",
-   "name": "苍穹巨刃",
+   "name": "苍穹战斧",
    "type": "weapon",
    "attack": 55,
    "defense": 18,
@@ -688,7 +688,7 @@
   },
   {
    "id": "staff_15000",
-   "name": "湮灭法杖",
+   "name": "湮灭魔杖",
    "type": "staff",
    "attack": 0,
    "defense": 14,
