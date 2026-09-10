@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OneBot 11 签到机器人 · 管理台</title>
+<title>qq-dungeon-bot · 管理台</title>
 <style>
   :root {
     --bg: #f0f2f5;
@@ -105,8 +105,8 @@
 
   <header>
     <div>
-      <h1>🪙 OneBot 11 签到机器人</h1>
-      <div class="sub">Python · Flask · SQLAlchemy · SQLite ｜ 反向连接 OneBot WS 服务端</div>
+      <h1>🪙 qq-dungeon-bot · 群聊地下城养成</h1>
+      <div class="sub">Python · Flask · SQLAlchemy · SQLite ｜ QQ 官方机器人（开放平台）WebSocket 接入</div>
     </div>
     <div class="head-right">
       <span id="statusBadge" class="status-badge offline"><span class="dot"></span><span id="statusText">未连接</span></span>
@@ -116,45 +116,36 @@
     </div>
   </header>
 
-  <!-- 连接配置 -->
+  <!-- QQ 官方机器人配置 -->
   <div class="card">
-    <h2>连接配置 <span class="sub">修改后点击「保存并重连」生效</span></h2>
+    <h2>QQ 官方机器人 <span class="sub">修改后点击「保存并重连」生效</span></h2>
     <div class="grid">
       <div class="field">
-        <label>主机（Host）</label>
-        <input id="cfg_host" type="text" placeholder="127.0.0.1">
-      </div>
-      <div class="field">
-        <label>端口（Port）</label>
-        <input id="cfg_port" type="text" placeholder="6700">
-      </div>
-      <div class="field">
-        <label>路径（Path）</label>
-        <input id="cfg_path" type="text" placeholder="/">
-      </div>
-      <div class="field">
-        <label>授权 Token</label>
-        <input id="cfg_token" type="password" placeholder="可为空">
-      </div>
-      <div class="field">
-        <label>消息格式</label>
-        <select id="cfg_format">
-          <option value="array">array（数组）</option>
-          <option value="string">string（字符串）</option>
+        <label>启用官方通道</label>
+        <select id="cfg_enable">
+          <option value="true">启用</option>
+          <option value="false">关闭</option>
         </select>
       </div>
       <div class="field">
-        <label>角色（Role）</label>
-        <select id="cfg_role">
-          <option value="universal">Universal（推荐，路径 /）</option>
-          <option value="api">API（仅调用，路径 /api）</option>
-          <option value="event">Event（仅事件，路径 /event）</option>
+        <label>AppID</label>
+        <input id="cfg_appid" type="text" placeholder="开放平台 AppID">
+      </div>
+      <div class="field">
+        <label>AppSecret</label>
+        <input id="cfg_appsecret" type="password" placeholder="开放平台 AppSecret（仅存本地库）">
+      </div>
+      <div class="field">
+        <label>命令触发方式</label>
+        <select id="cfg_plain">
+          <option value="true">免斜杠（直接发「签到」）</option>
+          <option value="false">必须带 / 前缀</option>
         </select>
       </div>
     </div>
     <div class="hint">
-      提示：本程序以客户端身份连接 OneBot 的正向 WebSocket 服务端（主机:端口 + 路径）。
-      角色选择 Universal 时路径建议为 "/"（同一连接同时支持 API 调用与事件推送）。
+      提示：官方通道为**本机主动外连**（WebSocket 客户端），无需公网 IP / 开放端口 / 域名备案。
+      AppSecret 仅保存在本地数据库（onebot_bot.db，已被 .gitignore 忽略），不会提交到仓库。
     </div>
     <div class="row mt">
       <button class="btn" onclick="saveConfig()">保存并重连</button>
@@ -327,18 +318,21 @@
       const s = await api('/api/status');
       const badge = document.getElementById('statusBadge');
       const text = document.getElementById('statusText');
+      if (!s.enabled) {
+        badge.className = 'status-badge offline';
+        text.textContent = '未启用';
+        badge.title = '未配置 AppID / AppSecret，或已在配置中关闭';
+        return;
+      }
       if (s.connected) {
         badge.className = 'status-badge online';
-        text.textContent = '已连接 ' + (s.connected_at || '');
+        text.textContent = '已连接' + (s.bot ? '（' + s.bot + '）' : '');
+        badge.title = '';
       } else {
         badge.className = 'status-badge offline';
-        text.textContent = '未连接';
-        if (s.last_error) {
-          badge.title = s.last_error;
-          text.textContent = '连接失败';
-        }
+        text.textContent = '连接失败';
+        badge.title = s.last_error || '';
       }
-      document.getElementById('statusBadge').title = s.url ? ('目标: ' + s.url) : '';
     } catch (e) { /* 忽略瞬时错误 */ }
   }
 
@@ -346,12 +340,10 @@
   async function loadConfig() {
     try {
       const c = await api('/api/config');
-      document.getElementById('cfg_host').value = c.bot_host || '';
-      document.getElementById('cfg_port').value = c.bot_port || '';
-      document.getElementById('cfg_path').value = c.bot_path || '/';
-      document.getElementById('cfg_token').value = c.bot_token || '';
-      document.getElementById('cfg_format').value = c.bot_message_format || 'array';
-      document.getElementById('cfg_role').value = c.bot_role || 'universal';
+      document.getElementById('cfg_enable').value = String(c.qq_official_enable === true || c.qq_official_enable === 'true' ? 'true' : 'false');
+      document.getElementById('cfg_appid').value = c.qq_appid || '';
+      document.getElementById('cfg_appsecret').value = c.qq_appsecret || '';
+      document.getElementById('cfg_plain').value = String(c.plain_command_enable === true || c.plain_command_enable === 'true' ? 'true' : 'false');
       document.getElementById('rl_enable').value = String(c.rate_limit_enable === true || c.rate_limit_enable === 'true' ? 'true' : 'false');
       document.getElementById('rl_max').value = c.rate_limit_max || 15;
       document.getElementById('rl_window').value = c.rate_limit_window || 60;
@@ -372,12 +364,10 @@
   }
   async function saveConfig() {
     const cfg = {
-      bot_host: document.getElementById('cfg_host').value.trim(),
-      bot_port: document.getElementById('cfg_port').value.trim(),
-      bot_path: document.getElementById('cfg_path').value.trim() || '/',
-      bot_token: document.getElementById('cfg_token').value.trim(),
-      bot_message_format: document.getElementById('cfg_format').value,
-      bot_role: document.getElementById('cfg_role').value,
+      qq_official_enable: document.getElementById('cfg_enable').value,
+      qq_appid: document.getElementById('cfg_appid').value.trim(),
+      qq_appsecret: document.getElementById('cfg_appsecret').value.trim(),
+      plain_command_enable: document.getElementById('cfg_plain').value,
     };
     try {
       await api('/api/config', 'POST', cfg);

@@ -95,9 +95,9 @@
 
 <header>
   <h1>⚔️ 群聊冒险机器人 · 玩家 Wiki</h1>
-  <p>签到 · 武器库 · 职业/晋升 · 地下城(Boss) · 矿石 · 铁匠铺 · 稀有装备 · 对战 · 互动图像 —— 全机制与参数手册</p>
+  <p>签到 · 武器库 · 职业/晋升 · 地下城(Boss) · 矿石 · 铁匠铺 · 稀有装备 · 对战 —— 全机制与参数手册</p>
   <div class="badges">
-    <span class="badge">OneBot 11</span>
+    <span class="badge">QQ 官方机器人</span>
     <span class="badge">Flask + SQLAlchemy + SQLite</span>
     <span class="badge">命令免打斜杠</span>
     <span class="badge">WS 消息数组格式</span>
@@ -118,7 +118,6 @@
     <li><a href="#bossalchemy">Boss挑战·材料·炼金</a></li>
     <li><a href="#forge">铁匠铺</a></li>
     <li><a href="#challenge">对战系统</a></li>
-    <li><a href="#img">互动图像</a></li>
     <li><a href="#repeat">复读机制</a></li>
     <li><a href="#unknown">未知指令</a></li>
     <li><a href="#ratelimit">消息频率限制</a></li>
@@ -181,9 +180,6 @@
     <tr><td><code class="inline">使用 物品名</code></td><td>使用药水/道具</td><td>药水=属性 BUFF；道具=掉落增益</td></tr>
     <tr><td><code class="inline">转转 捐赠 <装备名> / 乞讨</code></td><td>装备互助</td><td>捐赠入公共库（他人可乞讨，锻造装除外）；乞讨随机获得一件符合自己等级的装备（tier ≤ 当前阶级/锻造 Lv 已解锁），每天 3 次</td></tr>
     <tr><td><code class="inline">祈愿 1|2|3 [次数]</code></td><td>祈愿</td><td>（v2.11.92 支持批量：第二参数为次数，默认 1、最多 10）消耗金钱抽金钱/装备/材料/矿石/道具，也有谢谢惠顾；5铜/5银/5金三档，中奖率与卡池稀有度逐档提升；<b>三档均为负期望</b>（≈0.87/0.65/0.45，档位越高亏越多，长期趋向亏损）；<b>高级货保留且高频</b>：档3 每抽 40% 出 tier4~5 装备（其中 20% 稀有大奖）、16% 传说~神话材料/矿石（空奖 38%/30%/6%）；材料与矿石按稀有度同池抽取（v2.11.89），矿石发放入矿石栏；<b>奖等</b>：🥉铜奖/🥈银奖/🥇金奖(稀有大奖/传说材料)/👑特等奖·神话材料/神话矿石</td></tr>
-    <tr><td><code class="inline">踢 @对方</code></td><td>生成踢人图</td><td>30 秒冷却</td></tr>
-    <tr><td><code class="inline">撅 @对方</code></td><td>生成撅人 GIF</td><td>30 秒冷却，2% 反撅</td></tr>
-    <tr><td><code class="inline">佬 @对方</code></td><td>生成大佬致敬图</td><td>30 秒冷却</td></tr>
     <tr><td><code class="inline">帮助</code></td><td>显示帮助</td><td>—</td></tr>
   </table>
 </section>
@@ -259,7 +255,7 @@
   <h3>进入条件与限制</h3>
   <ul>
     <li>持有<b>任意 1 件</b>装备即可进入（<code class="inline">地下城 进入</code>）。</li>
-    <li>进入后除 <code class="inline">签到</code>、<code class="inline">地下城</code>（退出/状态）、<code class="inline">余额</code>、<code class="inline">背包</code>、<code class="inline">帮助</code>、<code class="inline">踢</code>、<code class="inline">撅</code>、<code class="inline">佬</code>、<code class="inline">挑战</code>、<code class="inline">boss</code>、<code class="inline">炼金</code>、<code class="inline">使用</code>（即时结算，可在地下层内使用）外，其余动作一律拒绝。</li>
+    <li>进入后除 <code class="inline">签到</code>、<code class="inline">地下城</code>（退出/状态）、<code class="inline">余额</code>、<code class="inline">背包</code>、<code class="inline">帮助</code>、<code class="inline">挑战</code>、<code class="inline">boss</code>、<code class="inline">炼金</code>、<code class="inline">使用</code>（即时结算，可在地下层内使用）外，其余动作一律拒绝。</li>
     <li>退出时保存进度（层数 + 剩余进度），再次进入可<b>直达续上</b>。</li>
   </ul>
 
@@ -443,18 +439,6 @@
   </div>
 </section>
 
-<!-- ============ 互动图像 ============ -->
-<section id="img">
-  <h2>🖼️ 互动图像</h2>
-  <p>三个图像命令共享冷却（均为 <b>30 秒</b>，冷却中提示剩余秒数）。</p>
-  <table>
-    <tr><th>命令</th><th>产物</th><th>合成规则</th></tr>
-    <tr><td><code class="inline">踢 @B</code></td><td>单张图片</td><td>A 头像 120×120 圆形贴 (75,34)，B 头像 120×120 圆形贴 (400,98)，底图 images.jpg</td></tr>
-    <tr><td><code class="inline">撅 @B</code></td><td>3 帧 GIF</td><td>逐帧按坐标贴 A/B 头像，2% 概率位置互换（A 撅失败被 B 反撅，头像方向互换）</td></tr>
-    <tr><td><code class="inline">佬 @B</code></td><td>单张图片</td><td>A 头像 54×54 圆形贴 (91,121)，B 头像 54×54 圆形贴 (200,3)，底图 dalao.png</td></tr>
-  </table>
-  <p>被 @ 的用户显示<b>群昵称</b>（本地已记录则优先昵称，否则 QQ 号）。</p>
-</section>
 
 <!-- ============ 复读机制 ============ -->
 <section id="repeat">
@@ -475,7 +459,7 @@
   <p>对不存在的命令（<code class="inline">xxx</code>）累计计数：</p>
   <ul>
     <li>前 2 次：提示「未知指令，发送 帮助 查看可用命令」。</li>
-    <li><b>第 3 次</b>：发送 beat.jpeg 合成图（把该用户头像以 46×46 圆形裁切贴在 (23,82)），并提示不再响应。</li>
+    <li><b>第 3 次</b>：发出告警提示，不再响应其未知指令。</li>
     <li>第 4 次起：完全静默，不再响应该用户的未知指令（有效命令不受影响）。</li>
   </ul>
   <div class="note">阈值 UNKNOWN_LIMIT = 3；该计数跨会话累计。</div>
@@ -517,10 +501,8 @@
     <tr><th>层</th><th>技术</th></tr>
     <tr><td>语言 / 框架</td><td>Python + Flask</td></tr>
     <tr><td>数据库</td><td>Flask-SQLAlchemy + SQLite（onebot_bot.db）</td></tr>
-    <tr><td>协议</td><td>OneBot 11 WebSocket（消息格式：数组；角色 universal）</td></tr>
+    <tr><td>协议</td><td>QQ 官方机器人 WebSocket（api.bot.qq.com / api.sgroup.qq.com）</td></tr>
     <tr><td>管理页</td><td>Web 前端（群白名单、频率限制、用户与装备数据）</td></tr>
-    <tr><td>图片合成</td><td>Pillow（圆形裁切 / GIF 多帧 / 坐标贴图）</td></tr>
-    <tr><td>监控请求</td><td>CDP（Chrome DevTools Protocol） + curl.exe 降级</td></tr>
     <tr><td>数据文件</td><td>equipment.json / forge.json / ores.json / rare_drops.json / materials.json / bosses.json / consumables.json / alchemy_recipes.json（改数值即生效；classes.py / tiers.py 定义职业与阶级）</td></tr>
   </table>
   <h3>设计原则</h3>

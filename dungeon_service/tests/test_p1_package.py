@@ -31,7 +31,7 @@ def test_no_shell_import():
     """包内模块不得 import 外壳(循环依赖防线)。"""
     import re as _re
     pkg_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    shell_pat = _re.compile(r"^\s*(import|from)\s+(app|commands|bot|kick)\b", _re.M)
+    shell_pat = _re.compile(r"^\s*(import|from)\s+(app|commands|qq_official|logutil)\b", _re.M)
     checked = 0
     for fn in sorted(os.listdir(pkg_dir)):
         if not fn.endswith(".py") or fn in ("__init__.py", "models.py"):

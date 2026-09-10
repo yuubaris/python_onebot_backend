@@ -17,8 +17,6 @@
 
 地下城限制：进入地下城后，仅允许 /签到 与 /地下城（退出/状态），其余动作一律拒绝。
 """
-import os
-import random
 import time
 from datetime import datetime, timedelta
 
@@ -39,7 +37,6 @@ from dungeon import (
     effective_layer_total, boss_type, historical_best_layer,
     take_boss_report, rare_item_ids, find_any_item,
 )
-from kick import check_cooldown, mark_cooldown, build_kick_image, build_beat_image, build_jue_image, build_dalao_image
 import ore
 import material
 import forge
@@ -49,11 +46,8 @@ import alchemy
 import consumable
 import dungeon
 
-# 未知指令触发阈值：累计超过该次数后，发送 beat.jpeg 且不再响应该用户的未知指令
+# 未知指令触发阈值：累计超过该次数后，发出告警且不再响应该用户的未知指令
 UNKNOWN_LIMIT = 3
-# 项目根目录（用于定位 beat.jpeg）
-_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UNKNOWN_IMAGE = os.path.join(_BASE_DIR, "beat.jpeg")
 
 # 签到奖励概率（单位：铜币）：
 #   95% 概率 50~200 铜币；4% 概率 888 铜币；1% 概率 1 铜币
@@ -226,44 +220,7 @@ def cmd_help(user, group_id, args, at_qqs=None):
             "转转 捐赠 <装备名> · 乞讨 - 装备互助：捐赠入公共库，乞讨一件符合自己等级的装备（每天 3 次）\n"
             "祈愿 1|2|3 [次数] - 祈愿：消耗金钱抽装备/材料/矿石/道具/金钱（5铜/5银/5金，各档概率与稀有度不同；第二参数为次数，最多 10；原「抽奖」仍可用）\n"
             "\n"
-            "🎮 娱乐\n"
-            "踢 @对方 - 生成踢人图（30 秒冷却）\n"
-            "撅 @对方 - 生成撅人 GIF（30 秒冷却）\n"
-            "佬 @对方 - 生成大佬致敬图（30 秒冷却）\n"
             "帮助 - 显示本帮助")
-
-
-# ---------- 踢人（/踢 @对方） ----------
-
-def cmd_kick(user, group_id, args, at_qqs=None):
-    """/踢 @B：A 的头像贴在底图 (75,34)，B 的头像贴在 (400,98)，120x120，发图到群。
-
-    返回 dict（图片消息）或文本（提示）。30 秒冷却。
-    """
-    remain = check_cooldown(user.user_id)
-    if remain > 0:
-        return f"⏳ 功能冷却中，请 {int(remain) + 1} 秒后再试"
-    targets = at_qqs or []
-    if not targets:
-        return "用法：踢 @对方（例如 踢 @张三）"
-    target = targets[0]
-    if target == user.user_id:
-        return "不能踢自己"
-    # 被 @ 用户的显示名：优先本地已记录的群名片/昵称，其次 QQ 号
-    target_row = db.session.get(User, target)
-    target_name = target_row.nickname if target_row and target_row.nickname else str(target)
-    try:
-        out_path = build_kick_image(user.user_id, target)
-    except Exception as exc:
-        return f"生成图片失败：{exc}"
-    mark_cooldown(user.user_id)
-    return {
-        "type": "image",
-        "file": out_path,
-        "text": f"🦵 {user.nickname or user.user_id} 一脚把 {target_name} 踢飞了",
-        "target": target,
-        "group_id": group_id,
-    }
 
 
 # ---------- 对战（/挑战 @对方） ----------
@@ -283,74 +240,6 @@ _FINISH = [
 
 
 
-
-
-# ---------- 撅（/撅 @对方） ----------
-
-def cmd_jue(user, group_id, args, at_qqs=None):
-    """/撅 @B：多帧 GIF 合成。A 头像 120x120 圆形、B 头像 120x120 圆形逆时针旋转 90°，
-    按 3 帧序列底图逐帧贴上（每帧坐标见 kick.JUGE_POSITIONS），发 GIF 到群。30 秒冷却。
-    5% 概率 A/B 位置互换（A 撅失败被 B 反撅）。
-    """
-    remain = check_cooldown(user.user_id)
-    if remain > 0:
-        return f"⏳ 功能冷却中，请 {int(remain) + 1} 秒后再试"
-    targets = at_qqs or []
-    if not targets:
-        return "用法：撅 @对方（例如 撅 @张三）"
-    target = targets[0]
-    if target == user.user_id:
-        return "不能撅自己"
-    target_row = db.session.get(User, target)
-    target_name = target_row.nickname if target_row and target_row.nickname else str(target)
-    an = user.nickname or str(user.user_id)
-    bn = target_name
-    flip = random.random() < 0.02   # 2% 概率位置互换
-    try:
-        out_path = build_jue_image(user.user_id, target, flip=flip)
-    except Exception as exc:
-        return f"生成图片失败：{exc}"
-    mark_cooldown(user.user_id)
-    text = (f"😵 {an} 撅 {bn} 失败，被 {bn} 撅了！" if flip
-            else f"🍑 {an} 撅了 {bn}")
-    return {
-        "type": "image",
-        "file": out_path,
-        "text": text,
-        "target": target,
-        "group_id": group_id,
-    }
-
-
-# ---------- 佬（/佬 @对方） ----------
-
-def cmd_lao(user, group_id, args, at_qqs=None):
-    """/佬 @B：dalao.png 底图合成。A 头像 54x54 圆形贴 (91,121)、B 头像 54x54 圆形贴 (200,3)，
-    发图到群。30 秒冷却。
-    """
-    remain = check_cooldown(user.user_id)
-    if remain > 0:
-        return f"⏳ 功能冷却中，请 {int(remain) + 1} 秒后再试"
-    targets = at_qqs or []
-    if not targets:
-        return "用法：佬 @对方（例如 佬 @张三）"
-    target = targets[0]
-    if target == user.user_id:
-        return "不能称自己为佬"
-    target_row = db.session.get(User, target)
-    target_name = target_row.nickname if target_row and target_row.nickname else str(target)
-    try:
-        out_path = build_dalao_image(user.user_id, target)
-    except Exception as exc:
-        return f"生成图片失败：{exc}"
-    mark_cooldown(user.user_id)
-    return {
-        "type": "image",
-        "file": out_path,
-        "text": f"🤗 {user.nickname or user.user_id} 抱住了 {target_name} 的大腿",
-        "target": target,
-        "group_id": group_id,
-    }
 
 
 # ---------- Boss 挑战（/boss 列表 / 挑战 <名>） ----------
@@ -400,9 +289,6 @@ COMMANDS = {
     "地下城": cmd_dungeon, "dungeon": cmd_dungeon, "dixiacheng": cmd_dungeon,
     "铁匠铺": cmd_forge_shop, "forgeshop": cmd_forge_shop, "tiejiangpu": cmd_forge_shop,
     "锻造": cmd_forge, "forge": cmd_forge, "duanzao": cmd_forge,
-    "踢": cmd_kick, "kick": cmd_kick, "ti": cmd_kick,
-    "撅": cmd_jue, "jue": cmd_jue,
-    "佬": cmd_lao, "lao": cmd_lao,
     "挑战": cmd_challenge, "challenge": cmd_challenge, "tiaozhan": cmd_challenge,
     "boss": cmd_boss, "bosslist": cmd_boss, "b": cmd_boss,
     "炼金": cmd_alchemy, "alchemy": cmd_alchemy, "lianjin": cmd_alchemy,
@@ -422,9 +308,6 @@ DUNGEON_ALLOWED = {"签到", "checkin", "qiandao",
                    "晋升", "promote", "jinsheng",
                    "帮助", "help", "bangzhu",
                    "祈愿", "抽奖", "lottery", "choujiang", "lucky",
-                   "踢", "kick", "ti",
-                   "撅", "jue",
-                   "佬", "lao",
                    "挑战", "challenge", "tiaozhan",
                    "boss", "bosslist", "b",
                    "炼金", "alchemy", "lianjin",
@@ -474,29 +357,20 @@ def dispatch_command(text, user, group_id, at_qqs=None):
         _game.settle(user)  # GameCore 门面结算（等价原 settle_dungeon）
         if handler is None or name not in DUNGEON_ALLOWED:
             return (f"⚠️ 你正在地下城第 {user.dungeon_layer} 层中。\n"
-                    f"地下城内可使用 签到、余额、背包、祈愿、帮助、踢、撅、佬、挑战 或 地下城 退出。")
+                    f"地下城内可使用 签到、余额、背包、祈愿、帮助、挑战 或 地下城 退出。")
 
     if handler is None:
-        # 未知指令计数：达到阈值（第 3 次）发 beat.jpg+头像合成图并停止响应
+        # 未知指令计数：达到阈值（第 3 次）发出告警；此后（第 4 次起）完全静默
         user.unknown_count = (user.unknown_count or 0) + 1
         db.session.commit()
         if user.unknown_count >= UNKNOWN_LIMIT:
-            # 第 3 次（达到阈值）：发 beat+头像合成图；此后（第 4 次起）完全静默
             if user.unknown_count == UNKNOWN_LIMIT:
-                try:
-                    beat_path = build_beat_image(user.user_id)
-                except Exception:
-                    beat_path = UNKNOWN_IMAGE
-                return {
-                    "type": "image",
-                    "file": beat_path,
-                    "text": f"⚠️ {user.nickname or user.user_id} 无效指令过多，不再响应未知指令",
-                }
+                return f"⚠️ {user.nickname or user.user_id} 无效指令过多，不再响应未知指令"
             return None
         return "未知指令，发送 帮助 查看可用命令。"
 
     try:
-        # 地下城命令统一走 GameCore 门面直调；其余（签到/余额/帮助/踢/撅/佬）走本地 handler
+        # 地下城命令统一走 GameCore 门面直调；其余（签到/余额/帮助等）走本地 handler
         if name in _GAMECORE_ALIASES:
             reply = _game.run_command(name, user, group_id, args, at_qqs)
         else:

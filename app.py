@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""qq-dungeon-bot —— Flask 入口 / 管理后端（OneBot 11 与 QQ 官方双通道）。
+"""qq-dungeon-bot —— Flask 入口 / 管理后端（QQ 官方机器人通道）。
 
 启动：  python app.py
 管理页： http://127.0.0.1:5000/
@@ -13,8 +13,8 @@ from flask import Flask, render_template, request, jsonify
 
 from models import db, Config, GroupWhitelist, User, CheckinRecord, UserItem, UserOre
 from currency import format_currency
-from commands import ensure_user, ensure_qq_user, dispatch_command, normalize_command
-from bot import OneBotClient, log, get_logs
+from commands import ensure_qq_user, dispatch_command, normalize_command
+from logutil import log, get_logs
 from qq_official import QQOfficialClient
 from ratelimit import RateLimiter
 from equipment import load_equipment
@@ -24,26 +24,20 @@ from repeat import RepeatTracker
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "onebot_bot.db")
 
-# 连接配置默认值（前端可修改）
+# 配置默认值（前端可修改）
 DEFAULT_CONFIG = {
-    "bot_host": "127.0.0.1",       # OneBot 服务端主机
-    "bot_port": "6700",            # OneBot 服务端端口
-    "bot_path": "/",               # 连接路径（"/" 为 Universal）
-    "bot_token": "",               # 授权 Token（可为空）
-    "bot_message_format": "array", # 消息格式：数组
-    "bot_role": "universal",       # 连接角色：Universal
-    # 消息频率限制（按 群×用户 统计 "/" 指令）
+    # 消息频率限制（按 群×用户 统计指令）
     "rate_limit_enable": "false",  # 是否启用频率限制
     "rate_limit_max": "15",        # 统计窗口内最多消息条数
     "rate_limit_window": "60",     # 统计窗口（秒）
     "rate_limit_cooldown": "60",   # 超出限制后的提示冷却时长（秒），冷却期内静默过滤
-    # QQ 官方机器人（开放平台）接入
+    # QQ 官方机器人（开放平台）—— 唯一接入通道
     # 说明：AppSecret 为密钥，仅保存在本地数据库（onebot_bot.db，已被 .gitignore 忽略），
     #       切勿写入代码或提交到仓库；如需更换请在管理页重新填写。
-    "qq_official_enable": "false",  # 是否启用 QQ 官方机器人接入（true 时与 OneBot 可并存）
-    "qq_appid": "",                 # 官方机器人 AppID
-    "qq_appsecret": "",             # 官方机器人 AppSecret（密钥）
-    "qq_sandbox": "false",          # 是否使用沙箱环境
+    "qq_official_enable": "true",   # 是否启用官方通道
+    "qq_appid": "",                # 官方机器人 AppID
+    "qq_appsecret": "",            # 官方机器人 AppSecret（密钥）
+    "qq_sandbox": "false",         # 是否使用沙箱环境（预留，当前未实际生效）
     # 命令触发方式：true = 免斜杠（直接发「签到」即可；纯中文命令词才识别，避免误触），
     #              false = 必须带 / 前缀（/签到）
     "plain_command_enable": "true",
@@ -62,7 +56,6 @@ def create_app():
 
 
 app = create_app()
-bot = None
 limiter = RateLimiter()
 repeat_tracker = RepeatTracker()  # 复读机：2 个不同用户相同消息后复读一次
 
@@ -105,141 +98,6 @@ def save_config(new_cfg: dict):
     db.session.commit()
 
 
-# ---------- 消息解析 ----------
-def message_to_text(message):
-    """将 OneBot 消息（数组格式 / 字符串）转换为纯文本。"""
-    if isinstance(message, str):
-        return message
-    if isinstance(message, list):
-        parts = []
-        for seg in message:
-            if isinstance(seg, dict) and seg.get("type") == "text":
-                parts.append(seg.get("data", {}).get("text", ""))
-        return "".join(parts)
-    return "" if message is None else str(message)
-
-
-def extract_at_qq(message, exclude=None):
-    """从 OneBot 数组消息中提取所有被 @ 的 QQ 号（排除 @全体 与 exclude 指定的号）。"""
-    if not isinstance(message, list):
-        return []
-    result = []
-    for seg in message:
-        if isinstance(seg, dict) and seg.get("type") == "at":
-            qq = (seg.get("data") or {}).get("qq")
-            if qq and qq != "all" and qq != exclude:
-                try:
-                    result.append(int(qq))
-                except (TypeError, ValueError):
-                    pass
-    return result
-
-
-# ---------- 事件处理 ----------
-def handle_event(data):
-    try:
-        with app.app_context():
-            _handle_event_inner(data)
-    except Exception as exc:
-        log(f"事件处理异常: {exc}")
-
-
-def _handle_event_inner(data):
-    post_type = data.get("post_type")
-
-    # 元事件：生命周期/心跳
-    if post_type == "meta_event":
-        if data.get("meta_event_type") == "lifecycle":
-            log(f"生命周期事件: {data.get('sub_type')}")
-        return
-
-    # 仅处理群聊消息
-    if post_type != "message" or data.get("message_type") != "group":
-        return
-
-    group_id = data.get("group_id")
-    user_id = data.get("user_id")
-    if group_id is None or user_id is None:
-        return
-
-    # 群聊白名单校验
-    wl = db.session.execute(
-        db.select(GroupWhitelist).where(
-            GroupWhitelist.group_id == group_id,
-            GroupWhitelist.enabled.is_(True),
-        )
-    ).scalars().first()
-    if wl is None:
-        return
-
-    # 识别群聊用户身份：所有群消息都记录发送者群名片/昵称，
-    # 供 /踢 等命令显示被@用户的群昵称（优先取群名片，其次昵称）
-    sender = data.get("sender") or {}
-    nickname = sender.get("card") or sender.get("nickname") or str(user_id)
-    user = ensure_user(user_id, nickname)
-
-    # 记录最近活跃群（/地下城 排名 等按群展示的依据；仅群变化时写入，避免频繁 commit）
-    if user.group_id != group_id:
-        user.group_id = group_id
-        db.session.commit()
-
-    # 提取消息文本
-    text = message_to_text(data.get("message"))
-    cfg = load_config()
-
-    # 免斜杠模式：把「签到」这类纯中文命令词归一化为「/签到」
-    if _cfg_bool(cfg.get("plain_command_enable", "true")):
-        text = normalize_command(text)
-
-    # 非命令消息：复读机检测（2 个不同用户发相同消息后复读一次）
-    if not text or not text.lstrip().startswith("/"):
-        # 排除机器人自身消息（避免把机器人复读的消息再次计入）
-        if int(user_id) != int(data.get("self_id") or 0):
-            if repeat_tracker.check(group_id, user_id, text):
-                send_group_text(group_id, text)
-        return
-
-    # 提取消息中被 @ 的 QQ（排除 @全体 与机器人自身）
-    at_qqs = extract_at_qq(data.get("message"), exclude=data.get("self_id"))
-
-    # 消息频率限制（按 群×用户 统计；可配置）
-    if _cfg_bool(cfg.get("rate_limit_enable", "false")):
-        rl_max = _cfg_int(cfg.get("rate_limit_max"), 15)
-        rl_window = _cfg_int(cfg.get("rate_limit_window"), 60)
-        rl_cooldown = _cfg_int(cfg.get("rate_limit_cooldown"), 60)
-        allowed, rate_reply = limiter.check(
-            (group_id, user_id), rl_max, rl_window, rl_cooldown
-        )
-        if not allowed:
-            if rate_reply:
-                send_group_text(group_id, rate_reply)
-            return  # 冷却期内静默过滤，不处理、不提示
-
-    reply = dispatch_command(text, user, group_id, at_qqs=at_qqs)
-    if reply:
-        if isinstance(reply, dict) and reply.get("type") == "image":
-            send_group_image(group_id, reply["file"], reply.get("text"))
-            # 异步刷新被@用户的群名片到本地（便于后续 /踢 显示群昵称）
-            if reply.get("target") and reply.get("group_id"):
-                refresh_member_card_async(reply["group_id"], reply["target"])
-        elif isinstance(reply, dict) and reply.get("type") == "challenge_show":
-            _send_challenge_show(reply)
-        else:
-            send_group_text(group_id, reply)
-
-
-def _send_challenge_show(reply):
-    """对战演出：后台线程逐条发送 3 条消息，每条间隔 delay 秒（不阻塞事件处理）。"""
-    def worker():
-        msgs = reply.get("msgs") or []
-        delay = float(reply.get("delay") or 2)
-        for i, m in enumerate(msgs):
-            send_group_text(reply["group_id"], m)
-            if i < len(msgs) - 1:
-                time.sleep(delay)
-    threading.Thread(target=worker, daemon=True).start()
-
-
 # ---------- QQ 官方机器人通道 ----------
 qqbot = None  # 全局：QQ 官方客户端（qq_official_enable=true 时启动；与 OneBot 可并存）
 
@@ -260,16 +118,41 @@ def send_qq_text(group_openid, text, msg_id=None, msg_seq=1):
     return qqbot.reply_group(group_openid, text, msg_id=msg_id, msg_seq=msg_seq)
 
 
-def handle_qq_group_message(group_openid, user_openid, text, msg_id, nickname=""):
+def handle_qq_group_message(group_openid, user_openid, text, msg_id, nickname="", mentions=None):
     """QQ 官方群消息入口（由官方客户端线程回调）。"""
     try:
         with app.app_context():
-            _handle_qq_group_message_inner(group_openid, user_openid, text, msg_id, nickname)
+            _handle_qq_group_message_inner(
+                group_openid, user_openid, text, msg_id, nickname, mentions
+            )
     except Exception as exc:
         log(f"[QQ官方] 消息处理异常: {exc}")
 
 
-def _handle_qq_group_message_inner(group_openid, user_openid, text, msg_id, nickname):
+def _qq_at_user_ids(mentions):
+    """把官方消息 mentions 中的被 @ 用户（openid）映射为本地 user_id 列表。
+
+    跳过机器人自身与 @全体；被 @ 但从未在群里发过言的用户没有本地账号，
+    无法参与对战（与旧通道「对方未注册无法挑战」口径一致）。
+    """
+    ids = []
+    for m in mentions or []:
+        if not isinstance(m, dict):
+            continue
+        if m.get("bot") or m.get("is_you"):
+            continue
+        oid = m.get("id") or m.get("member_openid")
+        if not oid:
+            continue
+        u = db.session.execute(
+            db.select(User).where(User.openid == oid)
+        ).scalars().first()
+        if u is not None and u.user_id not in ids:
+            ids.append(u.user_id)
+    return ids
+
+
+def _handle_qq_group_message_inner(group_openid, user_openid, text, msg_id, nickname, mentions=None):
     if not group_openid or not user_openid:
         return
     gid = _qq_group_int(group_openid)
@@ -291,16 +174,19 @@ def _handle_qq_group_message_inner(group_openid, user_openid, text, msg_id, nick
         user.group_id = gid
         db.session.commit()
 
-    # 官方通道只响应命令（不做复读）
     cfg = load_config()
 
     # 免斜杠模式：把「签到」这类纯中文命令词归一化为「/签到」
     if _cfg_bool(cfg.get("plain_command_enable", "true")):
         text = normalize_command(text)
+
+    # 非命令消息：复读机（群内两个不同用户发相同消息后复读一次）
     if not text or not text.startswith("/"):
+        if repeat_tracker.check(gid, user_openid, text):
+            send_qq_text(group_openid, text, msg_id=msg_id)
         return
 
-    # 频率限制（与 OneBot 共用同一套配置）
+    # 频率限制
     if _cfg_bool(cfg.get("rate_limit_enable", "false")):
         rl_max = _cfg_int(cfg.get("rate_limit_max"), 15)
         rl_window = _cfg_int(cfg.get("rate_limit_window"), 60)
@@ -311,67 +197,25 @@ def _handle_qq_group_message_inner(group_openid, user_openid, text, msg_id, nick
                 send_qq_text(group_openid, rate_reply, msg_id=msg_id)
             return  # 冷却期内静默过滤
 
-    reply = dispatch_command(text, user, gid, at_qqs=None)
+    # 被 @ 的用户（openid → 本地 user_id），供「挑战 @对方」等玩法使用
+    at_qqs = _qq_at_user_ids(mentions)
+
+    reply = dispatch_command(text, user, gid, at_qqs=at_qqs)
     if not reply:
         return
 
-    if isinstance(reply, dict) and reply.get("type") == "image":
-        # 官方通道尚未接入富媒体上传：降级为文本（保留文案）
-        send_qq_text(group_openid, reply.get("text") or "[图片]", msg_id=msg_id)
-    elif isinstance(reply, dict) and reply.get("type") == "challenge_show":
+    if isinstance(reply, dict) and reply.get("type") == "challenge_show":
         msgs = reply.get("msgs") or []
         delay = float(reply.get("delay") or 2)
         for i, m in enumerate(msgs):
             send_qq_text(group_openid, m, msg_id=msg_id, msg_seq=i + 1)
             if i < len(msgs) - 1:
                 time.sleep(delay)
+    elif isinstance(reply, dict) and reply.get("type") == "image":
+        # 兜底：理论上已无图片类命令
+        send_qq_text(group_openid, reply.get("text") or "", msg_id=msg_id)
     else:
         send_qq_text(group_openid, reply, msg_id=msg_id)
-
-
-def send_group_text(group_id, text):
-    """以数组格式发送群消息。"""
-    message = [{"type": "text", "data": {"text": text}}]
-    bot.send_action("send_group_msg", {"group_id": group_id, "message": message})
-
-
-def send_group_image(group_id, file_path, text=None):
-    """以数组格式发送群消息：可选文本 + 本地图片（file:/// 绝对路径）。"""
-    segments = []
-    if text:
-        segments.append({"type": "text", "data": {"text": text}})
-    file_uri = "file:///" + os.path.abspath(file_path).replace("\\", "/")
-    segments.append({"type": "image", "data": {"file": file_uri}})
-    bot.send_action("send_group_msg", {"group_id": group_id, "message": segments})
-
-
-def refresh_member_card_async(group_id, user_id):
-    """异步查询群成员名片并写入本地库（fire-and-forget，不阻塞命令处理）。
-
-    由于 OneBot WS 为单线程回调，命令处理中无法同步等待 API 结果；
-    这里只发送请求，结果在回调（bot 线程空闲时）中写入数据库。
-    """
-    def cb(data):
-        try:
-            info = data.get("data") or {}
-            card = info.get("card") or info.get("nickname")
-            if not card:
-                return
-            with app.app_context():
-                u = db.session.get(User, user_id)
-                if u and u.nickname != card:
-                    u.nickname = card
-                    db.session.commit()
-        except Exception:
-            pass
-
-    if bot is None:
-        return
-    try:
-        bot.send_action("get_group_member_info",
-                        {"group_id": group_id, "user_id": user_id}, callback=cb)
-    except Exception:
-        pass
 
 
 # ---------- 页面 ----------
@@ -383,13 +227,10 @@ def index():
 # ---------- 状态 / 配置 ----------
 @app.route("/api/status")
 def api_status():
-    return jsonify({
-        "connected": bot.status.get("connected", False),
-        "url": bot.status.get("url", ""),
-        "connected_at": bot.status.get("connected_at"),
-        "last_event_at": bot.status.get("last_event_at"),
-        "last_error": bot.status.get("last_error", ""),
-    })
+    """接入状态（QQ 官方通道）。"""
+    if qqbot is None:
+        return jsonify({"enabled": False, "connected": False})
+    return jsonify({"enabled": True, **dict(qqbot.status)})
 
 
 @app.route("/api/config", methods=["GET", "POST"])
@@ -563,7 +404,6 @@ def api_logs():
 
 @app.route("/api/bot/restart", methods=["POST"])
 def api_bot_restart():
-    bot.restart()
     if qqbot is not None:
         qqbot.stop()
         qqbot.start()
@@ -572,7 +412,6 @@ def api_bot_restart():
 
 @app.route("/api/bot/stop", methods=["POST"])
 def api_bot_stop():
-    bot.stop()
     if qqbot is not None:
         qqbot.stop()
     return jsonify({"ok": True})
@@ -580,7 +419,6 @@ def api_bot_stop():
 
 @app.route("/api/bot/start", methods=["POST"])
 def api_bot_start():
-    bot.start()
     if qqbot is not None:
         qqbot.start()
     return jsonify({"ok": True})
@@ -668,10 +506,13 @@ def _migrate_schema():
 with app.app_context():
     db.create_all()
     _migrate_schema()
-    bot = OneBotClient(get_config=load_config, on_event=handle_event)
-    bot.start()
-    # QQ 官方机器人通道（可选：配置 qq_official_enable=true 后启用，与 OneBot 并存）
-    if _cfg_bool(load_config().get("qq_official_enable", "false")):
+    # QQ 官方机器人通道（唯一接入通道）
+    _startup_cfg = load_config()
+    if not _cfg_bool(_startup_cfg.get("qq_official_enable", "true")):
+        log("[QQ官方] 接入已在配置中关闭（qq_official_enable=false）")
+    elif not (_startup_cfg.get("qq_appid") and _startup_cfg.get("qq_appsecret")):
+        log("[QQ官方] 未配置 AppID / AppSecret，未启动机器人（请在管理页填写后重启）")
+    else:
         qqbot = QQOfficialClient(
             get_config=load_config,
             on_group_message=handle_qq_group_message,

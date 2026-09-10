@@ -74,10 +74,10 @@ def test_help_grouped_dungeon(app):
     from commands import cmd_help
     out = cmd_help(None, 12345, "")
     assert "⚔️ 地下城（冒险）" in out
-    assert "🎮 娱乐" in out
     # 地下城组包含签到/余额（命令已免斜杠，行首不再带 /）
     assert out.index("⚔️ 地下城（冒险）") < out.index("\n签到 - ")
-    assert out.index("\n签到 - ") < out.index("🎮 娱乐")
+    # 「娱乐」分组（踢/撅/佬）已随 OneBot 通道一并移除，帮助末尾直接是「帮助」
+    assert "\n帮助 - 显示本帮助" in out
 
 
 def test_dispatch_boss_report_only_on_dungeon(app):

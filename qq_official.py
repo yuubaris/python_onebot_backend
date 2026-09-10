@@ -326,8 +326,11 @@ class QQOfficialClient:
             nickname = author.get("username") or ""
             text = strip_at(data.get("content", ""))
             msg_id = data.get("id", "")
+            mentions = data.get("mentions") or []
             try:
-                self.on_group_message(group_openid, user_openid, text, msg_id, nickname)
+                self.on_group_message(
+                    group_openid, user_openid, text, msg_id, nickname, mentions
+                )
             except Exception as e:
                 self._log(f"处理群消息异常：{e}")
             return
@@ -352,7 +355,7 @@ if __name__ == "__main__":
     cfg = {"qq_appid": os.environ.get("QQ_APPID", ""),
            "qq_appsecret": os.environ.get("QQ_APPSECRET", "")}
 
-    def on_msg(group, user, text, msg_id, nickname=""):
+    def on_msg(group, user, text, msg_id, nickname="", mentions=None):
         _log(f"收到群消息 group={group} user={user} nickname={nickname} text={text!r}")
         if text.strip() in ("/ping", "ping"):
             client.reply_group(group, "pong（来自 QQ 官方机器人）", msg_id=msg_id)

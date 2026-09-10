@@ -70,7 +70,7 @@ class User(db.Model):
     # 对战（/挑战）：每日发起次数限制（3 次/天，按日期重置）
     challenge_date = db.Column(db.String(10), default="", nullable=False)   # YYYY-MM-DD
     challenge_count = db.Column(db.Integer, default=0, nullable=False)      # 当日已发起次数
-    # 未知指令计数（累计）：超过 3 次后发 beat.jpeg 并停止响应其未知指令
+    # 未知指令计数（累计）：超过阈值后发出告警并停止响应其未知指令
     unknown_count = db.Column(db.Integer, default=0, nullable=False)
     # 最近活跃群（v2.11.68）：/地下城 排名 按群展示的依据；0=尚未归群（多群活跃时漂移为最近说话群）
     group_id = db.Column(db.BigInteger, default=0, nullable=False)
