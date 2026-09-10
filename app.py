@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""OneBot 11 签到机器人 —— Flask 入口 / 管理后端。
+"""qq-dungeon-bot —— Flask 入口 / 管理后端（OneBot 11 与 QQ 官方双通道）。
 
 启动：  python app.py
 管理页： http://127.0.0.1:5000/

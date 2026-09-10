@@ -92,7 +92,7 @@ boss.py    boss_gear.py  forge.py  classes.py  tiers.py  equipment.py  skills.py
 
 ```
 ┌────────────────────────────────────────────┐
-│             单进程 python_onebot_backend     │
+│             单进程 qq-dungeon-bot            │
 │                                            │
 │  消息端壳（现状）          游戏域（准新仓库）    │
 │  bot.py / app.py     ┌─── dungeon_service/  │
@@ -116,7 +116,7 @@ boss.py    boss_gear.py  forge.py  classes.py  tiers.py  equipment.py  skills.py
 评审决定 3-b：**不新建 GitHub 仓库，但在分支内把游戏服务组织成「准新仓库」**，将来可整体拎出。
 
 ```
-python_onebot_backend/
+qq-dungeon-bot/
 ├── bot.py / app.py / commands.py / kick.py / …   # 消息端壳（现状，仅命令层改委托）
 ├── dungeon_service/                              # ★ 准新仓库（游戏域，单进程内运行）
 │   ├── game_core.py       # GameCore 门面：唯一对外接口（结算/命令/事件）

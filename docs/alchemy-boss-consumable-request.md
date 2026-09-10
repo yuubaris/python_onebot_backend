@@ -34,7 +34,7 @@
 > `/地下城 状态` 展示生效中的药水（名称+效果+剩余层数）与道具（名称+增益+剩余时间），到期自动清理。
 > **✅ 落地补充（v2.11.10）**：**理顺资格边界**——传说/神话概率函数 `<=150` 改 `<150`，
 > 150 层起即有基础值（传说 2%/神话 0.1%），与资格入口（≥150）一致，消除"恰好 150 层无传说/神话"的错位。
-> 范围：`python_onebot_backend`（QQ 群签到/地下城/装备机器人）
+> 范围：`qq-dungeon-bot`（QQ 群签到/地下城/装备机器人）
 > 关联：`docs/equipment-system-redo-plan.md`、`docs/dungeon-boss-plan.md`、`docs/tier-forge-title-rework-request.md`。
 > 涉及新增命令：**`/boss`、`/炼金`、`/使用`**。
 

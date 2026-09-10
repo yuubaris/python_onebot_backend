@@ -241,7 +241,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=youruser
-WorkingDirectory=/home/youruser/python_onebot_backend
+WorkingDirectory=/home/youruser/qq-dungeon-bot
 ExecStart=/usr/bin/python3 app.py
 Restart=always
 RestartSec=5
@@ -273,7 +273,7 @@ AppID / AppSecret **不写在代码里**，存在数据库 `config` 表（`onebo
 写入方式（先启动一次让程序 `db.create_all()` 建好 `config` 表，或确认表已存在）：
 
 ```bash
-cd /home/youruser/python_onebot_backend
+cd /home/youruser/qq-dungeon-bot
 python3 - <<'PY'
 import sqlite3
 c = sqlite3.connect('onebot_bot.db')

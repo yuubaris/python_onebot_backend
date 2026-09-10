@@ -1,9 +1,13 @@
-# OneBot 11 签到机器人（Python + Flask + SQLAlchemy + SQLite）
+# qq-dungeon-bot · QQ 群地下城养成机器人
 
-一个由 Flask 驱动的 QQ 群机器人：通过 WebSocket 连接 OneBot 11 服务端，具备前端管理页面，
-支持配置群聊白名单、识别群聊用户身份，并处理以 `/` 开头的指令。
+基于 **Python + Flask + SQLAlchemy + SQLite** 的 QQ 群养成交互机器人：签到、地下城挂机、
+装备锻造、炼金、Boss 挑战与玩家对战。支持 **OneBot 11** 与 **QQ 官方机器人（开放平台）**
+双通道接入（共用同一套玩法与数据库），自带 Web 管理页。
+
+> 📖 QQ 官方机器人接入与部署：见 [docs/qq-official-robot-integration.md](./docs/qq-official-robot-integration.md)
+
 内置 `/签到`、`/武器库`、`/购买`、`/出售`、`/转职`、`/晋升`、`/地下城`、`/铁匠铺`、`/锻造`、
-`/挑战`、`/踢`、`/撅`、`/佬` 等指令与多级货币体系、职业/晋升/稀有装备、矿石与锻造玩法、
+`/挑战`、`/踢`、`/撅`、`/佬` 等指令，含多级货币体系、职业/晋升/稀有装备、矿石与锻造玩法、
 B 站直播/动态监控。
 
 
@@ -297,7 +301,7 @@ B 站直播/动态监控。
 ## 目录结构
 
 ```
-python_onebot_backend/
+qq-dungeon-bot/
 ├── app.py               # Flask 入口 / REST API / 事件处理
 ├── bot.py               # OneBot 正向 WebSocket 客户端（自动重连）
 ├── commands.py          # 命令分发与全部玩法实现（签到/武具/地下城/锻造/挑战/踢撅佬）
@@ -339,7 +343,7 @@ python_onebot_backend/
 ## 安装与启动
 
 ```bash
-cd python_onebot_backend
+cd qq-dungeon-bot
 python -m venv venv
 # Windows:
 venv\Scripts\activate
