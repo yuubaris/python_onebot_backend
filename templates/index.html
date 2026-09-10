@@ -196,83 +196,6 @@
     </div>
   </div>
 
-  <!-- 直播间监控 -->
-  <div class="card">
-    <h2>直播间监控 <span class="sub">B 站开播/下播推送：轮询 API（60 秒），一个群最多绑定 1 个直播间</span></h2>
-    <div class="row">
-      <div class="field" style="flex:1;min-width:150px;">
-        <label>群号</label>
-        <input id="lm_group" type="text" placeholder="例如 123456789">
-      </div>
-      <div class="field" style="flex:1;min-width:120px;">
-        <label>B 站房间号</label>
-        <input id="lm_room" type="text" placeholder="例如 5440">
-      </div>
-      <div class="field" style="flex:1;min-width:150px;">
-        <label>备注/主播名（可选）</label>
-        <input id="lm_remark" type="text" placeholder="例如 某某主播">
-      </div>
-      <button class="btn" onclick="addLivemon()">添加监控</button>
-      <button class="btn secondary" onclick="checkLivemon()">立即检测</button>
-    </div>
-    <div class="hint">
-      仅 <b>直播中（live_status=1）</b> 视为开播；轮播状态不视为开播。开播推送：标题/主播/开播时间/链接；
-      下播推送：标题/主播。首次添加只记录状态不通知。
-    </div>
-    <div class="mt">
-      <table>
-        <thead><tr><th>ID</th><th>群号</th><th>房间号</th><th>备注</th><th>状态</th><th>最近检测</th><th style="width:190px">操作</th></tr></thead>
-        <tbody id="livemonBody"><tr><td colspan="7" class="empty">加载中…</td></tr></tbody>
-      </table>
-    </div>
-    <div class="mt">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-size:13px;color:var(--muted)">监控日志（轮询/开播/下播/操作记录）</span>
-        <button class="btn secondary" style="padding:3px 10px;font-size:12px" onclick="loadLivemonLogs()">刷新日志</button>
-      </div>
-      <div class="log-box" id="livemonLogBox" style="height:160px"><div>暂无监控日志</div></div>
-    </div>
-  </div>
-
-  <!-- UP 主动态监控 -->
-  <div class="card">
-    <h2>动态监控 <span class="sub">B 站 UP 主新动态推送：队列式轮询，每项间隔 3 分钟，一个群可绑多个 UP 主</span></h2>
-    <div class="row">
-      <div class="field" style="flex:1;min-width:150px;">
-        <label>群号</label>
-        <input id="dm_group" type="text" placeholder="例如 123456789">
-      </div>
-      <div class="field" style="flex:1;min-width:120px;">
-        <label>UP 主 UID</label>
-        <input id="dm_uid" type="text" placeholder="例如 293793435">
-      </div>
-      <div class="field" style="flex:1;min-width:150px;">
-        <label>备注/UP主名（可选）</label>
-        <input id="dm_remark" type="text" placeholder="例如 某某UP主">
-      </div>
-      <button class="btn" onclick="addDynamon()">添加监控</button>
-      <button class="btn secondary" onclick="checkDynamon()">立即检测</button>
-    </div>
-    <div class="hint">
-      队列式串行轮询：多个 UP 主时逐个轮询、每项间隔 3 分钟（如 A→3分→B→3分→A…），
-      仅 1 个 UP 主时每 3 分钟一次，拉大间隔规避 B 站风控。检测到新动态推送：UP 主 / 类型 / 内容 / 时间 / 链接。
-      首次添加只记录最新动态不通知，避免误报历史动态。
-    </div>
-    <div class="mt">
-      <table>
-        <thead><tr><th>ID</th><th>群号</th><th>UP主UID</th><th>备注</th><th>最近动态ID</th><th>最近检测</th><th style="width:190px">操作</th></tr></thead>
-        <tbody id="dynamonBody"><tr><td colspan="7" class="empty">加载中…</td></tr></tbody>
-      </table>
-    </div>
-    <div class="mt">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-size:13px;color:var(--muted)">动态监控日志（轮询/新动态/操作记录）</span>
-        <button class="btn secondary" style="padding:3px 10px;font-size:12px" onclick="loadDynamonLogs()">刷新日志</button>
-      </div>
-      <div class="log-box" id="dynamonLogBox" style="height:160px"><div>暂无动态监控日志</div></div>
-    </div>
-  </div>
-
   <!-- 群聊白名单 -->
   <div class="card">
     <h2>群聊白名单 <span class="sub">仅白名单内群聊的 "/" 指令会被处理</span></h2>
@@ -587,125 +510,6 @@
     } catch (e) { toast('加载地下城失败: ' + e.message); }
   }
 
-  // ---------- 直播间监控 ----------
-  const LM_STATUS = { 0: '未开播', 1: '直播中', 2: '轮播中', null: '待检测' };
-  async function loadLivemon() {
-    try {
-      const rows = await api('/api/livemon');
-      const tb = document.getElementById('livemonBody');
-      if (!rows.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">暂无监控的直播间，请在下方添加</td></tr>'; return; }
-      tb.innerHTML = rows.map(m => `
-        <tr>
-          <td>${m.id}</td>
-          <td>${esc(m.group_id)}</td>
-          <td>${esc(m.room_id)}</td>
-          <td>${esc(m.remark) || '—'}</td>
-          <td><span class="pill ${m.last_status === 1 ? 'on' : 'off'}">${LM_STATUS[m.last_status] ?? '未知'}</span></td>
-          <td>${esc(m.last_check_at) || '—'}</td>
-          <td>
-            <button class="btn secondary" style="padding:4px 10px;font-size:12px" onclick="toggleLivemon(${m.id})">${m.enabled ? '停用' : '启用'}</button>
-            <button class="btn danger" style="padding:4px 10px;font-size:12px" onclick="removeLivemon(${m.id})">删除</button>
-          </td>
-        </tr>`).join('');
-    } catch (e) { toast('加载直播监控失败: ' + e.message); }
-  }
-  async function addLivemon() {
-    const group_id = document.getElementById('lm_group').value.trim();
-    const room_id = document.getElementById('lm_room').value.trim();
-    const remark = document.getElementById('lm_remark').value.trim();
-    if (!group_id || !room_id) { toast('请填写群号与房间号'); return; }
-    try {
-      await api('/api/livemon', 'POST', { group_id, room_id, remark });
-      document.getElementById('lm_group').value = '';
-      document.getElementById('lm_room').value = '';
-      document.getElementById('lm_remark').value = '';
-      toast('已添加直播监控');
-      loadLivemon();
-    } catch (e) { toast('添加失败: ' + e.message); }
-  }
-  async function toggleLivemon(mid) {
-    try { await api('/api/livemon/' + mid + '/toggle', 'POST'); loadLivemon(); }
-    catch (e) { toast('操作失败: ' + e.message); }
-  }
-  async function removeLivemon(mid) {
-    if (!confirm('确认删除该直播监控？')) return;
-    try { await api('/api/livemon/' + mid, 'DELETE'); toast('已删除'); loadLivemon(); }
-    catch (e) { toast('删除失败: ' + e.message); }
-  }
-  async function checkLivemon() {
-    try { await api('/api/livemon/check', 'POST'); toast('已触发检测'); loadLivemon(); loadLivemonLogs(); }
-    catch (e) { toast('检测失败: ' + e.message); }
-  }
-  async function loadLivemonLogs() {
-    try {
-      const d = await api('/api/livemon/logs');
-      const box = document.getElementById('livemonLogBox');
-      box.innerHTML = d.logs.length
-        ? d.logs.map(l => '<div>' + esc(l) + '</div>').join('')
-        : '<div>暂无监控日志</div>';
-      box.scrollTop = box.scrollHeight;
-    } catch (e) { /* 忽略瞬时错误 */ }
-  }
-
-  // ---------- UP 主动态监控 ----------
-  async function loadDynamon() {
-    try {
-      const rows = await api('/api/dynamon');
-      const tb = document.getElementById('dynamonBody');
-      if (!rows.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">暂无监控的 UP 主，请在下方添加</td></tr>'; return; }
-      tb.innerHTML = rows.map(m => `
-        <tr>
-          <td>${m.id}</td>
-          <td>${esc(m.group_id)}</td>
-          <td>${esc(m.uid)}</td>
-          <td>${esc(m.remark) || '—'}</td>
-          <td style="font-size:12px">${esc(m.last_dynamic_id) || '—'}</td>
-          <td>${esc(m.last_check_at) || '—'}</td>
-          <td>
-            <button class="btn secondary" style="padding:4px 10px;font-size:12px" onclick="toggleDynamon(${m.id})">${m.enabled ? '停用' : '启用'}</button>
-            <button class="btn danger" style="padding:4px 10px;font-size:12px" onclick="removeDynamon(${m.id})">删除</button>
-          </td>
-        </tr>`).join('');
-    } catch (e) { toast('加载动态监控失败: ' + e.message); }
-  }
-  async function addDynamon() {
-    const group_id = document.getElementById('dm_group').value.trim();
-    const uid = document.getElementById('dm_uid').value.trim();
-    const remark = document.getElementById('dm_remark').value.trim();
-    if (!group_id || !uid) { toast('请填写群号与 UP 主 UID'); return; }
-    try {
-      await api('/api/dynamon', 'POST', { group_id, uid, remark });
-      document.getElementById('dm_group').value = '';
-      document.getElementById('dm_uid').value = '';
-      document.getElementById('dm_remark').value = '';
-      toast('已添加动态监控');
-      loadDynamon();
-    } catch (e) { toast('添加失败: ' + e.message); }
-  }
-  async function toggleDynamon(mid) {
-    try { await api('/api/dynamon/' + mid + '/toggle', 'POST'); loadDynamon(); }
-    catch (e) { toast('操作失败: ' + e.message); }
-  }
-  async function removeDynamon(mid) {
-    if (!confirm('确认删除该动态监控？')) return;
-    try { await api('/api/dynamon/' + mid, 'DELETE'); toast('已删除'); loadDynamon(); }
-    catch (e) { toast('删除失败: ' + e.message); }
-  }
-  async function checkDynamon() {
-    try { await api('/api/dynamon/check', 'POST'); toast('已触发检测'); loadDynamon(); loadDynamonLogs(); }
-    catch (e) { toast('检测失败: ' + e.message); }
-  }
-  async function loadDynamonLogs() {
-    try {
-      const d = await api('/api/dynamon/logs');
-      const box = document.getElementById('dynamonLogBox');
-      box.innerHTML = d.logs.length
-        ? d.logs.map(l => '<div>' + esc(l) + '</div>').join('')
-        : '<div>暂无动态监控日志</div>';
-      box.scrollTop = box.scrollHeight;
-    } catch (e) { /* 忽略瞬时错误 */ }
-  }
-
   // ---------- 日志 ----------
   async function loadLogs() {
     try {
@@ -733,12 +537,10 @@
   }
 
   // ---------- 初始化 ----------
-  loadConfig(); loadStatus(); loadGroups(); loadUsers(); loadRecords(); loadEquipment(); loadDungeon(); loadLivemon(); loadLivemonLogs(); loadDynamon(); loadDynamonLogs(); loadLogs();
+  loadConfig(); loadStatus(); loadGroups(); loadUsers(); loadRecords(); loadEquipment(); loadDungeon(); loadLogs();
   setInterval(loadStatus, 3000);
   setInterval(loadLogs, 3000);
-  setInterval(loadLivemonLogs, 3000);
-  setInterval(loadDynamonLogs, 3000);
-  setInterval(() => { loadGroups(); loadUsers(); loadRecords(); loadEquipment(); loadDungeon(); loadLivemon(); loadDynamon(); }, 10000);
+  setInterval(() => { loadGroups(); loadUsers(); loadRecords(); loadEquipment(); loadDungeon(); }, 10000);
 </script>
 </body>
 </html>

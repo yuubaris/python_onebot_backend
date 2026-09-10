@@ -122,8 +122,6 @@
     <li><a href="#repeat">复读机制</a></li>
     <li><a href="#unknown">未知指令</a></li>
     <li><a href="#ratelimit">消息频率限制</a></li>
-    <li><a href="#livemon">B站直播间监控</a></li>
-    <li><a href="#dynmon">B站动态监控</a></li>
     <li><a href="#arch">技术架构</a></li>
   </ol>
 </nav>
@@ -497,8 +495,8 @@
   <p>超出限制：回复「发送消息过快，请在 X 秒后再试」并进入冷却期；<b>冷却期内再收到消息被静默过滤</b>（不再提示、不处理），冷却结束后重新计时。</p>
 </section>
 
-<!-- ============ 直播间监控 ============ -->
-<section id="livemon">
+<!-- ============ 地下城剥离 ============ -->
+<section id="dungeon-extract">
 
   <h2>🏗️ 地下城剥离（refactor/dungeon-extract）</h2>
   <p>地下城功能已剥离为独立准新仓库 <code>dungeon_service/</code>（0 import 外壳，单进程运行，不做双进程）：</p>
@@ -510,43 +508,6 @@
       <code>python3 -m pytest dungeon_service/tests/ -q</code>；</li>
     <li>玩家可见行为零变化；未来拆独立进程按 <code>docs/dungeon-extract-plan.md</code> §4.3 HTTP 契约起 server.py。</li>
   </ul>
-  <h2>🔴 B站直播间监控</h2>
-  <p>绑定群号监控直播间开播/下播，可在管理页配置启用/禁用。</p>
-  <table>
-    <tr><th>项</th><th>值</th></tr>
-    <tr><td>轮询间隔</td><td>60 秒</td></tr>
-    <tr><td>接口</td><td>批量 getRoomBaseInfo（一次查询全部）</td></tr>
-    <tr><td>直播判定</td><td>live_status == 1 才算直播中（<b>轮播 2 不算开播</b>）</td></tr>
-    <tr><td>绑定约束</td><td>一个群最多绑 1 个直播间；一个直播间可绑多个群（1 对多）</td></tr>
-    <tr><td>规模预估</td><td>不超过 3 个</td></tr>
-  </table>
-  <h3>推送内容</h3>
-  <ul>
-    <li><b>开播</b>（0/2 → 1）：直播间标题 / 主播名 / 开播时间 / 直播间链接</li>
-    <li><b>下播</b>（1 → 0/2）：直播间标题 / 主播名</li>
-    <li>首次监控只记录状态不通知；接口异常本轮跳过不误报</li>
-  </ul>
-</section>
-
-<!-- ============ 动态监控 ============ -->
-<section id="dynmon">
-  <h2>📢 B站动态监控</h2>
-  <p>绑定群号监控 UP 主新动态并推送（支持图文动态带图）。</p>
-  <table>
-    <tr><th>项</th><th>值</th></tr>
-    <tr><td>轮询方式</td><td>队列式串行轮询，每轮询完一个 UP 等 200 秒再轮询下一个（单 UP 间隔 200s；N 个 UP 每个约 N×200s）</td></tr>
-    <tr><td>请求层</td><td>CDP 真实 Edge 浏览器优先（复用登录态），失败自动降级 curl.exe</td></tr>
-    <tr><td>接口</td><td>空间动态列表 web-dynamic/v1/feed/space</td></tr>
-    <tr><td>去重</td><td>记录最新动态 id，只推送更新的动态</td></tr>
-    <tr><td>置顶处理</td><td>按 pub_ts 真实发布时间倒序，避免置顶动态挡住新动态</td></tr>
-  </table>
-  <h3>推送内容</h3>
-  <ul>
-    <li>UP 主名 / 动态类型 / 内容 / 发布时间 / 动态链接</li>
-    <li>图文动态：文字 + 图片（下载到本地后以 file:// 发送）</li>
-    <li>首次监控只记录最新动态 id、不通知（避免误报历史动态）</li>
-  </ul>
-  <div class="note">风控处理：命中 B 站风控（-352/-412/非 JSON）进入 300s 冷却，静默跳过，避免被拉黑。</div>
 </section>
 
 <!-- ============ 技术架构 ============ -->
@@ -557,7 +518,7 @@
     <tr><td>语言 / 框架</td><td>Python + Flask</td></tr>
     <tr><td>数据库</td><td>Flask-SQLAlchemy + SQLite（onebot_bot.db）</td></tr>
     <tr><td>协议</td><td>OneBot 11 WebSocket（消息格式：数组；角色 universal）</td></tr>
-    <tr><td>管理页</td><td>Web 前端（群白名单、频率限制、直播/动态监控配置与日志）</td></tr>
+    <tr><td>管理页</td><td>Web 前端（群白名单、频率限制、用户与装备数据）</td></tr>
     <tr><td>图片合成</td><td>Pillow（圆形裁切 / GIF 多帧 / 坐标贴图）</td></tr>
     <tr><td>监控请求</td><td>CDP（Chrome DevTools Protocol） + curl.exe 降级</td></tr>
     <tr><td>数据文件</td><td>equipment.json / forge.json / ores.json / rare_drops.json / materials.json / bosses.json / consumables.json / alchemy_recipes.json（改数值即生效；classes.py / tiers.py 定义职业与阶级）</td></tr>

@@ -110,40 +110,8 @@ class UserOre(db.Model):
     count = db.Column(db.Integer, default=0, nullable=False)
 
 
-class LiveMonitor(db.Model):
-    """B 站直播间监控项（绑定群号，开播/下播推送到群）。
-
-    约束：一个群最多绑定 1 个直播间；一个直播间可绑定多个群（1 对多）。
-    """
-    __tablename__ = "live_monitor"
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    room_id = db.Column(db.Integer, index=True, nullable=False)      # B 站直播间号（短号/真实号皆可）
-    remark = db.Column(db.String(128), default="")                   # 备注（主播名等，可选）
-    group_id = db.Column(db.BigInteger, index=True, nullable=False)  # 绑定的群号
-    enabled = db.Column(db.Boolean, default=True, nullable=False)    # 是否启用监控
-    last_status = db.Column(db.Integer, nullable=True)               # 最近一次轮询的 live_status(0/1/2)
-    last_check_at = db.Column(db.DateTime, nullable=True)            # 最近一次成功检测时间
-    created_at = db.Column(db.DateTime, default=datetime.now)
-
-
-class DynamicMonitor(db.Model):
-    """B 站 UP 主动态监控项（绑定群号，检测到新动态推送到群）。
-
-    一个群可绑定多个 UP 主；一个 UP 主可绑定多个群（多对多）。
-    依据开源参考（HarukaBot / bili-monitor / bilibili-notify）采用
-    轮询「空间动态列表」接口 + 记录最新动态 id 防重复的方式。
-    """
-    __tablename__ = "dynamic_monitor"
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    uid = db.Column(db.Integer, index=True, nullable=False)          # B 站 UP 主 UID
-    remark = db.Column(db.String(128), default="")                   # 备注（UP 主名等，可选）
-    group_id = db.Column(db.BigInteger, index=True, nullable=False)  # 绑定的群号
-    enabled = db.Column(db.Boolean, default=True, nullable=False)    # 是否启用监控
-    last_dynamic_id = db.Column(db.String(64), nullable=True)        # 最近已推送的动态 id（防重复）
-    last_check_at = db.Column(db.DateTime, nullable=True)            # 最近一次成功检测时间
-    created_at = db.Column(db.DateTime, default=datetime.now)
+# 说明：原 B 站直播监控（LiveMonitor）/ UP 主动态监控（DynamicMonitor）已移除。
+# 旧数据库仍可能残留 live_monitor / dynamic_monitor 两张表，不影响运行。
 
 
 class CheckinRecord(db.Model):

@@ -164,7 +164,7 @@ CREATE INDEX idx_gw_openid ON group_whitelist(group_openid);
 | `app.py` | `qq_official_enable=true` 时**与 OneBot 并存**启动官方客户端；群消息走 `dispatch_command`；自动登记群白名单；新增 `/api/qq/status` | ✅ 已完成 |
 | `commands.py` | `ensure_qq_user()`（按 openid 建号）；`normalize_command()`（**免打 `/`**，直接发「签到」） | ✅ 已完成 |
 | `models.py` | `User.openid`、`GroupWhitelist.group_openid`（配 `_migrate_schema()` 在线补列，存量库不丢数据） | ✅ 已完成 |
-| `dynamon.py` | 顺带修复：无启用监控时死循环刷日志 | ✅ 已完成 |
+| `dynamon.py`、`livemon.py`、`cdp.py` | **已移除**：B 站直播/动态监控随本次改动一并删除 | — |
 | `ratelimit.py` | 无需改动：限流键用的是通用用户标识，官方通道直接传 openid | ✅ 无需改 |
 | `bot.py` | 无需改动：官方通道自带发送逻辑（`POST /v2/groups/.../messages`），不复用 OneBot 发送 | ✅ 无需改 |
 | 合成图（`kick.py` 等） | 改走富媒体上传（`file_info`）再发送 | ⬜ 待做，当前**降级为纯文本**（图片文案仍会发出，只是没图） |
@@ -206,7 +206,7 @@ CREATE INDEX idx_gw_openid ON group_whitelist(group_openid);
 - ❌ 开放任何入站端口（安全组只放进站反而更安全）
 - ❌ 域名、备案、HTTPS 证书、nginx 反代
 - ❌ 独立数据库（自带 SQLite 足够）
-- ❌ Windows（Linux 即可；`dynamon.py` 里的 `curl.exe` 会自动回退到 `curl`）
+- ❌ Windows（Linux 即可）
 
 > 管理页 `http://127.0.0.1:5000` **只监听本机**。远程要看得用 SSH 隧道：
 > `ssh -L 5000:127.0.0.1:5000 user@server`，再在本地浏览器开 `http://127.0.0.1:5000`。

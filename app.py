@@ -8,11 +8,10 @@ import os
 import hashlib
 import threading
 import time
-import urllib.request
 
 from flask import Flask, render_template, request, jsonify
 
-from models import db, Config, GroupWhitelist, User, CheckinRecord, UserItem, LiveMonitor, DynamicMonitor, UserOre
+from models import db, Config, GroupWhitelist, User, CheckinRecord, UserItem, UserOre
 from currency import format_currency
 from commands import ensure_user, ensure_qq_user, dispatch_command, normalize_command
 from bot import OneBotClient, log, get_logs
@@ -20,11 +19,6 @@ from qq_official import QQOfficialClient
 from ratelimit import RateLimiter
 from equipment import load_equipment
 from dungeon import layer_total, effective_layer_total, coin_per_5sec, effective_stats, dungeon_speed, owned_items
-from livemon import LiveMonitorThread, run_once, STATUS_TEXT, log as livemon_log, get_logs as livemon_logs
-from dynamon import (
-    DynamicMonitorThread, run_once as dyn_run_once,
-    log as dynamon_log, get_logs as dynamon_logs,
-)
 from repeat import RepeatTracker
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -70,7 +64,6 @@ def create_app():
 app = create_app()
 bot = None
 limiter = RateLimiter()
-monitor = None
 repeat_tracker = RepeatTracker()  # 复读机：2 个不同用户相同消息后复读一次
 
 
@@ -352,52 +345,6 @@ def send_group_image(group_id, file_path, text=None):
     bot.send_action("send_group_msg", {"group_id": group_id, "message": segments})
 
 
-def download_dynamic_pics(urls, out_dir=None):
-    """下载动态配图到本地 tmp，返回成功下载的本地路径列表（单张失败跳过，不影响推送）。
-
-    B 站图片带 Referer + UA 直下，避免把网络 URL 直接交给协议端（更稳定）。
-    """
-    if out_dir is None:
-        out_dir = os.path.join(BASE_DIR, "tmp")
-    os.makedirs(out_dir, exist_ok=True)
-    paths = []
-    for i, url in enumerate((urls or [])[:3]):
-        if not url:
-            continue
-        try:
-            req = urllib.request.Request(url, headers={
-                "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                               "AppleWebKit/537.36 (KHTML, like Gecko) "
-                               "Chrome/120.0.0.0 Safari/537.36"),
-                "Referer": "https://www.bilibili.com/",
-            })
-            with urllib.request.urlopen(req, timeout=12) as resp:
-                data = resp.read()
-            if not data:
-                continue
-            ext = ".jpg"
-            if url.lower().endswith(".png"):
-                ext = ".png"
-            elif url.lower().endswith(".gif"):
-                ext = ".gif"
-            p = os.path.join(out_dir, f"dyn_{int(time.time() * 1000)}_{i}{ext}")
-            with open(p, "wb") as fh:
-                fh.write(data)
-            paths.append(p)
-        except Exception:
-            continue
-    return paths
-
-
-def send_group_dynamic(group_id, text, pics=None):
-    """动态监控推送：文本 + 最多 3 张本地图片（下载到 tmp 后以 file:/// 发送）。"""
-    segments = [{"type": "text", "data": {"text": text}}]
-    for p in download_dynamic_pics(pics):
-        file_uri = "file:///" + os.path.abspath(p).replace("\\", "/")
-        segments.append({"type": "image", "data": {"file": file_uri}})
-    bot.send_action("send_group_msg", {"group_id": group_id, "message": segments})
-
-
 def refresh_member_card_async(group_id, user_id):
     """异步查询群成员名片并写入本地库（fire-and-forget，不阻塞命令处理）。
 
@@ -607,166 +554,6 @@ def api_records():
     } for r in rows])
 
 
-# ---------- 直播间监控 ----------
-@app.route("/api/livemon")
-def api_livemon():
-    rows = db.session.execute(
-        db.select(LiveMonitor).order_by(LiveMonitor.id)
-    ).scalars().all()
-    return jsonify([{
-        "id": r.id,
-        "room_id": r.room_id,
-        "remark": r.remark,
-        "group_id": r.group_id,
-        "enabled": r.enabled,
-        "last_status": r.last_status,
-        "status_text": STATUS_TEXT.get(r.last_status, "未知"),
-        "last_check_at": r.last_check_at.strftime("%Y-%m-%d %H:%M:%S")
-        if r.last_check_at else None,
-        "created_at": r.created_at.strftime("%Y-%m-%d %H:%M:%S") if r.created_at else None,
-    } for r in rows])
-
-
-@app.route("/api/livemon/logs")
-def api_livemon_logs():
-    limit = min(int(request.args.get("limit", 100)), 200)
-    return jsonify({"logs": livemon_logs(limit)})
-
-
-@app.route("/api/livemon", methods=["POST"])
-def api_livemon_add():
-    data = request.get_json(force=True) or {}
-    try:
-        group_id = int(data.get("group_id"))
-        room_id = int(data.get("room_id"))
-    except (TypeError, ValueError):
-        return jsonify({"ok": False, "error": "群号与房间号必须为数字"}), 400
-    if group_id <= 0 or room_id <= 0:
-        return jsonify({"ok": False, "error": "群号与房间号非法"}), 400
-    # 约束：一个群最多绑定 1 个直播间
-    exists = db.session.execute(
-        db.select(LiveMonitor).where(LiveMonitor.group_id == group_id)
-    ).scalars().first()
-    if exists:
-        return jsonify({
-            "ok": False,
-            "error": f"群 {group_id} 已绑定直播间 {exists.room_id}，请先删除后再绑定",
-        }), 400
-    db.session.add(LiveMonitor(
-        room_id=room_id,
-        remark=(data.get("remark") or "").strip(),
-        group_id=group_id,
-        enabled=True,
-    ))
-    db.session.commit()
-    livemon_log(f"新增监控: 房间 {room_id} -> 群 {group_id}")
-    return jsonify({"ok": True})
-
-
-@app.route("/api/livemon/<int:mid>", methods=["DELETE"])
-def api_livemon_delete(mid):
-    row = db.session.get(LiveMonitor, mid)
-    if row:
-        db.session.delete(row)
-        db.session.commit()
-        livemon_log(f"删除监控 id={mid}（房间 {row.room_id} -> 群 {row.group_id}）")
-    return jsonify({"ok": True})
-
-
-@app.route("/api/livemon/<int:mid>/toggle", methods=["POST"])
-def api_livemon_toggle(mid):
-    row = db.session.get(LiveMonitor, mid)
-    if not row:
-        return jsonify({"ok": False, "error": "监控项不存在"}), 404
-    row.enabled = not row.enabled
-    db.session.commit()
-    livemon_log(f"监控 id={mid}（房间 {row.room_id}）已{'启用' if row.enabled else '停用'}")
-    return jsonify({"ok": True, "enabled": row.enabled})
-
-
-@app.route("/api/livemon/check", methods=["POST"])
-def api_livemon_check():
-    """立即执行一次检测（手动触发，按正常逻辑仅在状态翻转时通知）。"""
-    livemon_log("手动触发立即检测")
-    run_once(send_group_dynamic)
-    return jsonify({"ok": True})
-
-
-# ---------- UP 主动态监控 ----------
-@app.route("/api/dynamon")
-def api_dynamon():
-    rows = db.session.execute(
-        db.select(DynamicMonitor).order_by(DynamicMonitor.id)
-    ).scalars().all()
-    return jsonify([{
-        "id": r.id,
-        "uid": r.uid,
-        "remark": r.remark,
-        "group_id": r.group_id,
-        "enabled": r.enabled,
-        "last_dynamic_id": r.last_dynamic_id,
-        "last_check_at": r.last_check_at.strftime("%Y-%m-%d %H:%M:%S")
-        if r.last_check_at else None,
-        "created_at": r.created_at.strftime("%Y-%m-%d %H:%M:%S") if r.created_at else None,
-    } for r in rows])
-
-
-@app.route("/api/dynamon/logs")
-def api_dynamon_logs():
-    limit = min(int(request.args.get("limit", 100)), 200)
-    return jsonify({"logs": dynamon_logs(limit)})
-
-
-@app.route("/api/dynamon", methods=["POST"])
-def api_dynamon_add():
-    data = request.get_json(force=True) or {}
-    try:
-        group_id = int(data.get("group_id"))
-        uid = int(data.get("uid"))
-    except (TypeError, ValueError):
-        return jsonify({"ok": False, "error": "群号与 UP 主 UID 必须为数字"}), 400
-    if group_id <= 0 or uid <= 0:
-        return jsonify({"ok": False, "error": "群号与 UP 主 UID 非法"}), 400
-    db.session.add(DynamicMonitor(
-        uid=uid,
-        remark=(data.get("remark") or "").strip(),
-        group_id=group_id,
-        enabled=True,
-    ))
-    db.session.commit()
-    dynamon_log(f"新增动态监控: UP 主 {uid} -> 群 {group_id}")
-    return jsonify({"ok": True})
-
-
-@app.route("/api/dynamon/<int:mid>", methods=["DELETE"])
-def api_dynamon_delete(mid):
-    row = db.session.get(DynamicMonitor, mid)
-    if row:
-        db.session.delete(row)
-        db.session.commit()
-        dynamon_log(f"删除动态监控 id={mid}（UP 主 {row.uid} -> 群 {row.group_id}）")
-    return jsonify({"ok": True})
-
-
-@app.route("/api/dynamon/<int:mid>/toggle", methods=["POST"])
-def api_dynamon_toggle(mid):
-    row = db.session.get(DynamicMonitor, mid)
-    if not row:
-        return jsonify({"ok": False, "error": "监控项不存在"}), 404
-    row.enabled = not row.enabled
-    db.session.commit()
-    dynamon_log(f"动态监控 id={mid}（UP 主 {row.uid}）已{'启用' if row.enabled else '停用'}")
-    return jsonify({"ok": True, "enabled": row.enabled})
-
-
-@app.route("/api/dynamon/check", methods=["POST"])
-def api_dynamon_check():
-    """立即执行一次检测（手动触发，按正常逻辑仅在出现新动态时通知）。"""
-    dynamon_log("手动触发立即检测")
-    dyn_run_once(send_group_text)
-    return jsonify({"ok": True})
-
-
 # ---------- 日志 / 机器人控制 ----------
 @app.route("/api/logs")
 def api_logs():
@@ -892,10 +679,6 @@ with app.app_context():
         )
         qqbot.start()
         log("[QQ官方] 接入已启用")
-    monitor = LiveMonitorThread(app, send_group_dynamic)
-    monitor.start()
-    dmonitor = DynamicMonitorThread(app, send_group_dynamic)
-    dmonitor.start()
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=False, threaded=True)

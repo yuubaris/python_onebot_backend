@@ -25,13 +25,13 @@
 
 | 层 | 文件 | 职责 |
 |---|---|---|
-| 协议/接入 | `bot.py`(184) / `cdp.py`(122) | OneBot 11 正向 WebSocket 客户端；CDP 接入 |
+| 协议/接入 | `bot.py`(184) | OneBot 11 正向 WebSocket 客户端 |
 | 应用/编排 | `app.py`(762) | Flask 应用、事件处理 `_handle_event_inner`、命令分发调用、HTTP 管理 API、定时任务 |
 | 命令层 | `commands.py`(1,495) | `COMMANDS` 表 + `dispatch_command` + 全部命令实现（41 个命令含别名） |
 | **游戏域** | `dungeon.py`(995)、`ore.py`(186)、`material.py`(196)、`alchemy.py`(200)、`consumable.py`(370)、`lottery.py`(214)、`boss.py`(417)、`boss_gear.py`(77)、`forge.py`(115)、`classes.py`(117)、`tiers.py`(142)、`equipment.py`(57)、`skills.py`(75)、`currency.py`(54) | 地下城结算/挑战/Boss/矿石/材料/炼金/抽奖/锻造/职业/装备 |
 | 数据层 | `models.py`(213) | 15 张表（SQLAlchemy） |
 | 群管理 | `kick.py`(189) | /踢 等群管理 |
-| 运维监控 | `dynamon.py`(376)、`livemon.py`(195)、`ratelimit.py`(58)、`repeat.py`(65) | 动态监控、直播监控、限流、复读 |
+| 运维监控 | `ratelimit.py`(58)、`repeat.py`(65) | 限流、复读 |
 
 ### 2.2 关键耦合点
 
@@ -77,11 +77,11 @@ boss.py    boss_gear.py  forge.py  classes.py  tiers.py  equipment.py  skills.py
 
 ### 3.2 留在消息端外壳（不剥离）
 
-- `bot.py` / `cdp.py`：协议接入
+- `bot.py`：协议接入
 - `app.py`：事件编排、HTTP 管理 API、定时任务
 - `commands.py`：**非地下城命令**（签到/余额/踢/撅/佬/帮助/排名）与分发骨架
 - `kick.py`：群管理
-- `dynamon.py` / `livemon.py` / `ratelimit.py` / `repeat.py`：运维监控
+- `ratelimit.py` / `repeat.py`：运维监控
 - `models.py`：游戏服务自持一份（见 §5.4）
 
 ---
