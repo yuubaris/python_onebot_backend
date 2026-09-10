@@ -30,7 +30,7 @@
 | 命令层 | `commands.py`(1,495) | `COMMANDS` 表 + `dispatch_command` + 全部命令实现（41 个命令含别名） |
 | **游戏域** | `dungeon.py`(995)、`ore.py`(186)、`material.py`(196)、`alchemy.py`(200)、`consumable.py`(370)、`lottery.py`(214)、`boss.py`(417)、`boss_gear.py`(77)、`forge.py`(115)、`classes.py`(117)、`tiers.py`(142)、`equipment.py`(57)、`skills.py`(75)、`currency.py`(54) | 地下城结算/挑战/Boss/矿石/材料/炼金/抽奖/锻造/职业/装备 |
 | 数据层 | `models.py`(213) | 15 张表（SQLAlchemy） |
-| 群管理 | `kick.py`(189) | /踢 等群管理 |
+| 群管理 | `kick.py`(189) | 踢 等群管理 |
 | 运维监控 | `ratelimit.py`(58)、`repeat.py`(65) | 限流、复读 |
 
 ### 2.2 关键耦合点
@@ -45,21 +45,21 @@
 
 | 命令 | 入口 | 涉及模块 |
 |---|---|---|
-| /地下城 | `cmd_dungeon` | dungeon、ore、material、boss |
-| /挑战 | `cmd_challenge` | boss、dungeon、skills |
-| /boss | `cmd_boss` | boss、dungeon |
-| /炼金 | `cmd_alchemy` | alchemy、consumable、material、ore |
-| /使用 | `cmd_use` | consumable |
-| /抽奖 | `cmd_lottery` | lottery、consumable、currency、equipment、material |
-| /背包 | `cmd_bag` | equipment、ore、material、consumable、boss_gear |
-| /武器库 | `cmd_shop` | dungeon、equipment |
-| /购买 | `cmd_buy` | dungeon、equipment |
-| /出售 | `cmd_sell` | dungeon、equipment |
-| /转职 | `cmd_class` | classes、dungeon |
-| /晋升 | `cmd_promote` | tiers、dungeon |
-| /铁匠铺 | `cmd_forge_shop` | forge、dungeon |
-| /锻造 | `cmd_forge` | forge、dungeon |
-| /转转 | `cmd_turn` | models（TurnItem） |
+| 地下城 | `cmd_dungeon` | dungeon、ore、material、boss |
+| 挑战 | `cmd_challenge` | boss、dungeon、skills |
+| boss | `cmd_boss` | boss、dungeon |
+| 炼金 | `cmd_alchemy` | alchemy、consumable、material、ore |
+| 使用 | `cmd_use` | consumable |
+| 抽奖 | `cmd_lottery` | lottery、consumable、currency、equipment、material |
+| 背包 | `cmd_bag` | equipment、ore、material、consumable、boss_gear |
+| 武器库 | `cmd_shop` | dungeon、equipment |
+| 购买 | `cmd_buy` | dungeon、equipment |
+| 出售 | `cmd_sell` | dungeon、equipment |
+| 转职 | `cmd_class` | classes、dungeon |
+| 晋升 | `cmd_promote` | tiers、dungeon |
+| 铁匠铺 | `cmd_forge_shop` | forge、dungeon |
+| 锻造 | `cmd_forge` | forge、dungeon |
+| 转转 | `cmd_turn` | models（TurnItem） |
 
 ---
 
@@ -108,7 +108,7 @@ boss.py    boss_gear.py  forge.py  classes.py  tiers.py  equipment.py  skills.py
 
 - 消息端收到 `地下城` 等 15 个地下城命令 → **同进程直调 `GameCore.run_command`**（无 HTTP、无进程间通信）→ 返回文本原样播报；
 - 非地下城命令（签到/余额/踢/帮助/排名）保持现状逻辑，**同进程共享同一 SQLite、单一写方，无并发写问题**；
-- **战报**：`GameCore.take_events` 由消息端在 /地下城 时取出播报（沿用 `_BOSS_REPORT_COMMANDS` 策略）；
+- **战报**：`GameCore.take_events` 由消息端在 地下城 时取出播报（沿用 `_BOSS_REPORT_COMMANDS` 策略）；
 - **未来扩展位**：若将来需要独立进程/多平台，把 GameCore 调用点换成 HTTP 即可（见 §4.3 预留契约），当前不启用。
 
 ### 4.2 代码组织（等同新仓库）
@@ -224,7 +224,7 @@ class GameCore:
 ## 8. 验收标准
 
 - [x] `dungeon_service/tests/` 全绿；15 个地下城命令输出与剥离前逐字一致（golden diff）；
-- [x] `dungeon_service/` 0 import 外壳模块；单进程跑通：/地下城 等命令经 GameCore 返回与现状一致；
+- [x] `dungeon_service/` 0 import 外壳模块；单进程跑通：地下城 等命令经 GameCore 返回与现状一致；
 - [x] 无 `database is locked` 风险（单进程单一写方）；
 - [x] 线上 v2.11.x 行为无回归（矿石/材料/掉落/Boss/胜率口径不变）；
 - [x] README / bot_wiki / CHANGELOG 同步；未来拆独立进程的 HTTP 契约已存档（§4.3）。

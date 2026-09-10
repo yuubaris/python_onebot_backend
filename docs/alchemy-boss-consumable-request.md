@@ -189,7 +189,7 @@ boss 状态        → 我的首通与各 Boss 累计成功次数（并入列表
 
 ---
 
-## 三、炼金系统（/炼金）
+## 三、炼金系统
 
 配方结构（`alchemy_recipes.json`）：
 ```jsonc
@@ -251,7 +251,7 @@ boss 状态        → 我的首通与各 Boss 累计成功次数（并入列表
 
 ---
 
-## 四、使用系统（/使用）—— 效果体系（2026-09-08 定稿）
+## 四、使用系统 —— 效果体系（2026-09-08 定稿）
 
 ### 4.1 `consumables.json` 结构（含等级 / 效果 / 持续）
 
@@ -304,7 +304,7 @@ boss 状态        → 我的首通与各 Boss 累计成功次数（并入列表
 - `UserBuff`(user_id, buff_id, effect_json 快照, expire_ts 可空, start_layer 可空, remain_layers 可空)：统一记录属性药水/掉落道具，时间型与层数型都支持。
 
 ### 5.3 模块
-`material.py`(镜像 ore) · `boss.py`(列表/成功率/永久递减/次数/掉落) · `alchemy.py`(镜像 forge) · `consumable.py`(/使用) · `models.py` · `commands.py`
+`material.py`(镜像 ore) · `boss.py`(列表/成功率/永久递减/次数/掉落) · `alchemy.py`(镜像 forge) · `consumable.py`(使用) · `models.py` · `commands.py`
 
 ---
 

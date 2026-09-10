@@ -433,7 +433,7 @@
     try {
       const rows = await api('/api/users');
       const tb = document.getElementById('userBody');
-      if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">暂无用户，群内触发 /签到 后出现</td></tr>'; return; }
+      if (!rows.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">暂无用户，群内触发 签到 后出现</td></tr>'; return; }
       tb.innerHTML = rows.map(u => `
         <tr>
           <td>${esc(u.nickname)}</td>
