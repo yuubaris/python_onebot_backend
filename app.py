@@ -50,6 +50,9 @@ DEFAULT_CONFIG = {
     "qq_appid": "",                 # 官方机器人 AppID
     "qq_appsecret": "",             # 官方机器人 AppSecret（密钥）
     "qq_sandbox": "false",          # 是否使用沙箱环境
+    # 命令触发方式：true = 免斜杠（直接发「签到」即可；纯中文命令词才识别，避免误触），
+    #              false = 必须带 / 前缀（/签到）
+    "plain_command_enable": "true",
 }
 
 
@@ -189,6 +192,11 @@ def _handle_event_inner(data):
 
     # 提取消息文本
     text = message_to_text(data.get("message"))
+    cfg = load_config()
+
+    # 免斜杠模式：把「签到」这类纯中文命令词归一化为「/签到」
+    if _cfg_bool(cfg.get("plain_command_enable", "true")):
+        text = normalize_command(text)
 
     # 非命令消息：复读机检测（2 个不同用户发相同消息后复读一次）
     if not text or not text.lstrip().startswith("/"):
@@ -202,7 +210,6 @@ def _handle_event_inner(data):
     at_qqs = extract_at_qq(data.get("message"), exclude=data.get("self_id"))
 
     # 消息频率限制（按 群×用户 统计；可配置）
-    cfg = load_config()
     if _cfg_bool(cfg.get("rate_limit_enable", "false")):
         rl_max = _cfg_int(cfg.get("rate_limit_max"), 15)
         rl_window = _cfg_int(cfg.get("rate_limit_window"), 60)
@@ -291,13 +298,16 @@ def _handle_qq_group_message_inner(group_openid, user_openid, text, msg_id, nick
         user.group_id = gid
         db.session.commit()
 
-    # 官方通道只响应命令（不做复读）；允许省略前导 '/'，直接发「签到」即可
-    text = normalize_command(text)
+    # 官方通道只响应命令（不做复读）
+    cfg = load_config()
+
+    # 免斜杠模式：把「签到」这类纯中文命令词归一化为「/签到」
+    if _cfg_bool(cfg.get("plain_command_enable", "true")):
+        text = normalize_command(text)
     if not text or not text.startswith("/"):
         return
 
     # 频率限制（与 OneBot 共用同一套配置）
-    cfg = load_config()
     if _cfg_bool(cfg.get("rate_limit_enable", "false")):
         rl_max = _cfg_int(cfg.get("rate_limit_max"), 15)
         rl_window = _cfg_int(cfg.get("rate_limit_window"), 60)

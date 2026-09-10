@@ -106,7 +106,7 @@ boss.py    boss_gear.py  forge.py  classes.py  tiers.py  equipment.py  skills.py
 └────────────────────────────────────────────┘
 ```
 
-- 消息端收到 `/地下城` 等 15 个地下城命令 → **同进程直调 `GameCore.run_command`**（无 HTTP、无进程间通信）→ 返回文本原样播报；
+- 消息端收到 `地下城` 等 15 个地下城命令 → **同进程直调 `GameCore.run_command`**（无 HTTP、无进程间通信）→ 返回文本原样播报；
 - 非地下城命令（签到/余额/踢/帮助/排名）保持现状逻辑，**同进程共享同一 SQLite、单一写方，无并发写问题**；
 - **战报**：`GameCore.take_events` 由消息端在 /地下城 时取出播报（沿用 `_BOSS_REPORT_COMMANDS` 策略）；
 - **未来扩展位**：若将来需要独立进程/多平台，把 GameCore 调用点换成 HTTP 即可（见 §4.3 预留契约），当前不启用。

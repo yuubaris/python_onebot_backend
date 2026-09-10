@@ -131,7 +131,7 @@
 1. **classes.py**：注册 `spellblade`（魔剑士）/ `battlemage`（近战法师），需引入"双线"概念——现有 `line` 是单值（physical/magic），装备过滤 `_slot_candidates` 按 `item_line in (line, ANY)` 判定，双线职业需改为"line ∈ {physical, magic} 皆可"或 `types` 白名单直接判定。
 2. **购买/商店限制**：`class_types()` 决定可买部位，需为新职业配置 type 集合。
 3. **未转职自动择优**（`mark_best_equipped`）：现有只在物理/魔法两线间取高，需扩展支持新职业组合。
-4. **转职与称号**：称号前缀通用（见习/疾风/…），新职业名接入 `tier_title`；`/转职` 命令加别名。
+4. **转职与称号**：称号前缀通用（见习/疾风/…），新职业名接入 `tier_title`；`转职` 命令加别名。
 5. **挑战技能**：现有每职业 3 个娱乐技能（挑战演出文字），新职业需补 3 个（可后续）。
 6. **Boss 战力锚定/胜率**：胜率口径按玩家战力 vs Boss 战力，新职业强度对齐后无需改 Boss。
 7. **文档**：README/bot_wiki/CHANGELOG + 本分析文档，落地时同步。
@@ -197,6 +197,6 @@ Boss 胜率口径：`胜率 = x³/(1+x³)`，`x = 玩家速度 S / Boss 基准�
 ### 7.5 落地改动面与连带影响
 
 - **改动**：4 个 JSON（equipment/forge/rare_drops/boss_gear）的 focus/robe 件补防/命，约 30 件，机械改动；**不动公式、不动价格、不动套装、不动掉落**；JSON mtime 缓存免重启生效。
-- **连带**：法师装备评分（item_score）整体上升 → 背包/锻造推荐/部位对等展示变化；`/锻造 推荐` 排序可能变化；golden 基线（dungeon_enter/status、forge 等场景）需重新生成并审 diff。
+- **连带**：法师装备评分（item_score）整体上升 → 背包/锻造推荐/部位对等展示变化；`锻造 推荐` 排序可能变化；golden 基线（dungeon_enter/status、forge 等场景）需重新生成并审 diff。
 - **风险**：① 法师增强无代价，战士玩家相对优势缩小——发布时需公告说明；② 只补魔法线不动物理线，若未来再调平衡应继续以"生存资源对齐"为统一口径；③ 胜率展示数字不变，玩家可无感过渡。
 - **回归**：全量 pytest（60+）→ regenerate golden 审 diff → 三文档 + CHANGELOG 同步 → commit+push main。
