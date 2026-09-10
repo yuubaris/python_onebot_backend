@@ -2,7 +2,7 @@
 """命名守关 Boss 挑战模块（/boss 列表、/boss 挑战 <名>）。
 
 Boss 数据在 bosses.json（18 个命名守关 Boss：1000 前每100 / 1000 后每200 /
-2000 后每500 / 3000 大 Boss「万渊魔尊·裂界」/ 3600 最终「万瓜之主·夕张」），player 进度记于 user_boss 表。
+2000 后每500 / 3000 大 Boss「千界魔尊·裂界」/ 3600 最终「万瓜之主·夕张」），player 进度记于 user_boss 表。
 
 规则：
 - 解锁：历史最高层 ≥ boss.layer；
@@ -34,8 +34,11 @@ BOSSES_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 BIG_BOSS_LAYERS = (1000, 2000, 3000, 3600)
 GROUP_DAILY_LIMIT = {"normal": 3, "big": 1}
 GROUP_LABEL = {"normal": "守关 Boss", "big": "大 Boss（1000/2000/3000/3600）"}
-# 3600 最终 Boss 挑战成功额外掉落的特殊道具（用途暂空，占位收藏；独立 category=souvenir）
+# 四大 Boss 专属特殊道具（收藏级，独立 category=souvenir，v2.12.4 起统一极低掉率）：
+# 3600「万瓜圣契」原为挑战成功必掉，按用户「掉率极低」口径统一为 SOUVENIR_DROP_RATE。
 FINAL_BOSS_RELIC = "souvenir_wangua"
+SOUVENIR_LAYERS = {1000: "souvenir_final", 2000: "souvenir_abyss", 3000: "souvenir_rift", 3600: FINAL_BOSS_RELIC}
+SOUVENIR_DROP_RATE = 0.001   # 专属特殊道具掉率（极低 0.1%，与 4 大 Boss 专属装备同档）
 # 究极大 Boss(1000/2000/3000) 挑战成功必掉的专属材料「万宝源晶」；3600 最终 Boss 在其外额外掉落（万宝符原料）
 MYRIAD_GEM = "boss_myriad"
 
@@ -335,11 +338,12 @@ def challenge_boss(user, boss):
         db.session.add(UserItem(user_id=user.user_id, item_id=rare["id"], is_new=1))
         lines.append(f"✦ {rare['name']}({tn}·稀有) new！")
 
-    # 3600 最终 Boss 额外掉落特殊道具（用途暂空，占位收藏）
-    if int(boss.get("layer", 0) or 0) == 3600:
-        material.grant_materials(user.user_id, {FINAL_BOSS_RELIC: 1})
-        rmeta = material.material_meta(FINAL_BOSS_RELIC)
-        lines.append(f"🌟 额外获得特殊道具：{rmeta['name'] if rmeta else FINAL_BOSS_RELIC} ×1")
+    # 四大 Boss 专属特殊道具（v2.12.4）：1000/2000/3000/3600 各自专属、收藏级，极低掉率（SOUVENIR_DROP_RATE）
+    _sou = SOUVENIR_LAYERS.get(int(boss.get("layer", 0) or 0))
+    if _sou and random.random() < SOUVENIR_DROP_RATE:
+        material.grant_materials(user.user_id, {_sou: 1})
+        _rmeta = material.material_meta(_sou)
+        lines.append(f"🌟 专属特殊道具：{_rmeta['name'] if _rmeta else _sou} ×1")
 
     # 究极大 Boss(1000/2000/3000/3600) 额外必掉「万宝源晶」（万宝符原料；3600 与万瓜圣契并列额外）
     if int(boss.get("layer", 0) or 0) in BIG_BOSS_LAYERS:
@@ -414,4 +418,71 @@ def boss_list_text(user):
             else:
                 out.append(f"· {b['layer']}层 {b['name']}（{b.get('tag','')}）[{first}] · 材料：{mname}{suffix}{gear_txt}")
     out.append("—— 用法：/挑战 <Boss名|层数|称号>（如 /挑战 裂风狼王 / 挑战 1000层）；/挑战 列表 查看 ——")
+    return "\n".join(out)
+
+
+# —— 专属装备查询（/挑战 装备 [名称]，v2.12.12）——
+_GEAR_TYPE_CN = {"weapon": "主手", "staff": "法杖", "shield": "盾", "focus": "法器",
+                 "armor": "战甲", "robe": "法袍", "accessory": "饰品"}
+_GEAR_LINE_CN = {"physical": "战", "magic": "法", "any": "通用"}
+
+
+def _gear_attrs_txt(g):
+    parts = []
+    for k, cn in (("attack", "攻"), ("mp", "魔"), ("agility", "敏"),
+                  ("intelligence", "智"), ("hp", "命"), ("defense", "防")):
+        v = int(g.get(k, 0) or 0)
+        if v:
+            parts.append(f"{cn}{v}")
+    return " ".join(parts)
+
+
+def gear_list_text(user=None, gear_name=None):
+    """/挑战 装备 [名称]：查询命名 Boss 专属装备的属性与全服余量。
+
+    无名称 → 全部 35 件按 4 大 Boss / 其他命名 Boss 分组列出（属性 + 评分 + 余量）；
+    带名称 → 单件详情（含所属 Boss、掉率）。
+    """
+    from .boss_gear import load_gear
+    from .models import UserItem
+    gears = load_gear()
+    counts = dict(db.session.execute(
+        db.select(UserItem.item_id, db.func.count()).group_by(UserItem.item_id)
+    ).all())
+    layer_name = {int(b.get("layer", 0) or 0): b["name"] for b in all_bosses()}
+
+    def remain_txt(g):
+        produced = counts.get(g["id"], 0)
+        return f"{max(0, int(g.get('limit', 5)) - produced)}/{g.get('limit')}"
+
+    if gear_name:
+        key = gear_name.strip()
+        g = next((x for x in gears
+                  if x.get("name") == key or x.get("id", "").lower() == key.lower()), None)
+        if not g:
+            return f"没有找到专属装备「{gear_name}」，发送 /挑战 装备 查看全部"
+        layer = int(g.get("boss_layer", 0) or 0)
+        score = round(dungeon.item_score(g), 1)
+        rate = float(g.get("rate", 0.03)) * 100
+        return "\n".join([
+            f"👑 {g['name']}（{layer_name.get(layer, '?')} 专属 · "
+            f"{_GEAR_LINE_CN.get(g.get('line', ''), '')}·{_GEAR_TYPE_CN.get(g.get('type', ''), g.get('type', ''))}）",
+            f"  {_gear_attrs_txt(g)}",
+            f"  评分 {score} · 全服余量 {remain_txt(g)} · 掉率 {rate:.1f}% · 掉落层 {g.get('boss_layer')}",
+        ])
+
+    big = set(BIG_BOSS_LAYERS)
+    by_layer = {}
+    for g in gears:
+        by_layer.setdefault(int(g.get("boss_layer", 0) or 0), []).append(g)
+    out = ["👑 命名 Boss 专属装备（全服限量 · 掉率极低）"]
+    for layer in sorted(by_layer):
+        boss_name = layer_name.get(layer, f"第 {layer} 层")
+        rate = 0.1 if layer in big else 3
+        out.append(f"—— {boss_name}（{layer} 层 · 掉率 {rate:.1f}%）——")
+        for g in by_layer[layer]:
+            out.append(f"· {g['name']}（{_GEAR_LINE_CN.get(g.get('line', ''), '')}·"
+                       f"{_GEAR_TYPE_CN.get(g.get('type', ''), g.get('type', ''))}）"
+                       f"{_gear_attrs_txt(g)} 评分{round(dungeon.item_score(g), 1)} 余量{remain_txt(g)}")
+    out.append("—— /挑战 装备 <名称> 查单件详情 ——")
     return "\n".join(out)

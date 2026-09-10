@@ -22,7 +22,7 @@ from .tiers import (
 )
 from .dungeon import (
     BASE_STATS, LAYER1_TOTAL, layer_total, coin_rate_per_sec, coin_per_5sec,
-    effective_stats, dungeon_speed, owned_items, owned_item_rows, settle_dungeon,
+    effective_stats, dungeon_speed, item_score, owned_items, owned_item_rows, settle_dungeon,
     effective_layer_total, boss_type, historical_best_layer,
     take_boss_report, rare_item_ids, find_any_item,
 )
@@ -85,9 +85,16 @@ def cmd_bag(user, group_id, args, at_qqs=None):
         return ("🎒 你的背包空空如也。\n"
                 "前往 /武器库 购买一件装备吧！（持有任意装备即可进入 /地下城）")
     prof = (user.profession or "") or ""
-    cl_line = class_line(prof) if prof else None
+    usage = dungeon._usage_for(prof)
     rare_ids = rare_item_ids()
     lines = [f"🎒 我的背包（共 {len(rows)} 件） · {_user_title(user)}"]
+    # 套装效果生效中（v2.12.3）：与推进速度同一选件口径
+    try:
+        _sb = dungeon.current_set_bonus(user, [it for it, _, _ in rows])
+        if _sb > 1.0:
+            lines.append(f"⚡ 套装效果生效中：全属性 ×{_sb:g}")
+    except Exception:
+        pass
     groups = {}
     for it, is_new, eq in rows:
         groups.setdefault(it.get("type", "other"), []).append((it, is_new, eq))
@@ -118,10 +125,10 @@ def cmd_bag(user, group_id, args, at_qqs=None):
             if not dungeon._item_usable(it, user.tier or 0, historical_best_layer(user)):
                 f_lv = dungeon._forge_lv(it)
                 lvl_note = f"（需锻造Lv{f_lv}）" if f_lv is not None else f"（需T{dungeon._item_tier(it)}）"
-            # 转职后另一职业专属装备标注“暂不生效”
+            # 转职后另一职业/不可用装备标注“暂不生效”（双线职业按 lines×types 判定）
             unusable = ""
-            if cl_line and item_line(it) not in (LINE_ANY, cl_line):
-                unusable = "（另一职业·不生效）"
+            if usage and not dungeon._usable_line_type(it, *usage):
+                unusable = "（本职业不生效）"
             lines.append(f"· {disp}{suffix}{mark}{rare_tag}{wear}{lvl_note}（{_item_desc(it)}）{unusable}")
     # 矿石展示（稀有度前缀）
     ores = ore.owned_ores(user.user_id)
@@ -186,13 +193,14 @@ def cmd_shop(user, group_id, args, at_qqs=None):
     prof = (user.profession or "") or ""
     if not prof:
         return ("💡 你是冒险者，请先选择职业：\n"
-                "/转职 战士（物理近战） 或 /转职 魔法师（魔法施法）\n"
+                "/转职 战士（物理近战）/ 转职 魔法师（魔法施法）/ 转职 魔剑士（物主手+法施法）/ 转职 近战法师（法主手+物防护）\n"
                 "选定职业后，/武器库 将展示你可购买的装备。")
     line = class_line(prof)
+    usage = dungeon._usage_for(prof)
     my_tier = user.tier or 0
     items = load_equipment()
-    # 本职业可用（职业 line 或 通用 any）
-    usable = [it for it in items if item_line(it) in (line, LINE_ANY)]
+    # 本职业可用（职业 lines×types 或 通用 any）
+    usable = [it for it in items if dungeon._usable_line_type(it, *usage)] if usage else []
     if not usable:
         return "武器库暂无可购装备。"
     # —— 开关子命令：/武器库 开关（切换）/ 开 / 关 ——
@@ -237,7 +245,7 @@ def cmd_shop(user, group_id, args, at_qqs=None):
                 continue   # 精简模式：隐藏低于当前档的装备
             lines.append(f"—— T{ti} · {title_name} ——")
             for it in arr:
-                lines.append(f"· {it['name']}（{_item_desc(it)}）{format_currency(it['price'])}")
+                lines.append(f"· {it['name']}（{TYPE_NAMES.get(it.get('type'), it.get('type') or '')}·{_item_desc(it)}）{format_currency(it['price'])}")
         else:
             lines.append(f"—— 🔒 T{ti} · {title_name} 需 /晋升 至「{title_name}」——")
             preview = "、".join(it["name"] for it in arr[:4])
@@ -267,33 +275,34 @@ def cmd_class(user, group_id, args, at_qqs=None):
 
 
 def cmd_promote(user, group_id, args, at_qqs=None):
-    """晋升阶级（/晋升）：需历史最高层达标 + 消耗货币。"""
+    """晋升阶级（/晋升）：需已通关要求层 + 消耗货币（v2.12.17 起「通关才算」，到达不算）。"""
     cur = user.tier or 0
     nxt = next_promotion(cur)
     if nxt is None:
         return f"你已达最高阶级 {_user_title(user)}！"
-    best = historical_best_layer(user)
+    cleared = user.dungeon_cleared or 0   # 已通关层数（顺序推进，= 已通关最高层）
     need_layer = TIER_LAYER.get(nxt, 0)
     cost = tier_promotion_cost(nxt)
-    if best < need_layer:
+    if cleared < need_layer:
         return (f"晋升 {tier_title(user.profession, nxt)} 需要：\n"
-                f"地下城历史最高层 ≥ {need_layer}（当前 {best}）\n"
+                f"地下城已通关层数 ≥ {need_layer}（当前 {cleared}）\n"
                 f"货币 ≥ {format_currency(cost)}（当前 {format_currency(user.copper)}）")
     if user.copper < cost:
         return (f"货币不足，不能晋升！\n"
                 f"晋升 {tier_title(user.profession, nxt)} 需 {format_currency(cost)}，"
                 f"你只有 {format_currency(user.copper)}。\n"
-                f"（层数已达标：历史最高 {best} ≥ {need_layer}）")
+                f"（层数已达标：已通关 {cleared} ≥ {need_layer}）")
     user.copper -= cost
     user.tier = nxt
     db.session.commit()
-    # 解锁档位（2026-09-08 口径，层门槛 0/50/150/400/800/1600/3200/5000）：
-    # 武器库(商店)档位随阶级解锁；铁匠铺按历史层分级（Lv1@400…Lv4@3200，穿戴随层解锁）。
+    # 解锁档位（2026-09-09 口径，层门槛 0/50/150/400/800/1600/2500/3000）：
+    # 武器库(商店)档位随阶级解锁；铁匠铺按已通关层分级（Lv1@400…Lv4@3200，穿戴随层解锁）。
     # T6 灭世 / T7 至尊 不再纯称号——称号每阶全属性 +5%（T7=+35%），并配合锻造顶级追装。
     from tiers import TIER_ATTR_BONUS, TIER_LAYER as _TL
     if nxt >= 6:
+        forge_note = "铁匠铺 Lv3（已通关 1600）" if nxt == 6 else "铁匠铺 Lv4（已通关 3200）"
         unlock_note = (f"称号加成提升至 全属性 +{int((TIER_ATTR_BONUS[nxt] - 1) * 100)}%！"
-                       f"（灭世/至尊为称号·锻造段：铁匠铺 Lv{3 if nxt == 6 else 4} 及顶级锻造可追）")
+                       f"（灭世/至尊为称号·锻造段：{forge_note} 及顶级锻造可追）")
     else:
         unlock_note = f"武器库已解锁 {tier_title(user.profession, nxt)} 阶级的装备！称号加成 +{int((TIER_ATTR_BONUS[nxt] - 1) * 100)}%。"
     return (f"🎉 晋升成功！{tier_title(user.profession, cur)} → {tier_title(user.profession, nxt)}\n"
@@ -414,16 +423,16 @@ def cmd_forge(user, group_id, args, at_qqs=None):
         hits = forge.suggest_forges(name)
         hint = f"，你是不是想锻造：{'、'.join(h['name'] for h in hits)}" if hits else ""
         return f"铁匠铺没有「{name}」{hint}\n发送 /铁匠铺 查看配方。"
-    # 职业校验：锻造产物与商店一致，需职业 line 匹配
+    # 职业校验：锻造产物与商店一致，需职业 lines×types 匹配
     prof = (user.profession or "") or ""
+    usage = dungeon._usage_for(prof)
     line = item_line(rec)
     if line != LINE_ANY:
         if not prof:
             return (f"💡 锻造「{rec['name']}」需要职业。\n"
-                    f"请先 /转职 战士 或 /转职 魔法师。")
-        if line != class_line(prof):
-            other = "战士" if line == "physical" else "魔法师"
-            return f"❌ 「{rec['name']}」是{other}的锻造装备，你无法使用。"
+                    f"请先 /转职 选择职业（如 /转职 战士 / 转职 魔法师 / 转职 魔剑士 / 转职 近战法师）。")
+        if not usage or not dungeon._usable_line_type(rec, *usage):
+            return f"❌ 「{rec['name']}」不是{class_name(prof) or '你'}的锻造装备，你无法使用。"
     # 等级解锁校验（新口径）：配方按铁匠铺 Lv 分级，需历史最高层达到该 Lv 解锁层
     lv = int(rec.get("level", 1))
     if not _forge_level_open(user, lv):
@@ -454,7 +463,10 @@ def cmd_forge(user, group_id, args, at_qqs=None):
 
 def cmd_buy(user, group_id, args, at_qqs=None):
     """购买装备（/购买），职业+阶级双重校验。"""
-    names = [n for n in (args or "").split()]
+    raw = (args or "").strip()
+    if raw in ("全部", "一键", "一键购买", "all", "顶级"):
+        return _cmd_buy_best(user)
+    names = [n for n in raw.split()]
     if not names:
         return "用法：/购买 商品名 [商品名 ...]（例如 /购买 短剑 圆盾）"
     items, missing = [], []
@@ -473,16 +485,16 @@ def cmd_buy(user, group_id, args, at_qqs=None):
         return "\n".join(hint_lines) + "\n发送 /武器库 查看商品列表。"
     # 职业/阶级校验
     prof = (user.profession or "") or ""
+    usage = dungeon._usage_for(prof)
     bad = None
     for it in items:
         line = item_line(it)
         if line != LINE_ANY:
             if not prof:
                 return (f"💡 购买「{it['name']}」需要职业。\n"
-                        f"请先 /转职 战士（物理）或 /转职 魔法师（魔法）。")
-            if line != class_line(prof):
-                other = "战士" if line == "physical" else "魔法师"
-                return f"❌ 「{it['name']}」是{other}的装备，你无法购买使用。"
+                        f"请先 /转职 选择职业（如 /转职 战士 / 转职 魔法师 / 转职 魔剑士 / 转职 近战法师）。")
+            if not usage or not dungeon._usable_line_type(it, *usage):
+                return f"❌ 「{it['name']}」不是{class_name(prof) or '你'}的装备，你无法购买使用。"
         req_tier = it.get("tier")
         if req_tier is None:
             req_tier = tier_of_price(it.get("price", 0))
@@ -510,11 +522,77 @@ def cmd_buy(user, group_id, args, at_qqs=None):
             f"消耗 {format_currency(total)}，剩余资产：{format_currency(user.copper)}。")
 
 
+def _cmd_buy_best(user):
+    """/购买 全部（一键购买）：购入商店可购买最高档的「每部位评分最好」装备各 1 件。
+
+    - 最高档 = 商店装备中 tier ≤ 当前阶级的最大档（仅商店来源，不含锻造）；
+    - 部位 = 本职业可用类型 + 饰品（如魔剑士=武器/法器/法袍/饰品）；
+    - 该部位已持有评分 ≥ 目标件的装备 → 跳过（不重复购入）；
+    - 不能赊账；未转职先引导转职。
+    """
+    prof = (user.profession or "") or ""
+    usage = dungeon._usage_for(prof)
+    if not usage:
+        return ("💡 一键购买需要先选择职业：\n"
+                "/转职 战士（物理近战）/ 转职 魔法师（魔法施法）/ 转职 魔剑士（物主手+法施法）/ 转职 近战法师（法主手+物防护）。")
+    lines, types = usage
+    tier_max = user.tier or 0
+    items = load_equipment()
+    avail = [it for it in items
+             if dungeon._usable_line_type(it, lines, types)
+             and _item_tier(it) <= tier_max]
+    if not avail:
+        return "当前没有可购买的装备（请先 /晋升 提升阶级）。"
+    top_tier = max(_item_tier(it) for it in avail)
+    top = [it for it in avail if _item_tier(it) == top_tier]
+    best_by_type = {}
+    for it in top:
+        t = it.get("type", "other")
+        if t not in best_by_type or item_score(it) > item_score(best_by_type[t]):
+            best_by_type[t] = it
+    # 该部位已有更高分装备 → 跳过
+    owned_best = {}
+    for it in dungeon.owned_items(user):
+        t = it.get("type", "other")
+        sc = item_score(it)
+        if t not in owned_best or sc > owned_best[t]:
+            owned_best[t] = sc
+    buys, skipped = [], []
+    for t, it in best_by_type.items():
+        if owned_best.get(t, -1) >= item_score(it):
+            skipped.append(it)
+        else:
+            buys.append(it)
+    if not buys:
+        names = "、".join(it["name"] for it in best_by_type.values())
+        return f"已拥有 T{top_tier} 档每部位最好装备（{names}），无需重复购买。"
+    total = sum(it["price"] for it in buys)
+    if user.copper < total:
+        need = "、".join(f"{it['name']}({format_currency(it['price'])})" for it in buys)
+        return (f"铜币不足，不能赊账！一键购买 {len(buys)} 件（T{top_tier} 档每部位最好）共需 {format_currency(total)}，"
+                f"你只有 {format_currency(user.copper)}。\n{need}")
+    for it in buys:
+        user.copper -= it["price"]
+        db.session.add(UserItem(user_id=user.user_id, item_id=it["id"]))
+    db.session.commit()
+    names = "、".join(f"{it['name']}×1" for it in buys)
+    skip_note = f"\n已跳过 {len(skipped)} 件（持有更好）：{'、'.join(it['name'] for it in skipped)}" if skipped else ""
+    return (f"🛒 一键购买成功！已购入 T{top_tier} 档每部位最好装备：{names}\n"
+            f"消耗 {format_currency(total)}，剩余资产：{format_currency(user.copper)}。{skip_note}")
+
+
 def cmd_sell(user, group_id, args, at_qqs=None):
-    """出售装备（购买价 60%），支持空格分隔批量出售（例：/出售 短剑 圆盾）。"""
-    names = [n for n in (args or "").split()]
+    """出售装备（购买价 60%），支持空格分隔批量出售（例：/出售 短剑 圆盾）。
+
+    一键出售：/出售 全部（或 一键/all）——一次性出售所有「可出售、未穿戴、
+    非本部位最高评分」的非专属装备；保留：穿戴中、每部位评分最高、锻造、专属。
+    """
+    args = (args or "").strip()
+    if args in ("全部", "一键", "一键出售", "all"):
+        return _cmd_sell_all(user)
+    names = [n for n in args.split()]
     if not names:
-        return "用法：/出售 商品名 [商品名 ...]（例如 /出售 短剑 圆盾）"
+        return "用法：/出售 商品名 [商品名 ...]（例如 /出售 短剑 圆盾）；/出售 全部 可一键出售全部可出售的闲置装备"
     sold, missing, not_owned, not_sellable = [], [], [], []
     total = 0
     for name in names:
@@ -571,6 +649,73 @@ def cmd_sell(user, group_id, args, at_qqs=None):
     return "\n".join(lines)
 
 
+def _cmd_sell_all(user):
+    """一键出售：所有「可出售、未穿戴、非本部位最高评分」的非专属装备。
+
+    保留：① 穿戴中（equipped=1）；② 每个部位（type）内可出售装备中评分最高的一件——
+    但仅当该部位**没有更高评分的不可售装备**（锻造/命名 Boss 专属）时才保留；
+    若已有更高分的锻造/专属（如裂渊之印），则可售最高件不保留、一并卖出；
+    ③ 锻造装备（只能分解）与命名 Boss 专属装备（全服限量收藏）。
+    售价与 /出售 一致：普通装备购买价 60%，掉落稀有装备按回收价 30%。
+    """
+    rows = db.session.execute(
+        db.select(UserItem).where(UserItem.user_id == user.user_id)
+    ).scalars().all()
+    all_meta = dungeon._all_item_meta()   # 商店+锻造+稀有+专属 全量装备表
+    sellable = []   # (row, item_meta, item_score)
+    for r in rows:
+        it = all_meta.get(r.item_id)
+        if it is None:
+            continue
+        if forge.is_forged_item(it["id"]) or boss_gear.is_gear(it["id"]):
+            continue
+        sellable.append((r, it, item_score(it)))
+    if not sellable:
+        return "没有可一键出售的装备（无可出售的非锻造/非专属装备）。"
+    # 每部位全量最高评分（含锻造/专属），用于判定可售最高件是否值得保留
+    max_all_by_type = {}
+    for r in rows:
+        it = all_meta.get(r.item_id)
+        if it is None:
+            continue
+        t = it.get("type", "other")
+        sc = item_score(it)
+        if t not in max_all_by_type or sc > max_all_by_type[t]:
+            max_all_by_type[t] = sc
+    keep = {r.id for r, _, _ in sellable if r.equipped}
+    best_by_type = {}
+    for r, it, sc in sellable:
+        t = it.get("type", "other")
+        if t not in best_by_type or sc > best_by_type[t][2]:
+            best_by_type[t] = (r, it, sc)
+    for t, (r, it, sc) in best_by_type.items():
+        # 可售最高件只有在「它就是该部位全量最高（无更高分锻造/专属）」时才保留
+        if sc >= max_all_by_type.get(t, -1):
+            keep.add(r.id)
+    to_sell = [(r, it) for r, it, _ in sellable if r.id not in keep]
+    if not to_sell:
+        return "没有可一键出售的装备：可出售装备均为穿戴中或本部位最高评分，已全部保留。"
+    total = 0
+    cnt = {}
+    rare = rare_item_ids()
+    for r, it in to_sell:
+        is_rare = it["id"] in rare
+        sp = int(it["price"] * (0.3 if is_rare else 0.6))
+        total += sp
+        cnt[it["name"]] = cnt.get(it["name"], 0) + 1
+        user.copper += sp
+        db.session.delete(r)
+    db.session.commit()
+    detail = "、".join(f"{n}×{c}" for n, c in cnt.items())
+    kept = len(sellable) - len(to_sell)
+    return ("\n".join([
+        f"一键出售完成！卖出 {len(to_sell)} 件：{detail}",
+        f"共获得 {format_currency(total)}（稀有装备按回收价 30% 计）",
+        f"已保留 {kept} 件：穿戴中、每部位评分最高、锻造与 Boss 专属装备。",
+        f"当前资产：{format_currency(user.copper)}",
+    ]))
+
+
 def _set_ore_entry_state(user, layer):
     """进入地下城时快照掉落资格：矿石 >400 层；草药 ≥150 层（进入时判定，本轮有效）。"""
     user.dungeon_ore_eligible = 1 if layer > ore.ORE_MIN_LAYER else 0
@@ -610,7 +755,7 @@ def _dungeon_enter(user):
     class_note = ""
     if not prof:
         class_note = ("\n💡 你尚未选择职业（地下城暂按最优自动生效）。\n"
-                      f"发送 /转职 战士 或 /转职 魔法师 选定职业（影响装备可用）。")
+                      f"发送 /转职 战士 / 魔法师 / 魔剑士 / 近战法师 选定职业（影响装备可用）。")
 
     # 优先从保存的进度继续（直达上次的层数与剩余进度）
     if user.saved_dungeon_layer and user.saved_dungeon_layer > 0:
@@ -637,7 +782,8 @@ def _dungeon_enter(user):
                 pass
         return (f"⚔️ 已从上次进度继续冒险！（{_user_title(user)}{boss_note}）\n"
                 f"你回到地下城第 {layer} 层（剩余进度 {progress:.0f} / 总计 {effective_layer_total(layer):.0f}）\n"
-                f"推进速度：{speed:.2f} 进度/秒；金币速度：约 {coin_per_5sec(layer):.4f} 铜币/5秒\n"
+                f"推进速度：{speed:.2f} 进度/秒\n"
+                f"金币速度：约 {coin_per_5sec(layer):.4f} 铜币/5秒\n"
                 f"{wear_note}地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。{ore_note}{class_note}")
 
     # 新的地下城冒险（第 1 层）
@@ -651,7 +797,8 @@ def _dungeon_enter(user):
 
     return (f"⚔️ 你已进入地下城第 1 层！\n"
             f"推进速度：{speed:.2f} 进度/秒\n"
-            f"通关本层进度：{effective_layer_total(1):.0f}；金币速度：约 {coin_per_5sec(1):.4f} 铜币/5秒\n"
+            f"通关本层进度：{effective_layer_total(1):.0f}\n"
+            f"金币速度：约 {coin_per_5sec(1):.4f} 铜币/5秒\n"
             f"{wear_note}地下城内可使用 /签到、/余额、/帮助 与 /地下城 退出。{class_note}")
 
 
@@ -693,8 +840,11 @@ def _dungeon_status(user):
     bt_txt = "（BOSS）" if bt else ""
     buff_block = _buff_status_block(user)
     buff_line = ("\n" + buff_block) if buff_block else ""
+    stats = effective_stats(user, owned_items(user))
+    speed = dungeon_speed(stats)
     return (f"📍 地下城第 {user.dungeon_layer} 层{bt_txt} · {_user_title(user)}\n"
             f"进度：{pct:.1f}%（剩余 {remaining:.0f} / 总计 {total:.0f}）\n"
+            f"推进速度：{speed:.2f} 进度/秒\n"
             f"金币速度：约 {coin_per_5sec(user.dungeon_layer):.4f} 铜币/5秒\n"
             f"本次地下城已获得 {user.dungeon_run_coins} 铜币；累计通关 {user.dungeon_cleared} 层，"
             f"累计获得 {user.dungeon_coins_earned} 铜币。\n"
@@ -858,9 +1008,15 @@ def cmd_challenge(user, group_id, args, at_qqs=None):
     if not text:
         return ("用法：/挑战 @对方（玩家对战，每天 3 次）\n"
                 "/挑战 列表 - 查看 Boss 清单与今日剩余次数\n"
+                "/挑战 装备 [名称] - 查询专属装备属性与全服余量\n"
                 "/挑战 <Boss名|层数|称号>（如 挑战 裂风狼王 / 挑战 1000层 / 挑战 究极）")
     if text.lower() in ("列表", "list", "清单", "all", "全部"):
         return boss.boss_list_text(user)
+    low = text.lower()
+    if low == "装备" or low == "equip" or low.startswith("装备 ") or low.startswith("equip "):
+        # /挑战 装备 [名称]：专属装备属性 + 全服余量（v2.12.12）
+        rest = text[2:].strip() if low.startswith("装备") else text[5:].strip()
+        return boss.gear_list_text(user, rest or None)
     boss_obj = boss.find_boss(text)
     if boss_obj:
         return boss.challenge_boss(user, boss_obj)[0]
@@ -957,9 +1113,9 @@ def cmd_boss(user, group_id, args, at_qqs=None):
 
 
 def cmd_lottery(user, group_id, args, at_qqs=None):
-    """抽奖：消耗金钱抽取金钱/装备/材料/矿石/道具，共 3 档（5铜/5银/5金）。
+    """祈愿：消耗金钱抽取金钱/装备/材料/矿石/道具，共 3 档（5铜/5银/5金）。
 
-    支持批量（v2.11.92）：/抽奖 <档位> <次数>，次数为第二个参数，默认 1，最多 10 次。
+    支持批量（v2.11.92）：/祈愿 <档位> <次数>，次数为第二个参数，默认 1，最多 10 次。
     """
     from . import lottery
     raw = (args or "").strip()
@@ -969,12 +1125,12 @@ def cmd_lottery(user, group_id, args, at_qqs=None):
     name = parts[0]
     tier_no = _LOTTERY_ALIAS.get(name.lower(), None)
     if tier_no is None:
-        return f"不认识「{name}」。\n用法：/抽奖 1|2|3（或 /抽奖 铜|银|金）[次数]，/抽奖 查看规则"
+        return f"不认识「{name}」。\n用法：/祈愿 1|2|3（或 /祈愿 铜|银|金）[次数]，/祈愿 查看规则"
     count = 1
     if len(parts) == 2:
         if not parts[1].isdigit():
-            return (f"抽奖次数无效：「{parts[1]}」。\n"
-                    f"用法：/抽奖 {name} <次数>（最多 10 次）")
+            return (f"祈愿次数无效：「{parts[1]}」。\n"
+                    f"用法：/祈愿 {name} <次数>（最多 10 次）")
         count = max(1, min(int(parts[1]), 10))
     cost = lottery.TIERS[tier_no]["cost"]
     total = cost * count

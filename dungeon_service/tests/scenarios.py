@@ -18,7 +18,7 @@ SEED = 20260909
 def build_player_a(app_ctx):
     from models import db, User, UserItem, UserOre, UserMaterial, UserConsumable
     u = User(user_id=90001, nickname="阿甲", profession="warrior", tier=3, copper=500000,
-             saved_dungeon_layer=1200)  # 历史层 1200（锻造 Lv2 已解锁）
+             saved_dungeon_layer=1200, dungeon_cleared=1200)  # 已通关 1200（晋升按通关层判定 v2.12.17）
     db.session.add(u); db.session.flush()
     for iid in ("iron_sword", "leather_armor"):
         db.session.add(UserItem(user_id=u.user_id, item_id=iid))
@@ -67,6 +67,7 @@ SCENARIOS = {
     "shop":           ("A", lambda u: __import__("commands").cmd_shop(u, 12345, "")),
     "buy":            ("A", lambda u: __import__("commands").cmd_buy(u, 12345, "铁剑")),
     "sell":           ("A", lambda u: __import__("commands").cmd_sell(u, 12345, "铁剑")),
+    "sell_all":       ("A", lambda u: __import__("commands").cmd_sell(u, 12345, "全部")),
     "class_":         ("A", lambda u: __import__("commands").cmd_class(u, 12345, "战士")),
     "promote":        ("A", lambda u: __import__("commands").cmd_promote(u, 12345, "")),
     "alchemy_list":   ("A", lambda u: __import__("commands").cmd_alchemy(u, 12345, "配方")),

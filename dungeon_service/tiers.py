@@ -4,12 +4,14 @@
 设计（见 docs/tier-forge-title-rework-request.md）：
 - 装备带 tier(0~5)；玩家当前阶级 tier 决定能购买/装备到多好的装备，
   商店顶配在 T5；锻造（Lv1~Lv4）从商店 T4.5 之上起步为毕业线，供 T5/T6/T7 追装。
-- 层门槛：T0=0 / T1=50 / T2=150 / T3=400 / T4=800 / T5=1600 / T6=3200 / T7=3600
-  （2026-09-08：地下城封顶 3600，通关 3600 层即晋升 T7；此前 T7=5000）
+- 层门槛：T0=0 / T1=50 / T2=150 / T3=400 / T4=800 / T5=1600 / T6=2500 / T7=3000
+  （2026-09-09：T7 由 3600 改为 3000，T6 由 3200 顺延为 2500 防倒挂；
+  判定口径同时改为「已通关层数」——到达不算、须通关该层）
 - 全员一律从 T0（见习）开始，老玩家不自动继承阶级，均通过 /晋升 逐级提升。
 - 称号提供属性加成（TIER_ATTR_BONUS）：每阶全属性 +5%，T7 封顶 +35%，
   于 dungeon.effective_stats 内生效（同装备下，高阶称号实力更强）。
-- 层数门槛用「历史最高层」判定：以 dungeon_layer / saved_dungeon_layer 最高值为准。
+- 层数门槛用「已通关层数」判定（dungeon_cleared 累计通关层数 = 已通关最高层，
+  顺序推进不可跳层）；通关 3000 层即晋升 T7（最终档），地下城仍可推进至 3600 封顶。
 - 晋升需满足层数门槛 + 货币足够，由 /晋升 命令触发。
 """
 import os
@@ -30,9 +32,10 @@ TIER_PREFIX = {
     7: "至尊",
 }
 
-# 阶级层数门槛：晋升到 tier i 需历史最高层 ≥ TIER_LAYER[i]
-# 2026-09-08（用户口径）：T1=50 / T2=150 / T3=400，中后段等比顺延；
-# 地下城封顶 3600 层，通关 3600 = 晋升 T7（最终档）。
+# 阶级层数门槛：晋升到 tier i 需「已通关层数」≥ TIER_LAYER[i]
+# 2026-09-09（用户口径）：T1=50 / T2=150 / T3=400，中后段等比顺延；
+# T7 由 3600 改为 3000（通关 3000 达成最终档），T6 由 3200 顺延为 2500 防倒挂；
+# 判定用「已通关层数」（dungeon_cleared），到达不算、须通关该层。
 TIER_LAYER = {
     0: 0,
     1: 50,
@@ -40,8 +43,8 @@ TIER_LAYER = {
     3: 400,
     4: 800,
     5: 1600,
-    6: 3200,
-    7: 3600,
+    6: 2500,
+    7: 3000,
 }
 
 # 称号属性加成：玩家当前阶级 tier 的全属性倍率（每阶 +5%，T7 封顶 +35%）。
@@ -111,15 +114,18 @@ def tier_title(class_id, tier):
 
 
 def can_promote_to(user_meta, tier):
-    """能否晋升到某 tier：返回 (bool, 原因)。user_meta 含 best_layer 与 货币。"""
+    """能否晋升到某 tier：返回 (bool, 原因)。user_meta 含 cleared（已通关层数）与 货币。
+
+    v2.12.17 口径：须「已通关」要求层（到达不算）。
+    """
     if tier <= 0:
         return False, "已是初始阶级。"
     if tier > MAX_TIER:
         return False, "已达最高阶级。"
-    best_layer = user_meta.get("best_layer", 0)
+    cleared = user_meta.get("cleared", user_meta.get("best_layer", 0))
     need_layer = TIER_LAYER.get(tier)
-    if best_layer < need_layer:
-        return False, f"地下城历史最高层需 ≥ {need_layer}（当前 {best_layer}）"
+    if cleared < need_layer:
+        return False, f"地下城已通关层数需 ≥ {need_layer}（当前 {cleared}）"
     cost = user_meta.get("cost", 0)
     copper = user_meta.get("copper", 0)
     if copper < cost:

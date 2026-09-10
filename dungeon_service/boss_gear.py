@@ -51,6 +51,17 @@ def is_gear(item_id):
     return item_id in gear_ids()
 
 
+def gear_layer(item_id):
+    """返回专属装备对应的 Boss 层数（1000/2000/3000/3600/其他命名 Boss 层；非专属返回 0）。
+
+    供套装效果（v2.12.1）分类：三大 Boss（1000/2000/3000）×1.5、3600 ×2、其余命名 Boss ×1.2。
+    """
+    for g in load_gear():
+        if g["id"] == item_id:
+            return int(g.get("boss_layer", 0) or 0)
+    return 0
+
+
 def produced_count(item_id):
     """全服已产出数量（user_item 全局计数）。"""
     return db.session.execute(
@@ -61,13 +72,18 @@ def produced_count(item_id):
 
 
 def roll_gear(user, layer):
-    """挑战胜利时判定专属装备掉落：限量内 + 低概率 → 入包。
+    """挑战胜利时判定专属装备掉落：限量内 + 职业可用 + 低概率 → 入包。
 
-    该层专属可多件（战/法各 1 件）：先随机挑一件「未达限量」的候选，
-    再按该件掉率判定（4 大 0.1% / 其他 3%）；命中返回装备 dict（含已产出/限量播报）。
+    该层专属可多件（战/法各 1 件）：先随机挑一件「未达限量且本职业可用」的候选
+    （v2.12.15 起按职业 lines×部位白名单过滤，含战士/法师/魔剑士/近战法师；
+    未转职不限制），再按该件掉率判定（4 大 0.1% / 其他 3%）；
+    命中返回装备 dict（含已产出/限量播报）。
     """
+    from .classes import item_usable_for
+    prof = getattr(user, "profession", "") or ""
     cands = [g for g in gear_for_layer(layer)
-             if produced_count(g["id"]) < int(g.get("limit", 5))]
+             if produced_count(g["id"]) < int(g.get("limit", 5))
+             and (not prof or item_usable_for(g, prof))]
     if not cands:
         return None
     g = random.choice(cands)

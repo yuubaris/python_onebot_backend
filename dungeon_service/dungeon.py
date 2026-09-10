@@ -21,12 +21,44 @@ import time
 
 from .models import db, UserItem
 from .equipment import load_equipment
-from .classes import class_line, item_line, LINE_PHYSICAL, LINE_MAGIC, LINE_ANY
+from .classes import class_line, class_lines, item_line, LINE_PHYSICAL, LINE_MAGIC, LINE_ANY
 from .tiers import tier_of_price
 from . import ore
 from . import material
 from . import classes as _classes_mod
 from . import tiers as _tiers_mod
+
+# —— 职业可用性（v2.12.14 双线职业）——
+# 职业 → (lines 集合, types 白名单)；双线职业（魔剑士/近战法师）由两者共同限定可穿部位。
+_WARRIOR_USAGE = (set(_classes_mod.CLASSES["warrior"]["lines"]),
+                  set(_classes_mod.CLASSES["warrior"]["types"]))
+_MAGE_USAGE = (set(_classes_mod.CLASSES["mage"]["lines"]),
+               set(_classes_mod.CLASSES["mage"]["types"]))
+
+
+def _usage_for(prof):
+    """职业标识 → (lines 集合, types 白名单)；未知/未转职返回 None。"""
+    meta = _classes_mod.class_meta(prof) if prof else None
+    if not meta:
+        return None
+    return (set(meta.get("lines", (meta.get("line"),))), set(meta.get("types", ())))
+
+
+def _usable_line_type(it, lines, types):
+    """装备对某 (lines, types) 是否可用：any 恒可用；否则 line ∈ lines 且 type ∈ types。
+
+    饰品（accessory）为通用部位：不受职业 types 白名单限制（仅按 line 归属判定），
+    故带物理/魔法归属线的 Boss 专属饰品各职业线均可穿（v2.12.23 起专属饰品已合并为 line=any 中立件，如 裂渊之印）。
+    """
+    ln = item_line(it)
+    if ln == LINE_ANY:
+        return True
+    if ln not in lines:
+        return False
+    t = it.get("type", "other")
+    if t == "accessory":
+        return True
+    return types is None or t in types
 
 LAYER1_TOTAL = 1000.0
 
@@ -204,21 +236,94 @@ def _best_slot_combo(candidates_by_slot, base):
     return stats
 
 
-def _stats_for_line(owned, line, tier_max, best_layer):
-    """按「职业 line + 阶级/锻造解锁」过滤后计算有效属性（不乘称号加成）。
-
-    可用 = line 为该职业(或 any 通用) 且（商店/稀有：tier ≤ 当前阶级；锻造：Lv 已按历史层解锁）；
-    再按槽位（type）做「整体推进速度最优」贪心选件叠加（评分起步 + 迭代校正）。
-    """
-    stats = dict(BASE_STATS)
+def _slot_candidates(owned, lines, types, tier_max, best_layer):
+    """可用装备按槽位分组（职业 lines×types + 阶级/锻造解锁过滤）。供属性计算与套装判定共用。"""
     by_slot = {}
     for it in owned:
         if not _item_usable(it, tier_max, best_layer):
             continue
-        if item_line(it) not in (line, LINE_ANY):
+        if not _usable_line_type(it, lines, types):
             continue
         by_slot.setdefault(it.get("type", "other"), []).append(it)
+    return by_slot
+
+
+def _stats_for_line(owned, lines, types, tier_max, best_layer):
+    """按「职业 lines×types + 阶级/锻造解锁」过滤后计算有效属性（不乘称号加成）。
+
+    可用 = line 为该职业(或 any 通用) 且 type ∈ 职业白名单 且（商店/稀有：tier ≤ 当前阶级；
+    锻造：Lv 已按历史层解锁）；
+    再按槽位（type）做「整体推进速度最优」贪心选件叠加（评分起步 + 迭代校正）。
+    """
+    stats = dict(BASE_STATS)
+    by_slot = _slot_candidates(owned, lines, types, tier_max, best_layer)
     return _best_slot_combo(by_slot, stats)
+
+
+def _worn_items(user, owned, lines, types, tier_max, best_layer):
+    """穿戴中的装备列表（套装判定用）：有「穿戴中」标记用标记件；未标记回退自动最优选件。"""
+    eq = equipped_item_ids(user.user_id)
+    if eq:
+        return [it for it in owned if it.get("id") in eq]
+    by_slot = _slot_candidates(owned, lines, types, tier_max, best_layer)
+    return list(_best_slot_chosen(by_slot).values())
+
+
+def _set_bonus_multiplier(worn):
+    """套装效果（v2.12.3）：全属性倍率，作用于装备属性（与称号同层，药水点数不乘）。
+
+    - 普通套装（×1.1）：穿戴 4 件稀有/锻造（任意混合、无需同系列/Lv）即触发——
+      全稀有、全锻造、2 稀有+2 锻造、1+3 等均生效；只要 4 件中没有商店/其他来源装备；
+    - 穿戴命名 Boss 专属装备后：普通套装的 1.1 一律不再计算，按件累乘——
+      普通命名 Boss 专属 ×1.2/件、三大 Boss（1000/2000/3000）专属 ×1.5/件、3600 最终 Boss ×2/件。
+    """
+    if not worn:
+        return 1.0
+    from .boss_gear import is_gear, gear_layer
+    from .forge import is_forged_item
+    rare_ids = rare_item_ids()
+    boss_pieces = []
+    rare_count = 0
+    forge_count = 0
+    for it in worn:
+        iid = it.get("id", "")
+        if iid in rare_ids:
+            rare_count += 1
+        elif is_forged_item(iid):
+            forge_count += 1
+        if is_gear(iid):
+            boss_pieces.append(it)
+    bonus = 1.0
+    if boss_pieces:
+        for it in boss_pieces:
+            layer = gear_layer(it.get("id", ""))
+            if layer == 3600:
+                bonus *= 2.0
+            elif layer in (1000, 2000, 3000):
+                bonus *= 1.5
+            else:
+                bonus *= 1.2
+    elif rare_count + forge_count >= 4:
+        bonus *= 1.1
+    return bonus
+
+
+def current_set_bonus(user, owned):
+    """当前生效的套装倍率（供背包展示；与 effective_stats 同一选件口径）。"""
+    if user is None:
+        return 1.0
+    tier_max = getattr(user, "tier", 0) or 0
+    prof = getattr(user, "profession", "") or ""
+    best_layer = historical_best_layer(user)
+    usage = _usage_for(prof)
+    if usage:
+        lines, types = usage
+    else:
+        # 未转职 → 与 effective_stats 一致：取自动择优组
+        s_phy = dungeon_speed(_stats_for_line(owned, *_WARRIOR_USAGE, tier_max, best_layer))
+        s_mag = dungeon_speed(_stats_for_line(owned, *_MAGE_USAGE, tier_max, best_layer))
+        lines, types = _WARRIOR_USAGE if s_phy >= s_mag else _MAGE_USAGE
+    return _set_bonus_multiplier(_worn_items(user, owned, lines, types, tier_max, best_layer))
 
 
 def effective_stats(user, owned):
@@ -233,6 +338,10 @@ def effective_stats(user, owned):
       只计算穿戴中的装备；从未标记过穿戴的用户回退为自动最优（兼容老玩家/新角色）。
     - 称号加成：全属性乘 TIER_ATTR_BONUS[user.tier]（每阶 +5%，T7=+35%）——
       同装备下，高阶称号实力更强。
+    - 套装效果（v2.12.2）：穿戴 4 件同来源装备（无需同系列/Lv）全属性 ×1.1——全稀有或全锻造；
+      混搭（稀有+锻造）不足 4 件同源不触发；穿戴命名 Boss 专属后普通套装 1.1 取消、
+      按件累乘——普通命名 Boss ×1.2/件、三大 Boss（1000/2000/3000）×1.5/件、3600 ×2/件；
+      与称号同层，药水点数不乘。
     """
     tier_max = 0
     prof = ""
@@ -247,16 +356,29 @@ def effective_stats(user, owned):
         eq = equipped_item_ids(user.user_id)
         if eq:
             owned = [it for it in owned if it.get("id") in eq]
-    if prof and class_line(prof):
-        stats = _stats_for_line(owned, class_line(prof), tier_max, best_layer)
+    if prof and _usage_for(prof):
+        lines, types = _usage_for(prof)
+        stats = _stats_for_line(owned, lines, types, tier_max, best_layer)
+        _usage = (lines, types)
     else:
         # 未转职 → 自动择优（any 通用件两组都能用，按各自专属件收益定胜负）
-        s_phy = _stats_for_line(owned, LINE_PHYSICAL, tier_max, best_layer)
-        s_mag = _stats_for_line(owned, LINE_MAGIC, tier_max, best_layer)
-        stats = s_phy if dungeon_speed(s_phy) >= dungeon_speed(s_mag) else s_mag
+        s_phy = _stats_for_line(owned, *_WARRIOR_USAGE, tier_max, best_layer)
+        s_mag = _stats_for_line(owned, *_MAGE_USAGE, tier_max, best_layer)
+        if dungeon_speed(s_phy) >= dungeon_speed(s_mag):
+            stats = s_phy
+            _usage = _WARRIOR_USAGE
+        else:
+            stats = s_mag
+            _usage = _MAGE_USAGE
     if tier_bonus != 1.0:
         for k in stats:
             stats[k] *= tier_bonus
+    # 套装效果（v2.12.1）：全属性倍率，与称号同层（药水点数不乘，独立叠加）
+    if user is not None:
+        _sb = _set_bonus_multiplier(_worn_items(user, owned, *_usage, tier_max, best_layer))
+        if _sb != 1.0:
+            for k in stats:
+                stats[k] *= _sb
     # 属性药水 BUFF（v8）：生效中的 buff_stat 点数叠加到各属性（不乘称号，独立叠加）
     if user is not None:
         try:
@@ -372,22 +494,22 @@ def mark_best_equipped(user):
     tier_max = getattr(user, "tier", 0) or 0
     best_layer = historical_best_layer(user)
     prof = getattr(user, "profession", "") or ""
-    cl = class_line(prof) if prof else None
+    usage = _usage_for(prof)
 
-    def candidates(ln):
+    def candidates(lines, types):
         by = {}
         for it in owned:
             if not _item_usable(it, tier_max, best_layer):
                 continue
-            if item_line(it) not in (ln, LINE_ANY):
+            if not _usable_line_type(it, lines, types):
                 continue
             by.setdefault(it.get("type", "other"), []).append(it)
         return by
 
-    if cl:
-        by = candidates(cl)
+    if usage:
+        by = candidates(*usage)
     else:
-        c_phy, c_mag = candidates(LINE_PHYSICAL), candidates(LINE_MAGIC)
+        c_phy, c_mag = candidates(*_WARRIOR_USAGE), candidates(*_MAGE_USAGE)
         s_phy = dungeon_speed(_best_slot_combo(c_phy, dict(BASE_STATS)))
         s_mag = dungeon_speed(_best_slot_combo(c_mag, dict(BASE_STATS)))
         by = c_phy if s_phy >= s_mag else c_mag
@@ -523,18 +645,17 @@ def _grant_boss_rare(user, layer, btype):
     if not pool:
         return None
     prof = getattr(user, "profession", "") or ""
-    cl = class_line(prof) if prof else None
+    usage = _usage_for(prof)
     tier_max = getattr(user, "tier", 0) or 0
     cand = []  # (item, tier)
     for it in pool:
-        line = item_line(it)
-        if cl:
-            # 已转职：接受 本职业 line 或 通用(any)
-            if line not in (cl, LINE_ANY):
+        if usage:
+            # 已转职：接受 本职业 lines×types 或 通用(any)
+            if not _usable_line_type(it, *usage):
                 continue
         else:
             # 未转职：仅通用(any) 可用（职业专属先引导转职）
-            if line != LINE_ANY:
+            if item_line(it) != LINE_ANY:
                 continue
         t = _item_tier(it)
         if t > tier_max:
@@ -608,7 +729,7 @@ def _load_forge_meta():
     return _FORGE_EQ
 
 
-def _anchor_combo_s(pool, line, tier_max=None, forge_lv=None, title_bonus=1.0):
+def _anchor_combo_s(pool, lines, types, tier_max=None, forge_lv=None, title_bonus=1.0):
     """穿满指定装备池后的 dungeon_speed（商店按 tier≤tier_max / 锻造按 level≤forge_lv；
     同槽位做「整体推进速度最优」贪心选件叠加（与 _stats_for_line 同一算法），乘称号加成）。"""
     by_slot = {}
@@ -617,7 +738,7 @@ def _anchor_combo_s(pool, line, tier_max=None, forge_lv=None, title_bonus=1.0):
             continue
         if forge_lv is not None and int(it.get('level', 99)) > forge_lv:
             continue
-        if item_line(it) not in (line, LINE_ANY):
+        if not _usable_line_type(it, lines, types):
             continue
         by_slot.setdefault(it.get('type', 'other'), []).append(it)
     stats = _best_slot_combo(by_slot, dict(BASE_STATS))
@@ -647,15 +768,16 @@ def named_boss_b0(user, layer):
     3000→锻造Lv3、3600→锻造Lv4（后段对应锻造装备难度）；
     **同档内层间梯度**：档首 Boss 战力适当降低（胜率 ≈ 85%），档末 ≈ 70%，B0 线性插值。
     """
-    line = class_line(user.profession)
+    usage = _usage_for(user.profession) or _WARRIOR_USAGE
+    lines, types = usage
     for start, end, kind, spec in _NAMED_BOSS_BANDS:
         if not (start <= layer <= end):
             continue
         if kind == "forge":
             bonus = _tiers_mod.TIER_ATTR_BONUS[7 if spec == 4 else 5]
-            s = _anchor_combo_s(_load_forge_meta(), line, forge_lv=spec, title_bonus=bonus)
+            s = _anchor_combo_s(_load_forge_meta(), lines, types, forge_lv=spec, title_bonus=bonus)
         else:
-            s = _anchor_combo_s(_load_shop_meta(), line, tier_max=spec, title_bonus=_tiers_mod.TIER_ATTR_BONUS[spec])
+            s = _anchor_combo_s(_load_shop_meta(), lines, types, tier_max=spec, title_bonus=_tiers_mod.TIER_ATTR_BONUS[spec])
         if end > start:
             b0_start = s / _BAND_X_START
             b0_end = s / _BAND_X_END
