@@ -5,6 +5,7 @@
 管理页： http://127.0.0.1:5000/
 """
 import os
+import hashlib
 import threading
 import time
 import urllib.request
@@ -13,8 +14,9 @@ from flask import Flask, render_template, request, jsonify
 
 from models import db, Config, GroupWhitelist, User, CheckinRecord, UserItem, LiveMonitor, DynamicMonitor, UserOre
 from currency import format_currency
-from commands import ensure_user, dispatch_command
+from commands import ensure_user, ensure_qq_user, dispatch_command, normalize_command
 from bot import OneBotClient, log, get_logs
+from qq_official import QQOfficialClient
 from ratelimit import RateLimiter
 from equipment import load_equipment
 from dungeon import layer_total, effective_layer_total, coin_per_5sec, effective_stats, dungeon_speed, owned_items
@@ -236,6 +238,92 @@ def _send_challenge_show(reply):
             if i < len(msgs) - 1:
                 time.sleep(delay)
     threading.Thread(target=worker, daemon=True).start()
+
+
+# ---------- QQ 官方机器人通道 ----------
+qqbot = None  # 全局：QQ 官方客户端（qq_official_enable=true 时启动；与 OneBot 可并存）
+
+
+def _qq_group_int(group_openid):
+    """把 32 位 hex 的 group_openid 映射成正整数，复用既有「按群排名」等 int 群号逻辑。
+
+    真实 QQ 群号为 9~10 位十进制，此处取 md5 前 15 位 hex（约 1e18），碰撞概率可忽略。
+    """
+    return int(hashlib.md5(str(group_openid).encode("utf-8")).hexdigest()[:15], 16)
+
+
+def send_qq_text(group_openid, text, msg_id=None, msg_seq=1):
+    """通过 QQ 官方通道发送群文本消息。"""
+    if qqbot is None:
+        log("[QQ官方] 客户端未启动，消息未发送")
+        return None
+    return qqbot.reply_group(group_openid, text, msg_id=msg_id, msg_seq=msg_seq)
+
+
+def handle_qq_group_message(group_openid, user_openid, text, msg_id, nickname=""):
+    """QQ 官方群消息入口（由官方客户端线程回调）。"""
+    try:
+        with app.app_context():
+            _handle_qq_group_message_inner(group_openid, user_openid, text, msg_id, nickname)
+    except Exception as exc:
+        log(f"[QQ官方] 消息处理异常: {exc}")
+
+
+def _handle_qq_group_message_inner(group_openid, user_openid, text, msg_id, nickname):
+    if not group_openid or not user_openid:
+        return
+    gid = _qq_group_int(group_openid)
+
+    # 群白名单：官方通道下「机器人被拉进群」即视为授权，首次收到消息自动登记
+    wl = db.session.execute(
+        db.select(GroupWhitelist).where(GroupWhitelist.group_openid == group_openid)
+    ).scalars().first()
+    if wl is None:
+        wl = GroupWhitelist(group_id=gid, group_name="(QQ官方群)", group_openid=group_openid, enabled=True)
+        db.session.add(wl)
+        db.session.commit()
+        log(f"[QQ官方] 自动登记群 openid={group_openid}")
+    if not wl.enabled:
+        return
+
+    user = ensure_qq_user(user_openid, nickname)
+    if user.group_id != gid:
+        user.group_id = gid
+        db.session.commit()
+
+    # 官方通道只响应命令（不做复读）；允许省略前导 '/'，直接发「签到」即可
+    text = normalize_command(text)
+    if not text or not text.startswith("/"):
+        return
+
+    # 频率限制（与 OneBot 共用同一套配置）
+    cfg = load_config()
+    if _cfg_bool(cfg.get("rate_limit_enable", "false")):
+        rl_max = _cfg_int(cfg.get("rate_limit_max"), 15)
+        rl_window = _cfg_int(cfg.get("rate_limit_window"), 60)
+        rl_cooldown = _cfg_int(cfg.get("rate_limit_cooldown"), 60)
+        allowed, rate_reply = limiter.check((gid, user_openid), rl_max, rl_window, rl_cooldown)
+        if not allowed:
+            if rate_reply:
+                send_qq_text(group_openid, rate_reply, msg_id=msg_id)
+            return  # 冷却期内静默过滤
+
+    reply = dispatch_command(text, user, gid, at_qqs=None)
+    if not reply:
+        return
+
+    if isinstance(reply, dict) and reply.get("type") == "image":
+        # 官方通道尚未接入富媒体上传：降级为文本（保留文案）
+        send_qq_text(group_openid, reply.get("text") or "[图片]", msg_id=msg_id)
+    elif isinstance(reply, dict) and reply.get("type") == "challenge_show":
+        msgs = reply.get("msgs") or []
+        delay = float(reply.get("delay") or 2)
+        for i, m in enumerate(msgs):
+            send_qq_text(group_openid, m, msg_id=msg_id, msg_seq=i + 1)
+            if i < len(msgs) - 1:
+                time.sleep(delay)
+    else:
+        send_qq_text(group_openid, reply, msg_id=msg_id)
 
 
 def send_group_text(group_id, text):
@@ -679,19 +767,34 @@ def api_logs():
 @app.route("/api/bot/restart", methods=["POST"])
 def api_bot_restart():
     bot.restart()
+    if qqbot is not None:
+        qqbot.stop()
+        qqbot.start()
     return jsonify({"ok": True})
 
 
 @app.route("/api/bot/stop", methods=["POST"])
 def api_bot_stop():
     bot.stop()
+    if qqbot is not None:
+        qqbot.stop()
     return jsonify({"ok": True})
 
 
 @app.route("/api/bot/start", methods=["POST"])
 def api_bot_start():
     bot.start()
+    if qqbot is not None:
+        qqbot.start()
     return jsonify({"ok": True})
+
+
+@app.route("/api/qq/status")
+def api_qq_status():
+    """QQ 官方通道状态（未启用时 enabled=false）。"""
+    if qqbot is None:
+        return jsonify({"enabled": False})
+    return jsonify({"enabled": True, "status": dict(qqbot.status)})
 
 
 # ---------- 启动 ----------
@@ -730,7 +833,17 @@ def _migrate_schema():
         # 排名按群（v2.11.68）：最近活跃群（0=未归群，/地下城 排名 仅统计同群用户）
         if "group_id" not in cols:
             conn.execute("ALTER TABLE user ADD COLUMN group_id BIGINT DEFAULT 0")
+        # QQ 官方机器人：openid 标识官方通道用户（官方不返回真实 QQ 号）
+        if "openid" not in cols:
+            conn.execute("ALTER TABLE user ADD COLUMN openid VARCHAR(128) DEFAULT ''")
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_user_openid ON user (openid)")
         conn.commit()
+        # group_whitelist 表：QQ 官方群 openid（官方通道用于匹配白名单）
+        wl_cols = {r[1] for r in conn.execute("PRAGMA table_info(group_whitelist)")}
+        if wl_cols and "group_openid" not in wl_cols:
+            conn.execute("ALTER TABLE group_whitelist ADD COLUMN group_openid VARCHAR(128) DEFAULT ''")
+            conn.execute("CREATE INDEX IF NOT EXISTS ix_group_whitelist_group_openid ON group_whitelist (group_openid)")
+            conn.commit()
         # user_item 表：Boss 掉落 new 标记
         it_cols = {r[1] for r in conn.execute("PRAGMA table_info(user_item)")}
         if "is_new" not in it_cols:
@@ -760,6 +873,15 @@ with app.app_context():
     _migrate_schema()
     bot = OneBotClient(get_config=load_config, on_event=handle_event)
     bot.start()
+    # QQ 官方机器人通道（可选：配置 qq_official_enable=true 后启用，与 OneBot 并存）
+    if _cfg_bool(load_config().get("qq_official_enable", "false")):
+        qqbot = QQOfficialClient(
+            get_config=load_config,
+            on_group_message=handle_qq_group_message,
+            log=log,
+        )
+        qqbot.start()
+        log("[QQ官方] 接入已启用")
     monitor = LiveMonitorThread(app, send_group_dynamic)
     monitor.start()
     dmonitor = DynamicMonitorThread(app, send_group_dynamic)

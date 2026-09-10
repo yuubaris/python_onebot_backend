@@ -46,8 +46,10 @@ OP_HEARTBEAT_ACK = 11
 
 # ---- 关注的群事件 ----
 EVENT_GROUP_AT_MESSAGE = "GROUP_AT_MESSAGE_CREATE"   # 群里 @机器人 的消息
+EVENT_GROUP_MESSAGE = "GROUP_MESSAGE_CREATE"         # 群内全部消息（群主开启"获取群内全部消息"后）
 EVENT_GROUP_ADD_ROBOT = "GROUP_ADD_ROBOT"            # 被拉进群
 EVENT_GROUP_DEL_ROBOT = "GROUP_DEL_ROBOT"            # 被移出群
+GROUP_MESSAGE_EVENTS = (EVENT_GROUP_AT_MESSAGE, EVENT_GROUP_MESSAGE)
 
 
 def _http_json(url, method="GET", payload=None, headers=None, timeout=10):
@@ -140,7 +142,8 @@ class QQOfficialClient:
     """官方机器人 WebSocket 客户端（后台线程运行，自动重连/恢复）。
 
     - get_config: 返回配置 dict（读 qq_appid / qq_appsecret / qq_sandbox）
-    - on_group_message: 收到群 @消息时回调 (group_openid, user_openid, text, msg_id)
+    - on_group_message: 收到群消息时回调
+      (group_openid, user_openid, text, msg_id, nickname)
     - on_event: 其它事件回调 (event_type, data)，可为 None
     - log: 日志函数
     """
@@ -235,11 +238,15 @@ class QQOfficialClient:
                 self._next_heartbeat = now + self._heartbeat_interval
             try:
                 raw = self.ws.recv()
-            except Exception:
-                # 超时（无数据）继续循环以发送心跳
+            except Exception as e:
                 if not self._running:
                     return
-                continue
+                # 读超时（无数据）：继续循环以按时发心跳
+                if websocket is not None and isinstance(e, websocket.WebSocketTimeoutException):
+                    continue
+                # 其它异常（连接被关闭/网络断开）：退出循环，交由 _run 重连
+                self._log(f"接收异常，准备重连：{e}")
+                return
             if not raw:
                 continue
             try:
@@ -311,14 +318,16 @@ class QQOfficialClient:
             self._log("会话已恢复")
             return
         self.status["last_event_at"] = time.time()
-        if event_type == EVENT_GROUP_AT_MESSAGE and self.on_group_message:
+        self._log(f"收到事件：{event_type}")
+        if event_type in GROUP_MESSAGE_EVENTS and self.on_group_message:
             group_openid = data.get("group_openid", "")
             author = data.get("author") or {}
             user_openid = author.get("member_openid") or author.get("id") or ""
+            nickname = author.get("username") or ""
             text = strip_at(data.get("content", ""))
             msg_id = data.get("id", "")
             try:
-                self.on_group_message(group_openid, user_openid, text, msg_id)
+                self.on_group_message(group_openid, user_openid, text, msg_id, nickname)
             except Exception as e:
                 self._log(f"处理群消息异常：{e}")
             return
@@ -343,8 +352,8 @@ if __name__ == "__main__":
     cfg = {"qq_appid": os.environ.get("QQ_APPID", ""),
            "qq_appsecret": os.environ.get("QQ_APPSECRET", "")}
 
-    def on_msg(group, user, text, msg_id):
-        _log(f"收到群消息 group={group} user={user} text={text!r}")
+    def on_msg(group, user, text, msg_id, nickname=""):
+        _log(f"收到群消息 group={group} user={user} nickname={nickname} text={text!r}")
         if text.strip() in ("/ping", "ping"):
             client.reply_group(group, "pong（来自 QQ 官方机器人）", msg_id=msg_id)
             _log("已回复 pong")

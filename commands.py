@@ -86,6 +86,51 @@ def ensure_user(user_id, nickname):
     return user
 
 
+def ensure_qq_user(openid, nickname=""):
+    """按 QQ 官方 openid 获取或创建用户（官方通道专用）。
+
+    官方接口不返回真实 QQ 号，因此这类用户分配**负数 user_id**（真实 QQ 号为正值，不会冲突），
+    并把 openid 落库，便于后续把同一人的两种身份合并。
+    """
+    user = db.session.execute(
+        db.select(User).where(User.openid == openid)
+    ).scalars().first()
+    if user is not None:
+        if nickname and user.nickname != nickname:
+            user.nickname = nickname
+            db.session.commit()
+        return user
+
+    for _ in range(5):
+        min_id = db.session.execute(db.select(db.func.min(User.user_id))).scalar()
+        new_id = min(int(min_id or 0), 0) - 1
+        user = User(user_id=new_id, nickname=nickname or openid, openid=openid)
+        db.session.add(user)
+        try:
+            db.session.commit()
+            return user
+        except Exception:
+            # 并发建号撞主键：回滚后重算一次最小 id
+            db.session.rollback()
+            user = None
+    return user
+
+
+def normalize_command(text):
+    """允许省略前导 '/'：把「签到」这类纯中文命令词自动补成 '/签到'。
+
+    仅对**纯中文**命令词生效，避免把聊天里单个字母（如 b / shop / help）误判为命令。
+    已带 '/' 的输入原样返回。
+    """
+    s = (text or "").strip()
+    if not s or s.startswith("/"):
+        return s
+    head = s.split(maxsplit=1)[0].lower()
+    if head in COMMANDS and all("\u4e00" <= ch <= "\u9fff" for ch in head):
+        return "/" + s
+    return s
+
+
 # ---------- 签到 ----------
 
 

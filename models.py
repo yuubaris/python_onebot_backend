@@ -25,6 +25,7 @@ class GroupWhitelist(db.Model):
 
     group_id = db.Column(db.BigInteger, primary_key=True)
     group_name = db.Column(db.String(128), default="")
+    group_openid = db.Column(db.String(128), default="", nullable=False, index=True)  # QQ 官方群 openid（官方通道用）
     enabled = db.Column(db.Boolean, default=True, nullable=False)
     added_at = db.Column(db.DateTime, default=datetime.now)
 
@@ -35,6 +36,8 @@ class User(db.Model):
 
     user_id = db.Column(db.BigInteger, primary_key=True)
     nickname = db.Column(db.String(128), default="")
+    # QQ 官方机器人：官方不返回真实 QQ 号，用 openid 标识用户（官方通道用户；空=OneBot 用户）
+    openid = db.Column(db.String(128), default="", nullable=False, index=True)
     copper = db.Column(db.BigInteger, default=0, nullable=False)       # 资产，单位：铜币
     checkin_streak = db.Column(db.Integer, default=0, nullable=False)  # 连续签到天数
     total_checkin = db.Column(db.Integer, default=0, nullable=False)   # 累计签到次数
