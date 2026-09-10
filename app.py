@@ -99,7 +99,7 @@ def save_config(new_cfg: dict):
 
 
 # ---------- QQ 官方机器人通道 ----------
-qqbot = None  # 全局：QQ 官方客户端（qq_official_enable=true 时启动；与 OneBot 可并存）
+qqbot = None  # 全局：QQ 官方客户端（配置启用且已填 AppID/AppSecret 时启动）
 
 
 def _qq_group_int(group_openid):
