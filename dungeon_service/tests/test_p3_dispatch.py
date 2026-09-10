@@ -60,7 +60,7 @@ def test_dispatch_checkin_via_gamecore(app):
 def test_dispatch_unknown_first(app):
     u = build_player_a(None)
     out = dispatch_command("/不存在的命令", u, 12345)
-    assert out == "未知指令，发送 /帮助 查看可用命令。"
+    assert out == "未知指令，发送 帮助 查看可用命令。"
 
 
 def test_dispatch_balance_via_gamecore(app):
@@ -75,9 +75,9 @@ def test_help_grouped_dungeon(app):
     out = cmd_help(None, 12345, "")
     assert "⚔️ 地下城（冒险）" in out
     assert "🎮 娱乐" in out
-    # 地下城组包含签到/余额
-    assert out.index("⚔️ 地下城（冒险）") < out.index("/签到")
-    assert out.index("/签到") < out.index("🎮 娱乐")
+    # 地下城组包含签到/余额（命令已免斜杠，行首不再带 /）
+    assert out.index("⚔️ 地下城（冒险）") < out.index("\n签到 - ")
+    assert out.index("\n签到 - ") < out.index("🎮 娱乐")
 
 
 def test_dispatch_boss_report_only_on_dungeon(app):
